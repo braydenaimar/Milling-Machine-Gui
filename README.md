@@ -4,9 +4,7 @@ A graphical user interface for operating a milling machine.
 
 Installation
 -----
-Follow these steps to install the program.
-
-### Windows
+#### Follow these steps to install the program.
 
 1. Install nodejs from www.nodejs.org/en.
 1. Download Git for windows from https://git-for-windows.github.io/.
@@ -17,7 +15,8 @@ Follow these steps to install the program.
 5. Run `npm install`.
 5. Run `npm start` to launch the app.
 
-##### This is what command prompt should look like after completing the above steps.
+\
+This is roughly what command prompt should look like after completing the above steps:
 ```
 C:\Users\YourName>cd Documents
 
@@ -35,7 +34,6 @@ C:\Users\YourName\Documents\Milling-Machine-Gui>npm install
 ~note that it is normal to see some warning and error-like messages here~
 
 C:\Users\YourName\Documents\Milling-Machine-Gui>npm start
-
 ```
 
 Windows Firewall may pop-up with a security alert but you just need to click `Allow Access`.
@@ -53,9 +51,28 @@ If you are having issues, you may need to add the program to the list of exclusi
 7. Select `Exclude this folder`.
 8. Under 'Processes' select `Exclude a process`.
 9. Navigate to and open the 'Milling-Machine-Gui' folder.
-10. Open 'json_server' -> 'windows_x64'.
+10. Open 'json_server' > 'windows_x64'.
 11. Select the `serial-port-json-server.exe` file (Note, depending on your computer, this file may show as `serial-port-json-server` with a file type of 'Application').
 12. Select `Exclude this file`.
+
+
+Running the Program
+-----
+
+### Using File Explorer
+
+1. Open Windows File Explorer.
+2. Goto where you installed the program (in your 'Documents' folder if you followed the above instructions).
+3. Open the 'Milling-Machine-Gui' folder.
+4. Double click 'autostart.bat' to run the program.
+
+You may want to create a shortcut to your desktop to access it more easily.
+
+### Using Command Prompt
+
+1. Open Windows Command Prompt by going to the start menu and searching 'Command Prompt'.
+2. Run `cd Documents/Milling-Machine-Gui`.
+3. Run `autostart.bat` to run the program.
 
 
 File Tree
