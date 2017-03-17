@@ -1,0 +1,103 @@
+<!-- Connection Widget HTML -->
+
+<div class="panel panel-default splist-panel">
+
+	<div class="panel-heading">
+
+		<h3>Serial Devices</h3>
+
+		<div class="btn-group">
+
+			<!-- Hide Panel Button -->
+			<span evt-signal="hide-body" evt-data="splist-panel" class="btn btn-xs btn-default">
+				<span class="glyphicon glyphicon-chevron-up"></span>
+			</span>
+
+		</div>
+
+		<div class="btn-group">
+
+			<!-- Request SPJS List Button -->
+			<span evt-signal="/connection-widget/spjs-send" evt-data="list" class="btn btn-xs btn-default">
+				<span class="glyphicon glyphicon-refresh"></span>
+			</span>
+
+			<!-- Restart SPJS Button -->
+			<span evt-signal="/connection-widget/spjs-send" evt-data="restart" class="btn btn-xs btn-default">
+				<span class="glyphicon glyphicon-retweet" style="color: red;"></span>
+			</span>
+
+		</div>
+
+	</div>
+
+	<!-- Serial Port Devices List -->
+	<div class="panel-body splist">
+
+		<div class="bg-danger spjs-connection-warning">You are not connected to a SPJS.</div>
+		<div class="bg-warning serialport-connection-warning hidden">There are no serial ports available.</div>
+
+		<table class="table serial-port-list">
+			<!-- <tbody>
+				<tr id="serial-port-list-item-port-COM9" class="port-list-item first-port-list-item port-COM9">
+					<td class="port-toggle-btn"><span class="fa fa-toggle-off"></span></td>
+					<td class="port-port">COM9</td>
+					<td class="port-friendly">TinyG G2 Programming</td>
+					<td class="port-baud">115200</td>
+					<td class="port-buffer">tinyg</td>
+					<td class="port-mdi"></td>
+				</tr>
+				<tr id="serial-port-list-item-port-COM10" class="port-list-item port-COM10 success">
+					<td class="port-toggle-btn"><span class="fa fa-toggle-on"></span></td>
+					<td class="port-port">COM10</td>
+					<td class="port-friendly">TinyG G2 Native</td>
+					<td class="port-baud">115200</td>
+					<td class="port-buffer">tinygg2</td>
+					<td class="port-mdi">
+						<div class="form-group">
+							<div class="input-group">
+								<input id="" class="form-control input-sm" type="text" placeholder="GCode">
+								<span class="input-group-btn">
+									<span class="btn btn-xs btn-default">Send</span>
+								</span>
+							</div>
+						</div>
+					</td>
+				</tr>
+			</tbody> -->
+		</table>
+
+	</div>
+
+</div>
+
+<div class="panel panel-default console-log-panel">
+	<div class="panel-heading">
+		<h3>Console Log</h3>
+
+		<ul class="nav nav-tabs">
+			<!-- <li role="presentation" class="list-tab-COM10">
+				<span evt-data="COM10" class="console-log-tab">COM10</span>
+			</li> -->
+			<li role="presentation" class="list-tab-SPJS active">
+				<span evt-data="SPJS" class="console-log-tab">SPJS</span>
+			</li>
+		</ul>
+	</div>
+	<div class="panel-body">
+		<!-- <div class="console-log-output log-COM10 hidden">
+		</div> -->
+		<div class="console-log-output log-SPJS">
+		</div>
+	</div>
+	<div class="panel-footer console-input">
+		<input class="form-control" type="text" placeholder="SPJS Command" autofocus="true" autocomplete="off">
+	</div>
+</div>
+<!-- <label class="control-label">Input addons</label> -->
+<!-- <span class="input-group-addon"><span class="fa fa-terminal"></span></span> -->
+
+<!-- <div class="form-group">
+  <label class="control-label" for="inputSmall">Small input</label>
+  <input id="inputSmall" class="form-control input-sm" type="text">
+</div> -->

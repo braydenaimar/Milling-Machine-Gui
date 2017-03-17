@@ -1,0 +1,101 @@
+/* Connection Widget CSS */
+
+/* -- Serial Ports List -- */
+#connection-widget .splist-panel .panel-heading {
+	/*height: auto;*/
+	padding-right: 5px;
+}
+#connection-widget .splist-panel .panel-heading div.btn-group {
+	float: right;
+	margin: 0 3px;
+	padding: 0;
+}
+#connection-widget .splist-panel .panel-heading .btn {
+	/*float: right;*/
+	padding-top: 3px;
+	font-size: 11px;
+}
+#connection-widget .splist .spjs-connection-warning,
+#connection-widget .splist .serialport-connection-warning {
+	padding: 8px 10px;
+}
+#connection-widget table.serial-port-list {
+	padding: 0px 10px;
+	margin: 0;
+}
+#connection-widget .port-list-item > td {
+	vertical-align: middle;
+	padding: 0px 8px;
+	font-size: 13px;
+}
+#connection-widget .port-list-item.first-item > td {
+	border-top: 0;
+}
+/* Table data cells. */
+#connection-widget .port-list-item td.port-toggle-btn {
+	width: 50px;
+	font-size: 16px;
+	text-align: center;
+}
+#connection-widget .port-list-item td.port-name {
+	width: 60px;
+}
+#connection-widget .port-list-item td.port-friendly {
+	width: 180px;
+	/*font-size: 15px;*/
+}
+#connection-widget .port-list-item td.port-baud {
+	width: 60px;
+	text-align: right;
+}
+#connection-widget .port-list-item td.port-buffer {
+	/*width: 75px;*/
+}
+#connection-widget .port-list-item td.port-mdi {
+
+}
+
+#connection-widget .console-log-panel .panel-heading {
+	height: 28px;
+	/*padding-bottom: 0;*/
+}
+#connection-widget .console-log-panel .nav-tabs {
+	float: right;
+	margin-right: 10px;
+	/*position: relative;*/
+}
+
+/* -- SPJS Log -- */
+#connection-widget .console-log-output {
+	overflow: auto;
+	padding: 2px 5px;
+}
+#connection-widget .console-log-output samp,
+#connection-widget .console-log-output code {
+	/*margin: 2px;*/
+	font-size: 12px;
+	line-height: 13px;
+}
+#connection-widget .console-input {
+	/*height: 65px;*/
+	/*padding: 5px 0 7px 10px;*/
+	padding: 4px 15px 6px 15px;
+}
+#connection-widget .console-input .input-group {
+	width: 550px;
+	font-size: 15px;
+}
+#connection-widget .console-input input {
+	width: 95%;
+	color: #212121;
+	height: initial;
+	font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+	font-weight: 400;
+	padding: 0 0 0 4px;
+	/*background-color: #ffffff;*/
+}
+/*#connection-widget .console-input .input-addon-btn {
+	white-space: nowrap;
+	display: table-cell;
+	background-color: #ffffff;
+}*/
