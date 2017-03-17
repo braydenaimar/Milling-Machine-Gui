@@ -1,0 +1,261 @@
+# Codes that are not included in this list are 'Reserved'.
+
+statusCodes:
+    # Low Level Codes: System and comms status.
+    0: 'OK: Universal okay code.'
+    1: 'ERROR: Generic error return.'
+    2: 'EAGAIN: Function would block here.'
+    3: 'NOOP: Function had no operation.'
+    4: 'COMPLETE: Operation is complete.'
+    5: 'TERMINATE: Operation is terminated (gracefully).'
+    6: 'RESET: Operation was hard reset (sig kill).'
+    7: 'EOL: Returned end-of-line.'
+    8: 'EOF: Returned end-of-file.'
+    9: 'FILE_NOT_OPEN'
+    10: 'FILE_SIZE_EXCEEDED'
+    11: 'NO_SUCH_DEVICE'
+    12: 'BUFFER_EMPTY'
+    13: 'BUFFER_FULL'
+    14: 'BUFFER_FULL_FATAL'
+    15: 'INITIALIZING: Initializing - not ready for use.'
+    16: 'ENTERING_BOOT_LOADER: Emitted by the boot loader not TinyG.'
+    17: 'FUNCTION_IS_STUBBED'
+
+    # Internal System Errors
+    20: 'INTERNAL_ERROR: Unrecoverable internal error.'
+    21: 'INTERNAL_RANGE_ERROR'
+    22: 'FLOATING_POINT_ERROR: Number conversion error.'
+    23: 'DIVIDE_BY_ZERO'
+    24: 'INVALID_ADDRESS'
+    25: 'READ_ONLY_ADDRESS'
+    26: 'INIT_FAIL'
+    27: 'ALARMED: System Alarmed. System alarms occur when the system must halt operation for some reason. A message like this will be received er: fb:370.08 st:27 msg:System alarmed val:1. Alarms may occur when a limit switch has been hit or memory fault or corruption has been detected.'
+    28: 'FAILED_TO_GET_PLANNER_BUFFER'
+    29: 'GENERIC_EXCEPTION_REPORT: Used for test.'
+    30: 'PREP_LINE_MOVE_TIME_IS_INFINITE'
+    31: 'PREP_LINE_MOVE_TIME_IS_NAN'
+    32: 'FLOAT_IS_INFINITE'
+    33: 'FLOAT_IS_NAN'
+    34: 'PERSISTENCE_ERROR'
+    35: 'BAD_STATUS_REPORT_SETTING'
+
+    # Assertion Failures: Build down from 99 until they meet system errors.
+    90: 'CONFIG_ASSERTION_FAILURE'
+    91: 'XIO_ASSERTION_FAILURE'
+    92: 'ENCODER_ASSERTION_FAILURE'
+    93: 'STEPPER_ASSERTION_FAILURE'
+    94: 'PLANNER_ASSERTION_FAILURE'
+    95: 'CANONICAL_MACHINE_ASSERTION_FAILURE'
+    96: 'CONTROLLER_ASSERTION_FAILURE'
+    97: 'STACK_OVERFLOW'
+    98: 'MEMORY_FAULT: Generic memory corruption detected.'
+    99: 'GENERIC_ASSERTION_FAILURE: Unclassified assertion failure.'
+
+    # Application and Data I/P Errors Generic Data I/P Errors.
+    100: 'UNRECOGNIZED_NAME: Parser did not recognize the command.'
+    101: 'INVALID_OR_MALFORMED_COMMAND: Malformed line to parser.'
+    102: 'BAD_NUMBER_FORMAT: Number format error.'
+    103: 'BAD_UNSUPPORTED_TYPE: Number or JSON type is not supported.'
+    104: 'PARAMETER_IS_READ_ONLY: This parameter is read-only and cannot be set.'
+    105: 'PARAMETER_CANNOT_BE_READ: This parameter is not readable.'
+    106: 'COMMAND_NOT_ACCEPTED: Command cannot be accepted at this time.'
+    107: 'INPUT_EXCEEDS_MAX_LENGTH: Input string too long.'
+    108: 'INPUT_LESS_THAN_MIN_VALUE: Value is under minimum.'
+    109: 'INPUT_EXCEEDS_MAV_VALUE: Value is over maximum.'
+    110: 'INPUT_VALUE_RANGE_ERROR: Value is out-of-range.'
+    111: 'JSON_SYNTAX_ERROR: JSON input string is not well formed'
+    112: 'JSON_TOO_MANY_PAIRS: JSON input string has too many pairs.'
+    113: 'JSON_TOO_LONG: JSON exceeds buffer size.'
+
+    # GCode Errors and Warnings: Most are from NIST.
+    130: 'GCODE_GENERIC_INPUT_ERROR: Generic error for gcode input.'
+    131: 'GCODE_COMMAND_UNSUPPORTED: G command is not supported.'
+    132: 'MCODE_COMMAND_UNSUPPORTED: M command is not supported.'
+    133: 'GCODE_MODAL_GROUP_VIOLATION: GCode modal group error.'
+    134: 'GCODE_AXIS_IS_MISSING: Requires at least one axis present.'
+    135: 'GCODE_AXIS_CANNOT_BE_PRESENT: Error if G80 has axis words.'
+    136: 'GCODE_AXIS_IS_INVALID: Axis specified that\'s illegal for command.'
+    137: 'GCODE_AXIS_IS_NOT_CONFIGURED: WARNING - Attempt to program an axis that is disabled.'
+    138: 'GCODE_AXIS_NUMBER_IS_MISSING: Axis word is missing its value.'
+    139: 'GCODE_AXIS_NUMBER_IS_INVALID: Axis word value is illegal.'
+    140: 'GCODE_ACTIVE_PLANE_IS_MISSING: Active plane is not programmed.'
+    141: 'GCODE_ACTIVE_PLANE_IS_INVALID: Active plane selected not valid for this command.'
+    142: 'GCODE_FEEDRATE_NOT_SPECIFIED: Move has no feedrate.'
+    143: 'GCODE_INVERSE_TIME_MODE_CANNOT_BE_USED: G38.2 and some canned cycles cannot accept inverse time mode.'
+    144: 'GCODE_ROTARY_AXIS_CANNOT_BE_USED: G38.2 and some other commands cannot have rotary axes.'
+    145: 'GCODE_G53_WITHOUT_G0_OR_G1: G0 or G1 must be active for G53.'
+    146: 'REQUESTED_VELOCITY_EXCEEDS_LIMITS'
+    147: 'CUTTER_COMPENSATION_CANNOT_BE_ENABLED'
+    148: 'PROGRAMMED_POINT_SAME_AS_CURRENT_POINT'
+    149: 'SPINDLE_SPEED_BELOW_MINIMUM'
+    150: 'SPINDLE_SPEED_MAX_EXCEEDED'
+    151: 'S_WORD_IS_MISSING'
+    152: 'S_WORD_IS_INVALID'
+    153: 'SPINDLE_MUST_BE_OFF'
+    154: 'SPINDLE_MUST_BE_TURNING: Some canned cycles require spindle to be turning when called.'
+    155: 'ARC_SPECIFICATION_ERROR: Generic arc specification error.'
+    156: 'ARC_AXIS_MISSING_FOR_SELECTED_PLANE: Arc missing axis (axes) required by selected plane.'
+    157: 'ARC_OFFSETS_MISSING_FOR_SELECTED_PLANE: One or both offsets are not specified.'
+    158: 'ARC_RADIUS_OUT_OF_TOLERANCE: WARNING - Radius arc is too large - accuracy in question.'
+    159: 'ARC_ENDPOINT_IS_STARTING_POINT'
+    160: 'P_WORD_IS_MISSING: P must be present for dwells and other functions.'
+    161: 'P_WORD_IS_INVALID: Generic P value error.'
+    162: 'P_WORD_IS_ZERO'
+    163: 'P_WORD_IS_NEGATIVE: Dwells require positive P values.'
+    164: 'P_WORD_IS_NOT_AN_AN_INTEGER: G10s and other commands require integer P numbers.'
+    165: 'P_WORD_IS_NOT_VALID_TOOL_NUMBER'
+    166: 'D_WORD_IS_MISSING'
+    167: 'D_WORD_IS_INVALID'
+    168: 'E_WORD_IS_MISSING'
+    169: 'E_WORD_IS_INVALID'
+    170: 'H_WORD_IS_MISSING'
+    171: 'H_WORD_IS_INVALID'
+    172: 'L_WORD_IS_MISSING'
+    173: 'L_WORD_IS_INVALID'
+    174: 'Q_WORD_IS_MISSING'
+    175: 'Q_WORD_IS_INVALID'
+    176: 'R_WORD_IS_MISSING'
+    177: 'R_WORD_IS_INVALID'
+    178: 'T_WORD_IS_MISSING'
+    179: 'T_WORD_IS_INVALID'
+
+    # TinyG Errors and Warnings.
+    200: 'GENERIC_ERROR'
+    201: 'MINIMUM_LENGTH_MOVE: Move is less than minimum length.'
+    202: 'MINIMUM_TIME_MOVE: Move is less than minimum time.'
+    203: 'MACHINE_ALARMED: Machine is alarmed. Command not processed.'
+    204: 'LIMIT_SWITCH_HIT: Limit switch was hit causing shutdown.'
+    205: 'PLANNER_FAILED_TO_CONVERGE: Planner can throw this exceptions.'
+    220: 'SOFT_LIMIT_EXCEEDED: Soft limit error - axis unspecified.'
+    221: 'SOFT_LIMIT_EXCEEDED_XMIN: Soft limit error - X minimum.'
+    222: 'SOFT_LIMIT_EXCEEDED_XMAX: Soft limit error - X maximum.'
+    223: 'SOFT_LIMIT_EXCEEDED_YMIN: Soft limit error - Y minimum.'
+    224: 'SOFT_LIMIT_EXCEEDED_YMAX: Soft limit error - Y maximum.'
+    225: 'SOFT_LIMIT_EXCEEDED_ZMIN: Soft limit error - Z minimum.'
+    226: 'SOFT_LIMIT_EXCEEDED_ZMAX: Soft limit error - Z maximum.'
+    227: 'SOFT_LIMIT_EXCEEDED_AMIN: Soft limit error - A minimum.'
+    228: 'SOFT_LIMIT_EXCEEDED_AMAX: Soft limit error - A maximum.'
+    229: 'SOFT_LIMIT_EXCEEDED_BMIN: Soft limit error - B minimum.'
+    230: 'SOFT_LIMIT_EXCEEDED_BMAX: Soft limit error - B maximum.'
+    231: 'SOFT_LIMIT_EXCEEDED_CMIN: Soft limit error - C minimum.'
+    232: 'SOFT_LIMIT_EXCEEDED_CMAX: Soft limit error - C maximum.'
+    240: 'HOMING_CYCLE_FAILED: Homing cycle did not complete.'
+    241: 'HOMING_ERROR_BAD_OR_NO_AXIS'
+    242: 'HOMING_ERROR_SWITCH_MISCONFIGURATION'
+    243: 'HOMING_ERROR_ZERO_SEARCH_VELOCITY'
+    244: 'HOMING_ERROR_ZERO_LATCH_VELOCITY'
+    245: 'HOMING_ERROR_TRAVEL_MIN_MAX_IDENTICAL'
+    246: 'HOMING_ERROR_NEGATIVE_LATCH_BACKOFF'
+    247: 'HOMING_ERROR_SEARCH_FAILED'
+    250: 'PROBE_CYCLE_FAILED: Probing cycle did not complete.'
+    251: 'PROBE_ENDPOINT_IS_STARTING_POINT'
+    252: 'JOGGING_CYCLE_FAILED: Jogging cycle did not complete.'
+
+statusReportCodes:
+    # Machine State.
+    stat:
+        0: 'INITIALIZING: Machine is initializing.'
+        1: 'READY: Machine is ready for use.'
+        2: 'SOFT_ALARM: Machine is in alarm state (soft shut down).'
+        3: 'PROG_STOP: Program stop or no more blocks (M0 M1 M60).'
+        4: 'PROG_END: Program end (M2 M30).'
+        5: 'RUNNING: Motion is running.'
+        6: 'HOLDING: Motion is holding.'
+        7: 'PROBING: Probe cycle active.'
+        8: 'RUNNING: Machine is running (cycling).'
+        9: 'HOMING: Machine is homing.'
+        10: 'JOGGING: Machine is Jogging.'
+        11: 'HARD_ALARM: Machine is in hard alarm state (shut down).'
+
+    # Motion Mode.
+    momo:
+        0: 'G0: Linear Traverse'
+        1: 'G1: Linear Feed'
+        2: 'G2: CW Arc'
+        3: 'G3: CCW Arc'
+        4: 'G80: No Motion Active Mode'
+
+    # GCode Units.
+    unit:
+        0: 'G20: Inches'
+        1: 'G21: Millimeters'
+
+    # Machine State.
+    macs:
+        0: 'INITIALIZING: Machine is initializing.'
+        1: 'READY: Machine is ready for use.'
+        2: 'SOFT_ALARM: Machine is in alarm state (soft shut down).'
+        3: 'PROG_STOP: Program stop or no more blocks (M0 M1 M60).'
+        4: 'PROG_END: Program end (M2 M30).'
+        5: 'RUNNING: Motion is in cycle.'
+        6: 'SHUTDOWN: Machine is in shutdown state.'
+
+    # Cycle State.
+    cycs:
+        0: 'Off'
+        1: 'Machining'
+        2: 'Probing'
+        3: 'Homing'
+        4: 'Jogging'
+
+    # Motor State.
+    mots:
+        0: 'Off'
+        1: 'Run'
+        2: 'Hold'
+
+    # Feed Hold State
+    hold:
+        0: 'Off'
+        1: 'Sync Phase'
+        2: 'Planning'
+        3: 'Decelerating'
+        4: 'Holding'
+        5: 'End Hold'
+
+    # Active Coordinate System.
+    coor:
+        0: 'G53: Machine Coordinate'
+        1: 'G54: Coordinate System 1'
+        2: 'G55: Coordinate System 2'
+        3: 'G56: Coordinate System 3'
+        4: 'G57: Coordinate System 4'
+        5: 'G58: Coordinate System 5'
+        6: 'G59: Coordinate System 6'
+
+    # Arc Plane.
+    plan:
+        0: 'G17: XY Plane'
+        1: 'G18: XZ Plane'
+        2: 'G19: YZ Plane'
+
+    # Path Control Mode.
+    path:
+        0: 'G61: Exact Path'
+        1: 'G61.1: Exact Stop'
+        2: 'G64: Continuous'
+
+    # Distance Mode.
+    dist:
+        0: 'G90: Absolute'
+        1: 'G91: Incremental'
+
+    # Feed Rate Mode.
+    frmo:
+        0: 'G93: Inverse Time'
+        1: 'G94: Units per Minute'
+        2: 'G95: Units per Revolution'
+
+statusReportCodesInfo:
+    stat: 'Machine State'
+    momo: 'Motion Mode'
+    unit: 'GCode Units'
+    macs: 'Machine State'
+    cycs: 'Cycle State'
+    mots: 'Motion State'
+    hold: 'Feed Hold State'
+    coor: 'Active Coordinate System'
+    plan: 'Arc Plane'
+    path: 'Path Control Mode'
+    dist: 'Distance Mode'
+    frmo: 'Feed Rate Mode'
