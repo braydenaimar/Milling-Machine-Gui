@@ -7,6 +7,7 @@ requirejs.config({
 		gui: 'lib/gui',
 		bootstrap: 'lib/bootstrap',
 		mousetrap: 'lib/mousetrap.min'
+		// three: 'lib/three.min'
 	}
     // nodeRequire: require
 });

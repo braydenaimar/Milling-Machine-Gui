@@ -10,12 +10,16 @@
  */
 
 /* eslint-disable no-undef */
+/* eslint-disable no-console */
+/* eslint-disable global-require */
 
 define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 	console.log('running main.js');
 	console.log('global:', global);
 
+	Plotly = require('./js/lib/plotly.min.js');
+	THREE = require('./js/lib/three.min.js');
 	CSON = require('cson');
 	fsCSON = require('fs-cson');
 	fs = require('fs');
@@ -38,8 +42,10 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 	Mousetrap.bind('ctrl+shift+r', () => location.reload(true));
 
 	// Keyboard shortcuts for use throughout the program.
-	Mousetrap.bind('ctrl+pageup', () => publish('keyboard-shortcut', 'ctrl+pageup'));
-	Mousetrap.bind('ctrl+pagedown', () => publish('keyboard-shortcut', 'ctrl+pagedown'));
+	Mousetrap.bind('ctrl+pageup', () => publish('keyboard-shortcut', 'ctrl+pageup'));      // Connection Widget: Show device log to the left
+	Mousetrap.bind('ctrl+pagedown', () => publish('keyboard-shortcut', 'ctrl+pagedown'));  // Connection Widget: Show device log to the right
+	Mousetrap.bind('ctrl+o', () => publish('keyboard-shortcut', 'ctrl+o'));  // Load Widget: Open a file
+	Mousetrap.bind('ctrl+s', () => publish('keyboard-shortcut', 'ctrl+s'));  // Load Widget: Save a file
 
 	// Store information about the system.
 	hostMeta = {
@@ -86,7 +92,7 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 	console.log(hostMeta);
 
-	(function testCode() {
+	(function testCode() { /* eslint-disable */
 
 		console.groupCollapsed('OS Module');
 		console.log('OS:', hostMeta.os);
@@ -102,6 +108,79 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 		console.log(`Up time: ${(os.uptime() / 3600).toFixed(2)} hr`); // uptime [seconds]
 		console.log('User info:', os.userInfo());
 		console.groupEnd();
+
+		// var sg = require('sendgrid')(process.env.SENDGRID_API_KEY);
+		// var request = sg.emptyRequest({
+		//   method: 'POST',
+		//   path: '/v3/mail/send',
+		//   body: {
+		//     personalizations: [
+		//       {
+		//         to: [
+		//           {
+		//             email: 'baimar97@hotmail.com',
+		//           },
+		//         ],
+		//         subject: 'Hello World from the SendGrid Node.js Library!',
+		//       },
+		//     ],
+		//     from: {
+		//       email: 'brayden.aimar@gmail.com',
+		//     },
+		//     content: [
+		//       {
+		//         type: 'text/plain',
+		//         value: 'Hello, Email!',
+		//       },
+		//     ],
+		//   },
+		// });
+		//
+		// //With promise
+		// sg.API(request)
+		//   .then(response => {
+		//     console.log(response.statusCode);
+		//     console.log(response.body);
+		//     console.log(response.headers);
+		//   })
+		//   .catch(error => {
+		//     //error is an instance of SendGridError
+		//     //The full response is attached to error.response
+		//     console.log(error.response.statusCode);
+		//   });
+		//
+		// //With callback
+		// sg.API(request, function(error, response) {
+		//   if (error) {
+		//     console.log('Error response received');
+		//   }
+		//   console.log(response.statusCode);
+		//   console.log(response.body);
+		//   console.log(response.headers);
+		// });
+
+		// // using SendGrid's v3 Node.js Library
+		// // https://github.com/sendgrid/sendgrid-nodejs
+		// var helper = require('sendgrid').mail;
+		//
+		// from_email = new helper.Email("baimar97@hotmail.com");
+		// to_email = new helper.Email("brayden.aimar@gmail.com");
+		// subject = "Sending with SendGrid is Fun";
+		// content = new helper.Content("text/plain", "and easy to do anywhere, even with Node.js");
+		// mail = new helper.Mail(from_email, subject, to_email, content);
+		//
+		// var sg = require('sendgrid')(process.env.SENDGRID_API_KEY);
+		// var request = sg.emptyRequest({
+		//   method: 'POST',
+		//   path: '/v3/mail/send',
+		//   body: mail.toJSON()
+		// });
+		//
+		// sg.API(request, function(error, response) {
+		//   console.log(response.statusCode);
+		//   console.log(response.body);
+		//   console.log(response.headers);
+		// })
 
 		// // single keys
 		// Mousetrap.bind('4', function() { console.log('4'); });
@@ -174,8 +253,9 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 		// var data = fs.readFileSync('input.txt');
 		// console.log("Synchronous read: " + data.toString());
 
-	}());
+	}()); /* eslint-enable */
 
+	// WorkSpace.
 	ws = {
 		id: 'main',
 		name: 'CNC Interface',
@@ -192,36 +272,69 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 		}
 	};
 
-	// TODO: Load the widgets as modules in module exports.
-	// Stores the length of the widget object.
-	wgtLen = null;
-	// Same as respective widget's id, filename, reference object, and DOM container.
-	wgtMap = [ 'statusbar-widget', 'connection-widget', 'settings-widget' ];
-	// Gets set to true once respective widget publishes '/widget-loaded'.
-	// Ex. [ false, false, ..., false ]
+	/**
+	 *  Same as respective widget's id, filename, reference object, and DOM container.
+	 *
+	 *  @type {Array}
+	 */
+	wgtMap = [ 'statusbar-widget', 'load-widget', 'run-widget', 'mdi-widget', 'connection-widget', 'settings-widget', 'about-widget' ];
+	/**
+	 *  Stores the loaded/not-loaded state of each widget.
+	 *  This is initialized at runtime and each element gets set to true as the respective widget publishes '/widget-loaded'.
+	 *  Eg. [ false, false, ..., false ]
+	 *
+	 *  @type {Array}
+	 */
 	wgtLoaded = [];
+	/**
+	 *  Set which widget is visible at program load.
+	 *
+	 *  @type {string}
+	 */
 	// wgtVisible = 'connection-widget';
-	wgtVisible = 'connection-widget';
-	// Stores startup info and scope references for each widget
-	// IDEA: Take each of the widget refs and move them outside of the widget object.
-	// IDEA: Build each port's object during the program execution.
-	// IDEA: Call the widgets modules instead of widgets.
+	wgtVisible = 'load-widget';
+	/**
+	 *  Set which widgets require html files to be loaded and sidebar buttons to be created.
+	 *  After program startup, this is used to store the javascript references for each respective widget.
+	 *  @param {Boolean} loadHtml	Specifies if the respective widget has DOM elements that need to be loaded.
+	 *  @param {Boolean} sidebarBtn	Specifies how the button should be created.
+	 *                              (true: Make and show button; false: Make and hide button; null: Do not create a button)
+	 *
+	 *  @type {Object}
+	 */
 	widget = {
-		// loadHtml: Specifies if the respective widget has dom elements that need to be loaded [true/false].
-		// visible: Specifies if the respective widget should be visible on startup, its current visibility status, and if it's visibility can be changed
-		//   (null = n/a, false = not visible on startup, true = visible on startup).
-		// sidebarBtn: Specifies how the button should be created (true: make & show button, false: make & hide button, null/undefined: no button)
-		// IDEA: Move loadHtml and sidebarBtn flags into each respective widget and only have the widget's objects stored here.
-		'statusbar-widget': { loadHtml: false, sidebarBtn: null },
-		// 'strippit-widget': { loadHtml: true, sidebarBtn: true },
-		'connection-widget': { loadHtml: true, sidebarBtn: true },
-		'settings-widget': { loadHtml: true, sidebarBtn: true }
-		// 'help-widget': { loadHtml: true, sidebarBtn: true }
+		'statusbar-widget': {
+			loadHtml: false,
+			sidebarBtn: null
+		},
+		'load-widget': {
+			loadHtml: true,
+			sidebarBtn: true
+		},
+		'run-widget': {
+			loadHtml: true,
+			sidebarBtn: true
+		},
+		'mdi-widget': {
+			loadHtml: true,
+			sidebarBtn: true
+		},
+		'connection-widget': {
+			loadHtml: true,
+			sidebarBtn: true
+		},
+		'settings-widget': {
+			loadHtml: true,
+			sidebarBtn: true
+		},
+		'about-widget': {
+			loadHtml: true,
+			sidebarBtn: true
+		}
 	};
 
-	wgtLen = wgtMap.length;
-
-	for (let i = 0; i < wgtLen; i++) {
+	// Initialize the wgtLoaded array.
+	for (let i = 0; i < wgtMap.length; i++) {
 
 		this.wgtLoaded.push(false);
 
@@ -229,7 +342,7 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 	console.groupCollapsed(`${ws.name} Setup`);
 
-	initBody = function () {
+	initBody = function initBody() {
 
 		console.group(`${ws.id}.initBody()`);
 
@@ -272,7 +385,7 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 		}, 2000);
 
 		// This gets published at the end of each widget's initBody() function.
-		subscribe(`/${this.ws.id}/widget-loaded`, this, function (wgt) {
+		subscribe(`/${this.ws.id}/widget-loaded`, this, (wgt) => {
 
 			console.groupEnd();
 			// If this is the first time being called, set timer to check that all widgets are loaded within a given timeframe. If any widgets have not loaded after that time has elapsed, create an alert and log event listing the widget(s) that did not load.
@@ -333,7 +446,7 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 	};
 
-	createWidgetContainer = function (wgt) {
+	createWidgetContainer = function createWidgetContainer(wgt) {
 
 		// append a div container to dom body
 		console.log('  Creating widget DOM container');
@@ -343,7 +456,7 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 	};
 
-	loadHtmlWidget = function (wgt) {
+	loadHtmlWidget = function loadHtmlWidget(wgt) {
 
 		console.log('  Loading HTML & JS');
 
@@ -351,10 +464,11 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 			requirejs([ wgt ], (ref) => {
 
-				ref.loadHtml = widget[wgt].loadHtml;
-				ref.sidebarBtn = widget[wgt].sidebarBtn;
+				const temp = ref;
+				temp.loadHtml = widget[wgt].loadHtml;
+				temp.sidebarBtn = widget[wgt].sidebarBtn;
 
-				widget[wgt] = ref;
+				widget[wgt] = temp;
 
 				ref.initBody();
 
@@ -364,15 +478,16 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 	};
 
-	loadJsWidget = function (wgt) {
+	loadJsWidget = function loadJsWidget(wgt) {
 
 		console.log('  Loading JS');
 
 		requirejs([ wgt ], (ref) => {
 
-			ref.loadHtml = widget[wgt].loadHtml;
-			ref.sidebarBtn = widget[wgt].sidebarBtn;
-			widget[wgt] = ref;
+			const temp = ref;
+			temp.loadHtml = widget[wgt].loadHtml;
+			temp.sidebarBtn = widget[wgt].sidebarBtn;
+			widget[wgt] = temp;
 
 			ref.initBody();
 
@@ -380,9 +495,10 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 	};
 
-	createSidebarBtns = function (wgt) {
+	createSidebarBtns = function createSidebarBtns(wgt) {
 
 		console.log('Creating Sidebar Buttons');
+
 		$.each(widget, (widgetIndex, widgetItem) => {
 
 			// Check if the respective widget wants a sidebar button made
@@ -390,6 +506,15 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 			if (widgetItem.sidebarBtn === undefined || widgetItem.sidebarBtn === null) {
 
 				console.log('    ...jk, not creating sidebar button.');
+
+			} else if (widgetItem.icon.includes('material-icons')) {
+
+				let btnHtml = `<span id="btn-${widgetIndex}" evt-data="${widgetIndex}" class="btn btn-${widgetItem.btnTheme}`;
+				btnHtml += (widgetItem.sidebarBtn) ? '' : ' hidden';
+				btnHtml += `"><div><span class="material-icons">${widgetItem.icon.split(' ')[1]}</span></div><div>`;
+				btnHtml += (widgetItem.shortName) ? widgetItem.shortName : widgetItem.name;
+				btnHtml += '</div></span>';
+				$('#sidebar').append(btnHtml);
 
 			} else {
 
@@ -408,7 +533,7 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 	};
 
-	initWidgetVisible = function () {
+	initWidgetVisible = function initWidgetVisible() {
 
 		// Show the initial widget.
 		console.log(`Show wgt: ${wgtVisible}`);
@@ -422,9 +547,8 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 	};
 
-	makeWidgetVisible = function (wgt) {
+	makeWidgetVisible = function makeWidgetVisible(wgt) {
 
-		console.log(`Widget visible: ${wgt}`);
 		// If wgt is already visible, do nothing.
 		if (wgt === wgtVisible) return;
 		// console.log("  wgt: " + wgt + "\n  wgtVisible: " + wgtVisible);
@@ -444,13 +568,14 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 	};
 
-	updateGitRepo = function () {
+	updateGitRepo = function updateGitRepo() {
+
 		// Pulls the latest repository from the master branch on GitHub.
 
 		let terminal = null;
 
 		// Skip the update if host is my laptop or if there is no internet connection.
-		if (hostMeta.hostName === 'BRAYDENS-LAPTOP' || !navigator.onLine) return false;
+		if (hostMeta.hostName === 'BRAYDENS-LENOVO' || !navigator.onLine) return false;
 
 		console.log('Pulling latest repo from GitHub.');
 
@@ -497,6 +622,8 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 			console.log(`Git pull.\nChild precess exited with the code: ${code}.`);
 
 		});
+
+		return true;
 
 	};
 

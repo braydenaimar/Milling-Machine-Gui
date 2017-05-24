@@ -1,0 +1,10 @@
+/* About Widget CSS */
+
+.about-panel .panel-body {
+    padding: 8px;
+}
+
+.about-panel img.icon {
+    width: 350px;
+    height: 350px;
+}

@@ -1,24 +1,25 @@
 {
-	"name": "Milling-Machine-Gui",
-	"version": "0.0.1",
-	"description": "A graphical user interface for a milling machine.",
-	"main": "index.js",
-	"scripts": {
-		"start": "electron ."
-	},
-	"author": "Brayden Aimar",
-	"license": "MIT",
-	"devDependencies": {
-		"eslint": "^3.15.0",
-		"eslint-config-airbnb": "^14.1.0",
-		"eslint-plugin-import": "^2.2.0",
-		"eslint-plugin-jsx-a11y": "^4.0.0",
-		"eslint-plugin-react": "^6.9.0"
-	},
-	"dependencies": {
-		"electron": "^1.4.2",
-		"cson": "^4.0.0",
-		"fs-cson": "^0.3.2",
-		"mousetrap": "^1.6.0"
-	}
+  "name": "Milling-Machine-Gui",
+  "version": "0.0.1",
+  "description": "A graphical user interface for a milling machine.",
+  "main": "index.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "Brayden Aimar",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^3.15.0",
+    "eslint-config-airbnb": "^14.1.0",
+    "eslint-plugin-import": "^2.2.0",
+    "eslint-plugin-jsx-a11y": "^4.0.0",
+    "eslint-plugin-react": "^6.9.0"
+  },
+  "dependencies": {
+    "cson": "^4.0.0",
+    "electron": "^1.4.2",
+    "fs-cson": "^0.3.2",
+    "mousetrap": "^1.6.0",
+    "sendgrid": "^4.8.2"
+  }
 }
