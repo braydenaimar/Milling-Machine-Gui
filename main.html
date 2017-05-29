@@ -5,30 +5,29 @@
 		<meta charset= "utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
-		<link rel="stylesheet" type="text/css" href="css/lib/bootstrap-paper.min.css">
+		<link rel="stylesheet" type="text/css" href="lib/css/bootstrap-paper.min.css">
 		<!-- <link rel="stylesheet" type="text/css" href="node_modules/bootswatch/paper/bootstrap.min.css"> -->
 		<!-- <link rel="stylesheet" type="text/css" href="../node_modules/bootswatch/paper/bootstrap.css"> -->
 		<!-- <link rel="stylesheet" type="text/css" href="../node_modules/font-awesome/css/font-awesome.min.css"> -->
-		<link rel="stylesheet" type="text/css" href="css/lib/font-awesome.min.css">
-		<link rel="stylesheet" type="text/css" href="css/fonts/material-icons.css">
+		<link rel="stylesheet" type="text/css" href="lib/css/font-awesome.min.css">
+		<link rel="stylesheet" type="text/css" href="lib/fonts/material-icons.css">
 
-		<link rel="stylesheet" type="text/css" href="css/main.css">
-		<link rel="stylesheet" type="text/css" href="css/load-widget.css">
-		<link rel="stylesheet" type="text/css" href="css/run-widget.css">
-		<link rel="stylesheet" type="text/css" href="css/mdi-widget.css">
-		<link rel="stylesheet" type="text/css" href="css/connection-widget.css">
-		<link rel="stylesheet" type="text/css" href="css/settings-widget.css">
-		<link rel="stylesheet" type="text/css" href="css/about-widget.css">
+		<link rel="stylesheet" type="text/css" href="main/main.css">
+		<link rel="stylesheet" type="text/css" href="load-widget/load-widget.css">
+		<link rel="stylesheet" type="text/css" href="run-widget/run-widget.css">
+		<link rel="stylesheet" type="text/css" href="mdi-widget/mdi-widget.css">
+		<link rel="stylesheet" type="text/css" href="connection-widget/connection-widget.css">
+		<link rel="stylesheet" type="text/css" href="about-widget/about-widget.css">
 
 		<title>Milling Machine GUI</title>
 
 		<!-- Load RequireJS -->
-		<script data-main="js/lib/require-config" src="js/lib/require.js"></script>
+		<script data-main="lib/js/require-config" src="lib/js/require.js"></script>
 
 		<!-- Use RequireJS to load scripts -->
 		<script type="text/javascript">
-			requirejs(['require-config'], () => {
-				requirejs(['main'], () => {
+			requirejs([ 'require-config' ], () => {
+				requirejs([ 'main/main' ], () => {
 					initBody();
 				});
 			});

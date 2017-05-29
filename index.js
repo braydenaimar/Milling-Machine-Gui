@@ -4,12 +4,14 @@
 
 const electron = require('electron');
 const os = require('os');
-// const ipcMain = require('electron').ipcMain;
 
 const { app, BrowserWindow, ipcMain, dialog } = electron;
 
 console.log('running index.js');
 console.log(`Host Device: '${os.hostname()}'`);
+
+const developerHosts = [ 'BRAYDENS-LENOVO' ];  // List of developer host devices
+const inDebugMode = developerHosts.includes(os.hostname());
 
 let indexOpenDialogTime = 0;
 let indexSaveDialogTime = 0;
@@ -55,7 +57,8 @@ app.on('ready', () => {
 	let win = null;
 
 	// If running this on braydens laptop, open it in development mode.
-	if (os.hostname() === 'BRAYDENS-LENOVO') {
+	// if (os.hostname() === 'BRAYDENS-LENOVO') {
+	if (inDebugMode) {
 
 		console.log('Opening in development mode.');
 		console.log('electron', electron);
@@ -74,7 +77,7 @@ app.on('ready', () => {
 			// webPreferences: {
 			// 	nodeIntegration: false
 			// }
-			icon: `${__dirname}/icon.ico`
+			icon: `${__dirname}/icons/icon.ico`
 		});
 
 	} else {  // If not running on braydens laptop, open the program in deployment mode.
@@ -95,7 +98,7 @@ app.on('ready', () => {
 			// webPreferences: {
 			// 	nodeIntegration: false
 			// }
-			icon: `${__dirname}/icon.ico`
+			icon: `${__dirname}/icons/icon.ico`
 		});
 
 	}

@@ -9,31 +9,72 @@
  *  @author Brayden Aimar
  */
 
-/* eslint-disable no-undef */
-/* eslint-disable no-console */
-/* eslint-disable global-require */
+/* global ws:true, wgtMap:true, wgtLoaded:true, wgtVisible:true, widget:true, initBody:true, widgetLoadCheck:true, createWidgetContainer:true, loadHtmlWidget:true, loadJsWidget:true, createSidebarBtns:true, initWidgetVisible:true, makeWidgetVisible:true, updateGitRepo:true */  // eslint-disable-line no-unused-vars
 
 define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
+	/* eslint-disable no-console*/
 
 	console.log('running main.js');
 	console.log('global:', global);
 
-	Plotly = require('./js/lib/plotly.min.js');
-	THREE = require('./js/lib/three.min.js');
+	Plotly = require('./lib/js/plotly.min.js');  // eslint-disable-line import/no-unresolved
+	THREE = require('./lib/js/three.min.js');    // eslint-disable-line import/no-unresolved
 	CSON = require('cson');
 	fsCSON = require('fs-cson');
 	fs = require('fs');
 	os = require('os');
-	spawn = require('child_process').spawn;
+	({ spawn } = require('child_process'));
 
 	// The ipc module aLlows for communication between the main and render processes.
 	electron = require('electron');
 	({ ipcRenderer: ipc } = electron);
 
-	// TODO: Clean up the way amplify is imported cuz it is also in module exports.
-	publish = amplify.publish;
-	subscribe = amplify.subscribe;
-	unsubscribe = amplify.unsubscribe;
+	({ publish, subscribe, unsubscribe } = amplify);
+	// publish = amplify.publish;
+	// subscribe = amplify.subscribe;
+	// unsubscribe = amplify.unsubscribe;
+
+	DEBUG_ENABLED = true;  // Enable debugging mode
+	const developerHosts = [ 'BRAYDENS-LENOVO' ];  // List of developer host devices
+	inDebugMode = DEBUG_ENABLED && developerHosts.includes(os.hostname());
+
+	debug = {};
+
+	if (inDebugMode && (typeof console != 'undefined')) { // If debug mode is enabled
+		const keys = Object.keys(console);
+
+		for (let i = 0; i < keys.length; i++) {
+			const key = keys[i];
+
+			if (key === 'memory')
+				debug[key] = console[key];
+
+			else if (key === 'error')
+				debug[key] = ((...args) => { throw new Error(...args); });
+
+			else
+				debug[key] = console[key].bind(console);
+		}
+	}
+	else {
+		const keys = Object.keys(console);
+		const banned = [ 'log', 'info', 'table' ];  // Console log methods that will be ignored
+
+		for (let i = 0; i < keys.length; i++) {
+			const key = keys[i];
+
+			if (banned.includes(key))  // If not allowed
+				debug[key] = () => false;
+
+			else if (key === 'memory')
+				debug[key] = console[key];
+
+			else
+				debug[key] = console[key].bind(console);
+		}
+	}
+
+	/* eslint-enable no-console*/
 
 	// Press Ctrl-Shift-I to launch development tools.
 	Mousetrap.bind('ctrl+shift+i', () => ipc.send('open-dev-tools'));
@@ -62,52 +103,44 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 		userInfo: os.userInfo()
 	};
 
-	if (navigator.appVersion.includes('Win')) {
-
+	if (navigator.appVersion.includes('Win'))
 		hostMeta.os = 'Windows';
 
-	} else if (navigator.appVersion.includes('Mac')) {
-
+	else if (navigator.appVersion.includes('Mac'))
 		hostMeta.os = 'Mac';
 
-	} else if (navigator.appVersion.includes('X11')) {
-
+	else if (navigator.appVersion.includes('X11'))
 		hostMeta.os = 'Unix';
 
-	} else if (navigator.appVersion.includes('Linux')) {
-
+	else if (navigator.appVersion.includes('Linux'))
 		hostMeta.os = 'Linux';
 
-	} else if (navigator.appVersion.includes('SunOs')) {
-
+	else if (navigator.appVersion.includes('SunOs'))
 		hostMeta.os = 'Solaris';
 
-	}
 
-	if (navigator.onLine) {
+	if (navigator.onLine)
+		debug.log('Connected to the internet.');
 
-		console.log('Connected to the internet.');
 
-	}
-
-	console.log(hostMeta);
+	debug.log(hostMeta);
 
 	(function testCode() { /* eslint-disable */
 
-		console.groupCollapsed('OS Module');
-		console.log('OS:', hostMeta.os);
-		console.log('Platform:', os.platform());
-		console.log('Architecture:', os.arch());
-		console.log('CPUs:', os.cpus());
-		console.log(`Free memory: ${(os.freemem() / 1000000000).toFixed(3)} Gb`); // free memory [bytes]
-		console.log(`Total memory: ${(os.totalmem() / 1000000000).toFixed(3)} Gb`); // total memory [bytes]
-		console.log(`Home directory: ${os.homedir()}`);
-		console.log(`Hostname: ${os.hostname()}`);
-		console.log(`Load average: ${os.loadavg()}`);
-		console.log('Network interfaces:', os.networkInterfaces());
-		console.log(`Up time: ${(os.uptime() / 3600).toFixed(2)} hr`); // uptime [seconds]
-		console.log('User info:', os.userInfo());
-		console.groupEnd();
+		debug.groupCollapsed('OS Module');
+		debug.log('OS:', hostMeta.os);
+		debug.log('Platform:', os.platform());
+		debug.log('Architecture:', os.arch());
+		debug.log('CPUs:', os.cpus());
+		debug.log(`Free memory: ${(os.freemem() / 1000000000).toFixed(3)} Gb`); // free memory [bytes]
+		debug.log(`Total memory: ${(os.totalmem() / 1000000000).toFixed(3)} Gb`); // total memory [bytes]
+		debug.log(`Home directory: ${os.homedir()}`);
+		debug.log(`Hostname: ${os.hostname()}`);
+		debug.log(`Load average: ${os.loadavg()}`);
+		debug.log('Network interfaces:', os.networkInterfaces());
+		debug.log(`Up time: ${(os.uptime() / 3600).toFixed(2)} hr`); // uptime [seconds]
+		debug.log('User info:', os.userInfo());
+		debug.groupEnd();
 
 		// var sg = require('sendgrid')(process.env.SENDGRID_API_KEY);
 		// var request = sg.emptyRequest({
@@ -139,24 +172,24 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 		// //With promise
 		// sg.API(request)
 		//   .then(response => {
-		//     console.log(response.statusCode);
-		//     console.log(response.body);
-		//     console.log(response.headers);
+		//     debug.log(response.statusCode);
+		//     debug.log(response.body);
+		//     debug.log(response.headers);
 		//   })
 		//   .catch(error => {
 		//     //error is an instance of SendGridError
 		//     //The full response is attached to error.response
-		//     console.log(error.response.statusCode);
+		//     debug.log(error.response.statusCode);
 		//   });
 		//
 		// //With callback
 		// sg.API(request, function(error, response) {
 		//   if (error) {
-		//     console.log('Error response received');
+		//     debug.log('Error response received');
 		//   }
-		//   console.log(response.statusCode);
-		//   console.log(response.body);
-		//   console.log(response.headers);
+		//   debug.log(response.statusCode);
+		//   debug.log(response.body);
+		//   debug.log(response.headers);
 		// });
 
 		// // using SendGrid's v3 Node.js Library
@@ -177,25 +210,25 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 		// });
 		//
 		// sg.API(request, function(error, response) {
-		//   console.log(response.statusCode);
-		//   console.log(response.body);
-		//   console.log(response.headers);
+		//   debug.log(response.statusCode);
+		//   debug.log(response.body);
+		//   debug.log(response.headers);
 		// })
 
 		// // single keys
-		// Mousetrap.bind('4', function() { console.log('4'); });
-		// Mousetrap.bind("?", function() { console.log('show shortcuts!'); });
-		// Mousetrap.bind('esc', function() { console.log('escape'); }, 'keyup');
+		// Mousetrap.bind('4', function() { debug.log('4'); });
+		// Mousetrap.bind("?", function() { debug.log('show shortcuts!'); });
+		// Mousetrap.bind('esc', function() { debug.log('escape'); }, 'keyup');
 		//
 		// // combinations
 
-		// Open the console log.
+		// Open the debug.log.
 		// Mousetrap.bind('ctrl+shift+i', () => ipc.send('open-dev-tools'));
 
 		// // map multiple combinations to the same callback
 		// Mousetrap.bind(['command+k', 'ctrl+k'], function() {
 		//
-		//     console.log('command k or control k');
+		//     debug.log('command k or control k');
 		//
 		//     // return false to prevent default browser behavior
 		//     // and stop event from bubbling
@@ -204,16 +237,16 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 		// });
 		//
 		// // gmail style sequences
-		// Mousetrap.bind('g i', function() { console.log('go to inbox'); });
-		// Mousetrap.bind('* a', function() { console.log('select all'); });
+		// Mousetrap.bind('g i', function() { debug.log('go to inbox'); });
+		// Mousetrap.bind('* a', function() { debug.log('select all'); });
 		//
 		// // konami code!
 		// Mousetrap.bind('up up down down left right left right b a enter', function() {
-		//     console.log('konami code');
+		//     debug.log('konami code');
 		//
 		// });
 
-		// console.log(`returned value: ${ 0 || '' || 'helloworld' || 'stuff' }`);
+		// debug.log(`returned value: ${ 0 || '' || 'helloworld' || 'stuff' }`);
 
 		// const saveBtn = document.getElementById('save-dialog')
 		//
@@ -229,29 +262,29 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 		// // Asynchronous file read
 		// fs.readFile('input.txt', function (err, data) {
 		// 	if (err) {
-		//     	return console.error(err);
+		//     	return debug.error(err);
 		// 	}
-		// 	console.log(`Asynchronous read: ${data.toString()}`);
-		// 	console.log("Going to write into existing file");
+		// 	debug.log(`Asynchronous read: ${data.toString()}`);
+		// 	debug.log("Going to write into existing file");
 		// 	fs.writeFile('input.txt', data.toString() + 'Simply Easy Learning!',  function(err) {
 		// 	   if (err) {
-		// 	      return console.error(err);
+		// 	      return debug.error(err);
 		// 	   }
 		//
-		// 	   console.log("Data written successfully!");
-		// 	   console.log("Let's read newly written data");
+		// 	   debug.log("Data written successfully!");
+		// 	   debug.log("Let's read newly written data");
 		// 	   fs.readFile('input.txt', function (err, data) {
 		// 	      if (err) {
-		// 	         return console.error(err);
+		// 	         return debug.error(err);
 		// 		 }
-		// 	      console.log(`Asynchronous read: ${data.toString()}`);
+		// 	      debug.log(`Asynchronous read: ${data.toString()}`);
 		// 	   });
 		// 	});
 		// });
 		//
 		// // Synchronous file read
 		// var data = fs.readFileSync('input.txt');
-		// console.log("Synchronous read: " + data.toString());
+		// debug.log("Synchronous read: " + data.toString());
 
 	}()); /* eslint-enable */
 
@@ -316,16 +349,16 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 			sidebarBtn: true
 		},
 		'mdi-widget': {
-			loadHtml: true,
-			sidebarBtn: true
+			loadHtml: false,
+			sidebarBtn: false
 		},
 		'connection-widget': {
 			loadHtml: true,
 			sidebarBtn: true
 		},
 		'settings-widget': {
-			loadHtml: true,
-			sidebarBtn: true
+			loadHtml: false,
+			sidebarBtn: false
 		},
 		'about-widget': {
 			loadHtml: true,
@@ -334,209 +367,168 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 	};
 
 	// Initialize the wgtLoaded array.
-	for (let i = 0; i < wgtMap.length; i++) {
-
+	for (let i = 0; i < wgtMap.length; i++)
 		this.wgtLoaded.push(false);
 
-	}
 
-	console.groupCollapsed(`${ws.name} Setup`);
+	debug.groupCollapsed(`${ws.name} Setup`);
 
 	initBody = function initBody() {
-
-		console.group(`${ws.id}.initBody()`);
+		debug.group(`${ws.id}.initBody()`);
 
 		$(window).resize(() => {
-
-			// console.log("Resize window");
+			// debug.log("Resize window");
 			// publish('/' + this.ws.id + '/window-resize');
 			// TODO: Fix resize. Widgets do not resize with the window. only the first subscriber to the '/main/window-resize' line gets their callback called.
 			publish('/main/window-resize');
-
 		});
 
 		widgetLoadCheck = setTimeout(function () {
-
-			console.log('widgetLoadCheck timeout function running');
+			debug.log('widgetLoadCheck timeout function running');
 
 			if (wgtLoaded.includes(false)) {
-
 				const that = this;
 				let errorLog = '!! Widget(s) Not Successfully Loaded !!';
 
 				$.each(wgtLoaded, (i, item) => {
-
 					errorLog += (item) ? '' : `\n  ${that.wgtMap[i]} widget`;
-
 				});
 
-				console.error(errorLog);
+				debug.error(errorLog);
 
 				alert(errorLog);
 
 				ipc.send('open-dev-tools');
-
-			} else {
-
-				console.log('  check non-resultant');
-
 			}
-
+			else {
+				debug.log('  check non-resultant');
+			}
 		}, 2000);
 
 		// This gets published at the end of each widget's initBody() function.
 		subscribe(`/${this.ws.id}/widget-loaded`, this, (wgt) => {
+			debug.groupEnd();
 
-			console.groupEnd();
 			// If this is the first time being called, set timer to check that all widgets are loaded within a given timeframe. If any widgets have not loaded after that time has elapsed, create an alert and log event listing the widget(s) that did not load.
-			// if (wgtLoaded.indexOf(true) == -1) {
-			// }
 			wgtLoaded[wgtMap.indexOf(wgt)] = true;
 
 			// If all of the widgets are loaded.
-			if (!wgtLoaded.includes(false)) {
-
+			if (!wgtLoaded.includes(false))
+			{
 				createSidebarBtns();
-				// initSidebarBtnEvts();
 				initWidgetVisible();
 
-				console.groupEnd();
-				// Publish before making dom visible so that the widgets can start communicating with eachother and getting their shit together.
-				publish(`/${this.ws.id}/all-widgets-loaded`);
+				debug.groupEnd();
+
+				publish(`/${this.ws.id}/all-widgets-loaded`);  // Publish before making DOM visible so that the widgets can start communicating with eachother and getting their shit together.
+
 				ipc.send('all-widgets-loaded');
 				clearTimeout(widgetLoadCheck);
-
 			}
-
 		});
 
 		subscribe(`/${this.ws.id}/all-widgets-loaded`, this, updateGitRepo.bind(this));
 
-		// Tells widgets that visibility has been changed so they can stop/resume dom updates if required
 		subscribe(`/${this.ws.id}/make-widget-visible`, this, makeWidgetVisible.bind(this));
 
 		// Entry point for loading all widgets
 		// Load each widget in the order they appear in the widget object
 		$.each(widget, (wgt, wgtItem) => {
-
-			console.log(`Loading ${wgt}`);
+			debug.log(`Loading ${wgt}`);
 
 			if (wgtItem.loadHtml) {
-
 				createWidgetContainer(wgt);
 				loadHtmlWidget(wgt);
-
-			} else {
-
-				loadJsWidget(wgt);
-
 			}
-
+			else {
+				loadJsWidget(wgt);
+			}
 		});
 
-		console.log('Initializing sidebar button click events.');
+		debug.log('Initializing sidebar button click events.');
 
 		$('#sidebar').on('click', 'span.btn', function (evt) {
-
 			makeWidgetVisible($(this).attr('evt-data'));
-
 		});
 
-		console.groupEnd(); // Main Setup
-
+		debug.groupEnd(); // Main Setup
 	};
 
 	createWidgetContainer = function createWidgetContainer(wgt) {
-
 		// append a div container to dom body
-		console.log('  Creating widget DOM container');
+		debug.log('  Creating widget DOM container');
 
 		const containerHtml = `<div id="${wgt}" class="widget-container hidden"></div>`;
 		$('body').append(containerHtml);
-
 	};
 
 	loadHtmlWidget = function loadHtmlWidget(wgt) {
+		debug.log('  Loading HTML & JS');
 
-		console.log('  Loading HTML & JS');
-
-		$(`#${wgt}`).load(`html/${wgt}.html`, '', () => {
-
-			requirejs([ wgt ], (ref) => {
-
+		$(`#${wgt}`).load(`${wgt}/${wgt}.html`, '', () => {  // Load html content
+			requirejs([ `./${wgt}/${wgt}.js` ], (ref) => {        // Load javascript
 				const temp = ref;
 				temp.loadHtml = widget[wgt].loadHtml;
 				temp.sidebarBtn = widget[wgt].sidebarBtn;
 
 				widget[wgt] = temp;
 
-				ref.initBody();
-
+				widget[wgt].initBody();
 			});
-
 		});
-
 	};
 
 	loadJsWidget = function loadJsWidget(wgt) {
+		debug.log('  Loading JS');
 
-		console.log('  Loading JS');
-
-		requirejs([ wgt ], (ref) => {
-
+		requirejs([ `${wgt}/${wgt}` ], (ref) => {  // Load javascript
 			const temp = ref;
 			temp.loadHtml = widget[wgt].loadHtml;
 			temp.sidebarBtn = widget[wgt].sidebarBtn;
 			widget[wgt] = temp;
 
-			ref.initBody();
-
+			widget[wgt].initBody();
 		});
-
 	};
 
 	createSidebarBtns = function createSidebarBtns(wgt) {
-
-		console.log('Creating Sidebar Buttons');
+		debug.log('Creating Sidebar Buttons');
 
 		$.each(widget, (widgetIndex, widgetItem) => {
-
 			// Check if the respective widget wants a sidebar button made
-			console.log(`  ${widgetIndex}`);
-			if (widgetItem.sidebarBtn === undefined || widgetItem.sidebarBtn === null) {
-
-				console.log('    ...jk, not creating sidebar button.');
-
-			} else if (widgetItem.icon.includes('material-icons')) {
-
+			debug.log(`  ${widgetIndex}`);
+			if (!widgetItem.sidebarBtn) {
+				debug.log('    ...jk, not creating sidebar button.');
+			}
+			else if (widgetItem.icon.includes('material-icons')) {
 				let btnHtml = `<span id="btn-${widgetIndex}" evt-data="${widgetIndex}" class="btn btn-${widgetItem.btnTheme}`;
 				btnHtml += (widgetItem.sidebarBtn) ? '' : ' hidden';
 				btnHtml += `"><div><span class="material-icons">${widgetItem.icon.split(' ')[1]}</span></div><div>`;
 				btnHtml += (widgetItem.shortName) ? widgetItem.shortName : widgetItem.name;
 				btnHtml += '</div></span>';
+
 				$('#sidebar').append(btnHtml);
-
-			} else {
-
-				// var btnHtml = '<span id="btn-' + widgetIndex + '" evt-data="' + widgetIndex + '" class="btn btn-' + widgetItem.ref.btnTheme;
+			}
+			else {
 				let btnHtml = `<span id="btn-${widgetIndex}" evt-data="${widgetIndex}" class="btn btn-${widgetItem.btnTheme}`;
 				btnHtml += (widgetItem.sidebarBtn) ? '' : ' hidden';
-				// btnHtml += '"><div><span class="' + widgetItem.ref.icon + '"></span></div><div>';
 				btnHtml += `"><div><span class="${widgetItem.icon}"></span></div><div>`;
 				btnHtml += (widgetItem.shortName) ? widgetItem.shortName : widgetItem.name;
 				btnHtml += '</div></span>';
-				$('#sidebar').append(btnHtml);
 
+				$('#sidebar').append(btnHtml);
 			}
 
+			if (widgetIndex === wgtVisible && widgetItem.sidebarBtn) {
+				$(`#btn-${widgetIndex}`).removeClass('btn-default');
+				$(`#btn-${widgetIndex}`).addClass('btn-primary');
+			}
 		});
-
 	};
 
 	initWidgetVisible = function initWidgetVisible() {
-
 		// Show the initial widget.
-		console.log(`Show wgt: ${wgtVisible}`);
+		debug.log(`Show wgt: ${wgtVisible}`);
 
 		$(`#${wgtVisible}`).removeClass('hidden');
 
@@ -544,14 +536,18 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 		// $('#header-widget-icon').addClass(widget[wgtVisible].icon); // Set header bar icon.
 
 		publish(`/${this.ws.id}/widget-visible`, wgtVisible, null);
-
 	};
 
 	makeWidgetVisible = function makeWidgetVisible(wgt) {
-
 		// If wgt is already visible, do nothing.
 		if (wgt === wgtVisible) return;
-		// console.log("  wgt: " + wgt + "\n  wgtVisible: " + wgtVisible);
+		// debug.log("  wgt: " + wgt + "\n  wgtVisible: " + wgtVisible);
+
+		$(`#btn-${wgt}`).removeClass('btn-default');
+		$(`#btn-${wgt}`).addClass('btn-primary');
+
+		$(`#btn-${wgtVisible}`).removeClass('btn-primary');
+		$(`#btn-${wgtVisible}`).addClass('btn-default');
 
 		// Hide previously visible widget.
 		$(`#${wgtVisible}`).addClass('hidden');
@@ -560,16 +556,14 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 		// Show the requested widget.
 		$(`#${wgt}`).removeClass('hidden');
 
-		$('#header-widget-label').text(widget[wgt].name); // Set header bar label.
-		// $('#header-widget-icon').addClass(widget[wgt].icon); // Set header bar icon.
+		$('#header-widget-label').text(widget[wgt].name);  // Set header bar label.
+		// $('#header-widget-icon').addClass(widget[wgt].icon);  // Set header bar icon.
 
-		publish(`/${this.ws.id}/widget-visible`, wgt, wgtVisible);
+		publish(`/${this.ws.id}/widget-visible`, wgt, wgtVisible);  // Tells widgets that visibility has been changed so they can stop/resume dom updates if required
 		wgtVisible = wgt;
-
 	};
 
 	updateGitRepo = function updateGitRepo() {
-
 		// Pulls the latest repository from the master branch on GitHub.
 
 		let terminal = null;
@@ -577,54 +571,41 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 		// Skip the update if host is my laptop or if there is no internet connection.
 		if (hostMeta.hostName === 'BRAYDENS-LENOVO' || !navigator.onLine) return false;
 
-		console.log('Pulling latest repo from GitHub.');
+		debug.log('Pulling latest repo from GitHub.');
 
 		terminal = spawn('git pull', [], { shell: true });
 
 		terminal.stdout.on('data', (data) => {
-
 			const msg = `${data}`;
 			const msgBuffer = msg.split('\n');
 
 			for (let i = 0; i < msgBuffer.length; i++) {
-
-				if (msgBuffer[i]) console.log(`Git pull stdout: ${msgBuffer[i]}`);
+				if (msgBuffer[i]) debug.log(`Git pull stdout: ${msgBuffer[i]}`);
 
 				// If a newer repository was found, reload the GUI so the new scripts are used.
 				if (msgBuffer[i].includes('Updating')) {
-
-					console.log('Repository was updated.');
+					debug.log('Repository was updated.');
 
 					// Reload the program to make use of any new updates.
 					location.reload(true);
-
 				}
-
 			}
-
 		});
 
 		terminal.stderr.on('data', (data) => {
-
 			const msg = `${data}`;
 			const msgBuffer = msg.split('\n');
 
 			for (let i = 0; i < msgBuffer.length; i++) {
-
-				if (msgBuffer[i]) console.log(`Git pull stderr: ${msgBuffer[i]}`);
-
+				if (msgBuffer[i])
+					debug.log(`Git pull stderr: ${msgBuffer[i]}`);
 			}
-
 		});
 
 		terminal.on('close', (code) => {
-
-			console.log(`Git pull.\nChild precess exited with the code: ${code}.`);
-
+			debug.log(`Git pull.\nChild precess exited with the code: ${code}.`);
 		});
 
 		return true;
-
 	};
-
 });

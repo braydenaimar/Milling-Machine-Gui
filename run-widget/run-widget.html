@@ -31,17 +31,21 @@
 
 	<div class="panel-body run-panel">
 
+		<span class="btn btn-xs btn-default auto-gcode-paused">
+			<span class="material-icons">schedule</span>
+		</span>
+
 		<div class="btn-group">
 
-			<span evt-signal="" evt-data="play" class="btn btn-xs btn-default">
+			<span evt-signal="" evt-data="play" class="btn btn-xs btn-default gcode-play-btn">
 				<span class="material-icons">play_arrow</span>
 			</span>
 
-			<span evt-signal="" evt-data="pause" class="btn btn-xs btn-default">
+			<span evt-signal="gcode-buffer/control" evt-data="pause" class="btn btn-xs btn-default gcode-pause-btn">
 				<span class="material-icons">pause</span>
 			</span>
 
-			<span evt-signal="" evt-data="stop" class="btn btn-xs btn-default">
+			<span evt-signal="gcode-buffer/control" evt-data="stop" class="btn btn-xs btn-default gcode-stop-btn">
 				<span class="material-icons">stop</span>
 			</span>
 

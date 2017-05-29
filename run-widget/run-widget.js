@@ -40,6 +40,18 @@ define([ 'jquery' ], $ => ({
 
 	minLineNumberDigits: 3,
 
+	/**
+	 *  Keep track of which port gcode data will be sent to.
+	 *  @type {string}
+	 */
+	mainDevicePort: '',
+	/**
+	 *  Keep track of the number of queued messages in the SPJS.
+	 *  This is updated what a queue count is published by the connection widget.
+	 *  @type {number}
+	 */
+	queueCount: 0,
+
 	initBody() {
 
 		console.group(`${this.name}.initBody()`);
@@ -47,24 +59,29 @@ define([ 'jquery' ], $ => ({
 		subscribe('/main/window-resize', this, this.resizeWidgetDom.bind(this));
 		subscribe('/main/widget-visible', this, this.visibleWidget.bind(this));
 
-		subscribe('gcode-data/file-loaded', this, this.fileLoaded.bind(this));  // Receive gcode lines when a gcode file is loaded { FileName, Data }
+		subscribe('/connection-widget/recvPortList', this, this.onPortList.bind(this));  // Used to set mainDevicePort { PortList, PortMeta, Diffs, OpenPorts, OpenLogs }
 
-		publish('/main/widget-loaded', this.id);
+		subscribe('gcode-data/file-loaded', this, this.fileLoaded.bind(this));  // Receive gcode lines when a gcode file is loaded { FileName, Data }
+		subscribe('gcode-buffer/control', this, this.gcodeBufferControl.bind(this));
+
+		subscribe('connection-widget/queue-count', this, this.onQueueCount.bind(this));  // Receive updates for the queue count
 
 		this.initClickEvents();
+
+		publish('/main/widget-loaded', this.id);
 
 		return true;
 
 	},
 	initClickEvents() {
 
-		// Header button events.
+		// GCode Run panel buttons.
 		$(`#${this.id} .gcode-run-panel .btn-group`).on('click', 'span.btn', (evt) => {
 
 			const evtSignal = $(evt.currentTarget).attr('evt-signal');
 			const evtData = $(evt.currentTarget).attr('evt-data');
 
-			if (evtSignal === 'hide-body') {
+			if (evtSignal === 'hide-body') {  // Hide panel body
 
 				$(`#${this.id} .${evtData} .panel-body`).addClass('hidden');
 				$(evt.currentTarget).find('span').removeClass('glyphicon-chevron-up').addClass('glyphicon-chevron-down');
@@ -72,7 +89,7 @@ define([ 'jquery' ], $ => ({
 
 				this.resizeWidgetDom();
 
-			} else if (evtSignal === 'show-body') {
+			} else if (evtSignal === 'show-body') {  // Show panel body
 
 				$(`#${this.id} .${evtData} .panel-body`).removeClass('hidden');
 				$(evt.currentTarget).find('span').removeClass('glyphicon-chevron-down').addClass('glyphicon-chevron-up');
@@ -80,33 +97,23 @@ define([ 'jquery' ], $ => ({
 
 				this.resizeWidgetDom();
 
-			} else if (evtSignal === '/connection-widget/spjs-send') {
+			} else if (evtSignal === '/connection-widget/spjs-send') {  // Send message to the SPJS
 
 				publish(evtSignal, { Msg: evtData });  // Request serial port list or restart the SPJS
 
-			}
+			} else if (evtData === 'play') {  // Send gcode to be buffered to the SPJS
 
-			if (evtData === 'play' || evtData === 'pause' || evtData === 'stop') {
+				this.bufferGcode();
+
+			} else if (evtSignal === 'gcode-buffer/control' && (evtData === 'pause' || evtData === 'resume' || evtData === 'stop')) {
 
 				console.log(`pressed ${evtData}`);
+
+				publish(evtSignal, evtData);
 
 			}
 
 		});
-
-		// // GCode Run Body click events.
-		// $(`#${this.id} .gcode-run-panel .panel-body .btn-group`).on('click', 'span.btn', (evt) => {
-		//
-		// 	const evtSignal = $(evt.currentTarget).attr('evt-signal');
-		// 	const evtData = $(evt.currentTarget).attr('evt-data');
-		//
-		// 	if () {
-		//
-		//
-		//
-		// 	}
-		//
-		// });
 
 	},
 
@@ -128,10 +135,73 @@ define([ 'jquery' ], $ => ({
 
 		}
 
-		const localFileName = FileName.match(/([^\\]+)\.[a-zA-Z0-9]+$/i)[1];
+		const [ globalPath, localFileName ] = FileName.match(/([^\\]+)\.[a-zA-Z0-9]+$/i);
 
 		$(`#${this.id} .gcode-file-panel .gcode-file-name`).text(localFileName);
 		$(`#${this.id} .gcode-file-panel .gcode-file-text`).html(gcodeHTML);  // Add the gcode file to the file text panel
+
+	},
+
+	onPortList(data) {
+
+		const { PortList, PortMeta, Diffs, OpenPorts, OpenLogs } = data;
+
+		console.log(`got port list data:\n${JSON.stringify(data)}`);
+
+		if (OpenPorts && OpenPorts.length) {  // If there are any open ports
+
+			[ this.mainDevicePort ] = OpenPorts;  // Use the alphanumerically first port that is open as the main port
+
+		} else {  // If there are no open ports
+
+			this.mainDevicePort = '';
+
+		}
+
+	},
+
+	bufferGcode() {
+
+		const { mainDevicePort: port, fileGcodeData, mainDevicePort } = this;
+
+		if (!port || !fileGcodeData) return false;
+
+		// Only buffer up to the first tool change command
+
+		publish('connection-widget/port-sendbuffered', mainDevicePort, { Msg: fileGcodeData });  // Send gcode data to be buffered to the SPJS
+
+	},
+
+	gcodeBufferControl(data) {
+
+		if (data === 'auto-paused') {  // If buffering gcode to the SPJS was automatically paused by the connection widget
+
+			$(`#${this.id} .gcode-run-panel .auto-gcode-paused`).removeClass('text-muted', 'btn-default');
+			$(`#${this.id} .gcode-run-panel .auto-gcode-paused`).addClass('btn-warning');
+
+		} else if (data === 'auto-resumed') {
+
+			$(`#${this.id} .gcode-run-panel .auto-gcode-paused`).addClass('text-muted', 'btn-default');
+			$(`#${this.id} .gcode-run-panel .auto-gcode-paused`).removeClass('btn-warning');
+
+		} else if (data === 'user-paused') {  // If buffering gcode to the SPJS was manually paused
+
+			$(`#${this.id} .gcode-run-panel .gcode-pause-btn`).attr('evt-data', 'resume');
+			$(`#${this.id} .gcode-run-panel .gcode-pause-btn`).addClass('text-muted');
+
+		} else if (data === 'user-resumed') {
+
+			$(`#${this.id} .gcode-run-panel .gcode-pause-btn`).attr('evt-data', 'pause');
+			$(`#${this.id} .gcode-run-panel .gcode-pause-btn`).removeClass('text-muted');
+
+		}
+
+	},
+
+	onQueueCount(QCnt) {
+
+		this.queueCount = QCnt;
+		console.log(`got queue count ${this.queueCount}`);
 
 	},
 
@@ -148,7 +218,7 @@ define([ 'jquery' ], $ => ({
 		// Put the .attr() function inside of a $.each() loop.
 
 		$.each(this.widgetDom, (setIndex, setItem) => {
-			// console.log("setIndex:", setIndex, "\nsetItem:", setItem);
+
 			const that1 = that;
 			let containerElement = null;
 			let containerHeight = null;
@@ -156,7 +226,7 @@ define([ 'jquery' ], $ => ({
 			let panelSpacing = 0;
 
 			$.each(setItem, (panelIndex, panelItem) => {
-				// console.log("  panelIndex:", panelIndex, "\n  panelItem:", panelItem);
+
 				// If panelItem is the container element, skip it.
 				if (!panelIndex) {
 
@@ -190,7 +260,7 @@ define([ 'jquery' ], $ => ({
 
 		});
 
-		$('#run-widget div.gcode-file-panel div.panel-body div').width($('#run-widget div.gcode-file-panel div.panel-body').width() - 10);
+		$(`#${this.id} div.gcode-file-panel div.panel-body div`).width($(`#${this.id} div.gcode-file-panel div.panel-body`).width() - 10);  // Set the width of the gcode file panel
 		return true;
 
 	},

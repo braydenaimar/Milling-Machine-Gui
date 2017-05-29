@@ -171,7 +171,7 @@ define([ 'jquery' ], $ => ({
 		// Check that a valid file path was passed.
 		if (!filePath) throw new Error('Invalid file path.');
 
-		const fileName = filePath[0]
+		const [ fileName ] = filePath;
 
 		$(`#${this.id} .file-data.file-name`).text(fileName);
 
@@ -198,20 +198,48 @@ define([ 'jquery' ], $ => ({
 
 	parseFile(fileName, gcodeLines) {
 
-		const lineData = gcodeLines;
+		let gcodeLineNum = 0;
+		let lineData = gcodeLines;
 		const gcodeData = {
 			x: [],
 			y: [],
 			z: [],
 			lineIndex: []
 		};
-		let gcodeLineNum = 0;
+
+		for (let i = 0; i < lineData.length; i++) {  // Remove all carriage-return characters
+
+			if (lineData[i].includes('\r')) lineData[i] = lineData[i].replace('\r', '');
+
+			if (/F[0-9]+/i.test(lineData[i]) && inDebugMode) {
+
+				const [ matchStr, matchNum ] = lineData[i].match(/F([0-9]+)/i);
+
+				alert(`Crazy multiplier on feedrate: ${80}`);
+
+				lineData[i] = lineData[i].replace(/F[0-9]+/i, `F${Number(matchNum) * 80}`);
+
+			}
+
+		}
+
+		lineData = lineData.filter((value) => {
+
+			if (/^%|^\n/i.test(value) || value === '' || value === '\n') {
+
+				return false;
+
+			}
+
+			return true;
+
+		});
 
 		for (let i = 0; i < lineData.length; i++) {
 
 			let line = lineData[i];
 
-			if (this.addLineNumbers && line && line !== '' && line !== '\n' && line !== '\r' && line !== '\r\n' && line[0] !== '%' && line[0] !== '(') {  // If a valid line of gcode
+			if (this.addLineNumbers && line && line !== '' && line !== '\n' && line !== '\r' && line !== '\r\n' && line[0] !== '%' && line[0] !== '(' && line[0] !== 'N') {  // If a valid line of gcode and line number is not already added
 
 				gcodeLineNum += 1;
 				lineData[i] = `N${gcodeLineNum} ${line}`;  // Add line number to gcode line
