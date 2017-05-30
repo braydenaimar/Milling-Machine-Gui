@@ -1,0 +1,45 @@
+# Main Settings
+
+# Widget to show on program load (default: first html widget loaded).
+wgtVisible: ""
+
+widget: {
+  "statusbar-widget": {
+    loadHtml: false
+    sidebarBtn: false
+  }
+  "load-widget": {
+    loadHtml: true
+    sidebarBtn: true
+  }
+  "run-widget": {
+    loadHtml: true
+    sidebarBtn: true
+  }
+  "mdi-widget": {
+    loadHtml: false
+    sidebarBtn: false
+  }
+  "connection-widget": {
+    loadHtml: true
+    sidebarBtn: true
+  }
+  "settings-widget": {
+    loadHtml: false
+    sidebarBtn: false
+  }
+  "about-widget": {
+    loadHtml: true
+    sidebarBtn: true
+  }
+}
+
+# widget: [
+#     "statusbar-widget"
+#     "load-widget"
+#     "run-widget"
+#     "mdi-widget"
+#     "connection-widget"
+#     "settings-widget"
+#     "about-widget"
+# ]

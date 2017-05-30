@@ -92,16 +92,23 @@ define([ 'jquery' ], $ => ({
 		// The openPorts object stores the names of the ports that are open.
 		// Ex. ["COM5", "COM10"]
 		openPorts: [],
+		/**
+		 *  Enable the gpio websocket tcp server when the host is a Raspberry Pi.
+		 *  @default Overwritten by settings cson file.
+		 *  @type {Boolean}
+		 */
 		launchGpioServerOnLinux: false,
 		/**
 		 *  Sets the time (msec) that the program will wait between attempting to connect to the WebSocket.
 		 *  If wsReconnectDelay has a value of 0, no auto reconnection attempts will be made.
+		 *  @default Overwritten by settings cson file.
 		 *  @type {number}
 		 */
 		wsReconnectDelay: 4000,
 		/**
 		 *  Sets if a new spjs is launched after an exit command is issued to the current spjs.
 		 *  If false, a new spjs may be launched based on the setting of wsReconnectDelay.
+		 *  @default Overwritten by settings cson file.
 		 *  @type {Boolean}
 		 */
 		wsReconnectOnExitCmd: true,
@@ -109,10 +116,15 @@ define([ 'jquery' ], $ => ({
 		 *  Sets the time (msec) that the program will wait between getting the port list when there are no available ports.
 		 *  If requestListDelay has a value of 0, no automatic list requests will be sent.
 		 *  Use a value greater than approx 500ms to ensure the stability of the program.
+		 *  @default Overwritten by settings cson file.
 		 *  @type {number}
 		 */
 		requestListDelay: 4000,
-		// requestListDelay: null,
+		/**
+		 *  Enable automatic relaunching of the Serial Port JSON Server if this process did not launch it and no devices are connected.
+		 *  @default Overwritten by settings cson file.
+		 *  @type {Boolean}
+		 */
 		exitUntrustedSpjs: true,
 		/**
 		 *  Keep track of how many commands are in the SPJS queue.
@@ -121,34 +133,40 @@ define([ 'jquery' ], $ => ({
 		queueCount: 0,
 		/**
 		 *  Keep track of wether or not buffered sending is paused.
+		 *  @default Overwritten by settings cson file.
 		 *  @type {Boolean}
 		 */
 		pauseBufferedSend: false,
 		/**
 		 *  Set by user to pause and resume buffering of gcode to the the SPJS.
+		 *  @default Overwritten by settings cson file.
 		 *  @type {Boolean}
 		 */
 		userPauseBufferedSend: false,
 		/**
 		 *  The number of lines queued in the SPJS buffer above which sending of buffered instructions will be paused.
+		 *  @default Overwritten by settings cson file.
 		 *  @type {number}
 		 */
-		pauseOnQueueCount: 4,
+		pauseOnQueueCount: 40,
 		/**
 		 *  The number of lines queued in the SPJS buffer below which sending of buffered instructions will be resumed.
+		 *  @default Overwritten by settings cson file.
 		 *  @type {number}
 		 */
-		resumeOnQueueCount: 2,
+		resumeOnQueueCount: 20,
 		/**
 		 *  The maximum number of instructions that can be sent to the SPJS at a time.
+		 *  @default Overwritten by settings cson file.
 		 *  @type {number}
 		 */
 		maxLinesAtATime: 8,
 		/**
 		 *  The minimum time [ms] between data buffered to the SPJS.
+		 *  @default Overwritten by settings cson file.
 		 *  @type {number}
 		 */
-		minWaitBetweenBufferSend: 250,
+		minWaitBetweenBufferSend: 150,
 		/**
 		 *  Time of the last data buffered to the SPJS. [unix time]
 		 *  @type {number}
@@ -156,16 +174,19 @@ define([ 'jquery' ], $ => ({
 		lastBufferSendTime: 0,
 		/**
 		 *  Enable a feedhold command to be sent when user stops buffering gcode.
+		 *  @default Overwritten by settings cson file.
 		 *  @type {Boolean}
 		 */
 		sendFeedholdOnBufferStop: true,
 		/**
 		 *  The time [ms] that is waited before sending a queue flush command to a device after the feedstop command.
+		 *  @default Overwritten by settings cson file.
 		 *  @type {number}
 		 */
 		waitQueueFlushOnFeedstop: 2000,
 		/**
 		 *  The time [ms] that is waited before sending a cycle resume command to a device after the queue flush command.
+		 *  @default Overwritten by settings cson file.
 		 *  @type {number}
 		 */
 		waitCycleResumeOnFeedstop: 500
@@ -176,114 +197,6 @@ define([ 'jquery' ], $ => ({
 	// NOTE: Loaded by cson file.
 	// TODO: Change this from an array to an object and create a meta called 'default' rather than using the empty string for Vid/Pids convention.
 	deviceMeta: [
-		{ Friendly: 'TinyG G2 Native',
-			Baud: 115200,
-			Buffer: 'tinygg2',
-			useReceivedFriendly: false,
-			autoConnectPort: true,
-			portMuted: false,
-			VidPids: [
-				{ Vid: '1D50', Pid: '606D' }
-			]
-		},
-		{ Friendly: 'TinyG G2 Native [Virtual]',
-			Baud: 115200,
-			Buffer: 'tinygg2',
-			useReceivedFriendly: false,
-			autoConnectPort: false,
-			portMuted: true,
-			VidPids: [
-				{ Vid: '1D50', Pid: '606D' }
-			]
-		},
-		{ Friendly: 'TinyG G2 Programming',
-			Baud: 115200,
-			Buffer: 'tinygg2',
-			useReceivedFriendly: false,
-			autoConnectPort: false,
-			portMuted: true,
-			VidPids: [
-				{ Vid: '2341', Pid: '003D' }
-			]
-		},
-		{ Friendly: 'TinyG v8',
-			Baud: 115200,
-			Buffer: 'tinyg',
-			useReceivedFriendly: false,
-			autoConnectPort: true,
-			portMuted: false,
-			VidPids: [
-				{ Vid: '0403', Pid: '6015' }
-			]
-		},
-		// { Friendly: 'Tinyg v9', Baud: 115200, Buffer: 'tinygg2', VidPids: [{ Vid: '', Pid: '' }] },
-		// { Friendly: 'FTDI or TinyG',
-		// 	Baud: 115200,
-		// 	Buffer: 'tinyg',
-		// 	useReceivedFriendly: true,
-		// 	autoConnectPort: false,
-		// 	portMuted: false,
-		// 	VidPids: [
-		// 		// { Vid: '0403', Pid: '6015' }
-		// 		{ Vid: '', Pid: '' }
-		// 	]
-		// },
-		{ Friendly: 'Arduino Uno',
-			Baud: 9600,
-			Buffer: 'default',
-			useReceivedFriendly: false,
-			autoConnectPort: false,
-			portMuted: false,
-			VidPids: [
-				{ Vid: '2341', Pid: '0043' },
-				{ Vid: '2341', Pid: '0001' },
-				{ Vid: '2A03', Pid: '0043' }
-			]
-		},
-		{ Friendly: 'Arduino Duemilanove',
-			Baud: 9600,
-			Buffer: 'default',
-			useReceivedFriendly: false,
-			autoConnectPort: false,
-			portMuted: false,
-			VidPids: [
-				{ Vid: '0403', Pid: '6001' }
-			]
-		},
-		{ Friendly: 'Arduino Yun',
-			Baud: 9600,
-			Buffer: 'default',
-			useReceivedFriendly: true,
-			autoConnectPort: false,
-			portMuted: false,
-			VidPids: [
-				{ Vid: '2341', Pid: '0041' },
-				{ Vid: '2341', Pid: '8041' },
-				{ Vid: '2A03', Pid: '0041' },
-				{ Vid: '2A03', Pid: '8041' }
-			]
-		},
-		{ Friendly: 'Bossa Program Port',
-			Baud: 115200,
-			Buffer: 'tinyg',
-			useReceivedFriendly: false,
-			autoConnectPort: false,
-			portMuted: false,
-			VidPids: [
-				{ Vid: '03EB', Pid: '6124' }
-			]
-		},
-		{ Friendly: 'TI MSP430',
-			Baud: 115200,
-			Buffer: 'default',
-			useReceivedFriendly: true,
-			autoConnectPort: false,
-			portMuted: false,
-			lineEnding: 'CRLF', // Defines that both carriage-return and line-feed characters must be added to messages sent to this device.
-			VidPids: [
-				{ Vid: '2047', Pid: '0013' }
-			]
-		},
 		{ Friendly: 'Device Not Recognized',
 			Baud: 9600,
 			Buffer: 'default',
@@ -429,58 +342,99 @@ define([ 'jquery' ], $ => ({
 
 	// IDEA: Restructure the shit outta this stuff.
 	consoleLog: {
-		// The activeLog string stores the name of the currently open console log.
+		/**
+		 *  Stores the name of the currently open console log.
+		 *  @type {String}
+		 */
 		activeLog: 'SPJS',
-		// The openLogs object stores the names of the console logs that are open. Ports are sorted smallest -> largest port number with the SPJS log at the end of the list.
-		// Ex. ["COM7", "COM10", "SPJS"]
+		/**
+		 *  Stores the names of the open console logs.
+		 *  Ports are sorted from smallest -> largest port number with the SPJS at the end of the list.
+		 *  Ex. [ 'COM7', 'COM10', 'SPJS' ]
+		 *  @type {Array}
+		 */
 		openLogs: [ 'SPJS' ],
-		// Specifies the maximum number of lines to be displayed in the console log.
+		/**
+		 *  Specifies the maximum number of lines to be displayed in the console log.
+		 *  @default Overwritten by settings cson file.
+		 *  @type {Number}
+		 */
 		maxLineLimit: 1000,
-		// Specifies the minimum number of lines to be displayed in the console log.
+		/**
+		 *  Specifies the minimum number of lines to be displayed in the console log.
+		 *  @default Overwritten by settings cson file.
+		 *  @type {Number}
+		 */
 		minLineLimit: 700,
 		/**
 		 *  Sets the time limit (ms) that an active command in the console log can be verified.
 		 *  To prevent messages from being marked as stale, set this to 0.
-		 *
+		 *  @default Overwritten by settings cson file.
 		 *  @type {number}
 		 */
 		staleCmdLimit: 30000,
 		/**
 		 *  Sets the time limit (ms) that an active command in the console log can prevent other commands of the same type from being set.
 		 *  To prevent messages from being marked as stale, set this to 0.
-		 *
+		 *  @default Overwritten by settings cson file.
 		 *  @type {number}
 		 */
 		staleListCmdLimit: 5000,
+		/**
+		 *  Enable the finding of stale commands in the console log.
+		 *  @default Overwritten by settings cson file.
+		 *  @type {Boolean}
+		 */
 		findStaleCommands: false,
-		// Sets the number of digits that will be displayed by default. If the line number exceeds this, the number of digits used will be increased.
+		/**
+		 *  The minimum number of digits that will be displayed in the line numbers in the console log.
+		 *  If the length of the line number exceeds this, the number of digits used in the line number will be increased accordingly.
+		 *  @default Overwritten by settings cson file.
+		 *  @type {Number}
+		 */
 		minLineNumberDigits: 3,
-		// EXPERIMENTAL: Set the removeLogOnClose flag to false to prevent a port's log from being closed when the port is closed so that issues can be more easily troubleshooted.
+		/**
+		 *  Set this flag to false to prevent a port's log from being closed when the port is closed so that issues can be more easily troubleshooted.
+		 *  NOTE: Only for debugging purposes.
+		 *  NOTE: HIGHLY EXPERIMENTAL. This will probably cause the program to crash when port is reopened.
+		 *  @type {Boolean}
+		 */
 		removeLogOnClose: true,
-		// The maximum age of an unverified command that will be set to status error in the log when the SPJS closes (milliseconds).
-		// Set to null for no limit.
-		// errorCmdOnSpjsCloseMaxAge: 5000,
+		/**
+		 *  The maximum age of an unverified command that will be set to status error in the log when the SPJS closes [ms].
+		 *  null - No age limit.
+		 *  @default Overwritten by settings cson file.
+		 *  @type {Number}
+		 */
 		errorCmdOnSpjsCloseMaxAge: null,
 		/**
 		 *  The maximum age of a command in the Spjs that can be assigned the status 'sent'.
 		 *  To prevent messages from being marked as stale, set this to 0.
-		 *
-		 *  @type {number}
+		 *  @default Overwritten by settings cson file.
+		 *  @type {Number}
 		 */
 		sentSpjsCmdMaxAge: 10000,
-		// Sets if the time to verify a given command is added beside the command in the console log as a comment.
+		/**
+		 *  Sets if the time to verify a given command is added beside the command in the console log as a comment.
+		 *  @default Overwritten by settings cson file.
+		 *  @type {Boolean}
+		 */
 		commentTimeToVerify: true,
-		// Add a comment to every command to show it's id. Very useful for debugging.
+		/**
+		 *  Add a comment to every command to show it's id. Very useful for debugging.
+		 *  @default Overwritten by settings cson file.
+		 *  @type {Boolean}
+		 */
 		commentCmdId: true,
 		/**
 		 *  The delimiters to use on either side of log bot messages in the console log.
-		 *
+		 *  @default Overwritten by settings cson file.
 		 *  @type {Array}
 		 */
 		logBotLineDelimiter: [ '<-- ', ' -->' ],
 		/**
 		 *  Set this to have the have the log bot add info about a port open event to the top of the port's console log.
-		 *
+		 *  @default Overwritten by settings cson file.
 		 *  @type {Boolean}
 		 */
 		logBotOnPortOpen: true,
@@ -490,26 +444,41 @@ define([ 'jquery' ], $ => ({
 		 *  'port' - Only show the messages in the port's console log.
 		 *  'spjs' - Only show the messages in the SPJS console log.
 		 *  'both' - Only show the messages in both the port's and the SPJS console log.
-		 *
-		 *  @type {string}
+		 *  @default Overwritten by settings cson file.
+		 *  @type {String}
 		 */
 		logBotOnStatusCode: 'both',
-		// Set the default line ending to be used for messages sent to ports on the SPJS. This is over-ridden by lineEnding inside each port's respective deviceMeta object.
-		//  NONE: No line ending characters are added to port messages.
-		//  CR: Add a carriage-return character '\r'.
-		//  LF: Add a line-feed character '\n'.
-		//  CRLF: Add a carriage-return and line-feed character '\r\n'.
+		/**
+		 *  Set the default line endings to be used for messages sent to ports on the SPJS.
+		 *  This is over-ridden by lineEnding inside each port's respective deviceMeta object.
+		 *  'NONE' - No characters will be added to the end of port messages.
+		 *  'CR'   - Add a carriage-return character '\r'.
+		 *  'LF'   - Add a line-feed character '\n'.
+		 *  'CRLF' - Add a carriage-return and line-feed character '\r\n'.
+		 *  @default Overwritten by settings cson file.
+		 *  @type {String}
+		 */
 		defaultLineEnding: 'LF',
-		// Stores the different line endings.
+		/**
+		 *  Define each line ending.
+		 *  @default Overwritten by settings cson file.
+		 *  @type {Object}
+		 */
 		lineEndings: {
 			NONE: '',
 			CR: '\\r',
 			LF: '\\n',
 			CRLF: '\\r\\n'
 		},
+		/**
+		 *  Enable recursive searching of the console log for message matches.
+		 *  @default Overwritten by settings cson file.
+		 *  @type {Boolean}
+		 */
 		enableRecursiveUpdate: false,
 		/**
 		 *  Distance from the bottom of the panel that the panel will still automatically scroll down on.
+		 *  @default Overwritten by settings cson file.
 		 *  @type {number}
 		 */
 		autoScrollThreshold: 50,
@@ -531,15 +500,29 @@ define([ 'jquery' ], $ => ({
 			// inputStatus [string] - Stores the most recent status of the respective port's <input> element. Used to correctly hilite the input field when switching between console log tabs.
 			inputStatus: null,
 			cmdCount: 0,
-			// history [array] - Stores all the commands submitted by the respective port's <input> element. Used to recall previously issued commands.
+			/**
+			 *  Stores all MDI (manual data input) commands.
+			 *  This is used to recall previously issued commands.
+			 *  @type {Array}
+			 */
 			history: [],
-			// historyRecallIndex [number] - Stores the current history recall index. Value of 'null' indicates that no history recall is happening.
+			/**
+			 *  Stores the current history recall index.
+			 *  null: indicates that no history recall is happening.
+			 *  @type {[type]}
+			 */
 			historyRecallIndex: null,
-			// placeholder [string] - Stores the text used as the placeholder for the <input> element.
-			// Loaded by cson file.
+			/**
+			 *  The placeholder for the manual data input field.
+			 *  @default Overwritten by settings cson file.
+			 *  @type {String}
+			 */
 			placeholder: 'SPJS Command',
-			// The logHtml array stores each msgHtml that is added to the console log (oldest -> recent).
-			// logHtml: []
+			/**
+			 *  Enable the displaying of each type of message in the console log.
+			 *  @default Overwritten by settings cson file.
+			 *  @type {Object}
+			 */
 			msgShow: {
 				default: true,
 				stdout: true,
@@ -573,9 +556,14 @@ define([ 'jquery' ], $ => ({
 				LogBot: true // Messages that are create by the console log to provide the user with information on important log events.
 			}
 		},
-		// Add 'samp' to use a samp DOM tag, default is 'code'.
-		// The <samp> tag has no background.
-		// The <code> tag has hilited background.
+		/**
+		 *  Set the style of messages in the console log.
+		 *  The <samp> tag has no hiliting.
+		 *  The <code> tag has hilited background.
+		 *  Default tag is <code>, add 'samp' to use <samp> tag.
+		 *  @default Overwritten by settings cson file.
+		 *  @type {Object}
+		 */
 		style: {
 			lineWrap: false,
 			default: 'text-default',
@@ -1541,8 +1529,6 @@ define([ 'jquery' ], $ => ({
 		subscribe('keyboard-shortcut', this, this.keyboardShortcuts);
 
 		this.initSettings();
-		// Import the status codes from the 'TinyG_Status_Codes.json' file as an object.
-		this.initStatusCodes();
 		this.initClickEvents();
 		this.initConsoleInput();
 
@@ -1551,62 +1537,81 @@ define([ 'jquery' ], $ => ({
 		return true;
 
 	},
-	// FIXME: Get the settings from a cson file.
 	initSettings() {
 
 		const that = this;
 
-		debug.log('Loading Settings from CSON file.');
-		// debug.log('initScripts:', JSON.stringify(this.initScripts));
+		debug.log('Loading Settings from CSON files.');
 
-		// let SPJS = {};
-		// let consoleLog = {};
-		// let deviceMeta = {};
-		// let defaultDeviceMeta = {};
-		// let initScripts = {};
-		// let connectScripts = {};
-		//
-		// const keys = [ 'spjs', 'consoleLog', 'deviceMeta', 'defaultDeviceMeta', 'initScripts', 'connectScripts' ];
-		//
-		// for (let i = 0; i < keys.length; i++) {
-		//
-		// 	CSON.parseCSONFile(`config/connection-widget_${keys[i]}.cson`, (err, result) => {
-		//
-		// 		debug.log('Error:', err, '\nResult:', result);
-		//
-		// 		if (err) return false;
-		//
-		// 		debug.log(`Result -${keys[i]}-\n${CSON.stringify(result)}`);
-		//
-		// 		return true;
-		//
-		// 	});
-		//
-		// }
+		CSON.parseCSONFile(`${this.id}/SPJS.cson`, (err, data) => {  // Synchronously load SPJS and console log settings
 
-		CSON.parseCSONFile(`${this.id}/Settings.cson`, (err, result) => {
+			if (err) {  // If there was an error reading the file
 
-			debug.log('Error:', err, '\nResult:', result);
+				debug.warn(err);
+				return false;
 
-			if (err) return false;
+			}
 
-			debug.log('Result:', CSON.stringify(result));
-
-			const { SPJS, consoleLog, deviceMeta, defaultMetaIndex, initScripts, connectScripts } = result;
-
-			// Object.keys(result).forEach(function(key) {
-			// 	that[key] = result[key];
-			// });
+			debug.log('Data:', CSON.stringify(data));
 
 			// Merge the objects in the cson file with the ones here.
-			// Object.assign(that.SPJS, SPJS);
-			// Object.assign(that.consoleLog, consoleLog);
-			// Object.assign(that.deviceMeta, deviceMeta);
-			// Object.assign(that.defaultMetaIndex, defaultMetaIndex);
-			// Object.assign(that.initScripts, initScripts);
+			gui.mergeDeep(that.SPJS, data);
 
-			// that.initScripts = initScripts;
-			// that.connectScripts = connectScripts;
+		});
+
+		CSON.parseCSONFile(`${this.id}/Console_Log.cson`, (err, data) => {  // Synchronously load SPJS and console log settings
+
+			if (err) {  // If there was an error reading the file
+
+				debug.warn(err);
+				return false;
+
+			}
+
+			debug.log('Data:', CSON.stringify(data));
+
+			// Merge the objects in the cson file with the ones here.
+			gui.mergeDeep(that.consoleLog, data);
+
+		});
+
+		CSON.parseCSONFile(`${this.id}/Device_Meta.cson`, (err, data) => {  // Synchronously load device meta settings
+
+			if (err) {  // If there was an error reading the file
+
+				debug.warn(err);
+				return false;
+
+			}
+
+			debug.log('Data:', CSON.stringify(data));
+
+			const { DefaultMetaIndex, DeviceMeta } = data;
+
+			// Merge the objects in the cson file with the ones here.
+			that.defaultMetaIndex = DefaultMetaIndex;
+
+			if (DeviceMeta.length)
+				that.deviceMeta = [ ...DeviceMeta ];
+
+		});
+
+		CSON.parseCSONFile(`${this.id}/Init_Scripts.cson`, (err, data) => {  // Synchronously load init and connect scripts
+
+			if (err) {  // If there was an error reading the file
+
+				debug.warn(err);
+				return false;
+
+			}
+
+			const { InitScripts, ConnectScripts } = data;
+
+			debug.log('Data:', CSON.stringify(data));
+
+			// Merge the objects in the cson file with the ones here.
+			that.initScripts = InitScripts;
+			that.connectScripts = ConnectScripts;
 
 		});
 
@@ -1642,19 +1647,20 @@ define([ 'jquery' ], $ => ({
 		// debug.log('initScripts:', this.initScripts);
 		// debug.log('connectScripts:', this.connectScripts);
 
-	},
-	initStatusCodes() {
-		// Synchronous file read.
-		const that = this;
 		debug.log('Loading Status Codes from cson file.');
 
-		CSON.parseCSONFile(`${this.id}/TinyG_Status_Codes.cson`, (err, result) => {
-			// debug.log('Error:', err, '\nResult:', result);
+		CSON.parseCSONFile(`${this.id}/TinyG_Status_Codes.cson`, (err, result) => {  // Synchronously load tinyg status codes
+
+			if (err) {
+
+				debug.warn(err);
+				return false;
+
+			}
+
 			that.tinygStatusMeta = result;
 
 		});
-
-		// debug.log('tinygStatusMeta:', this.tinygStatusMeta);
 
 	},
 	initClickEvents() {

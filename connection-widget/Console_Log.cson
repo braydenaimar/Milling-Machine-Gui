@@ -1,0 +1,188 @@
+# Console Log Settings
+
+# Specifies the maximum number of lines to be displayed in the console log.
+# @type {Number}
+maxLineLimit: 1000
+# Specifies the minimum number of lines to be displayed in the console log.
+# @type {Number}
+minLineLimit: 700
+# Sets the time limit (ms) that an active command in the console log can be verified.
+# To prevent messages from being marked as stale, set this to 0.
+# @type {number}
+staleCmdLimit: 30000
+# Sets the time limit (ms) that an active command in the console log can prevent other commands of the same type from being set.
+# To prevent messages from being marked as stale, set this to 0.
+# @type {number}
+staleListCmdLimit: 5000,
+# Enable the finding of stale commands in the console log.
+# @type {Boolean}
+findStaleCommands: false
+# The minimum number of digits that will be displayed in the line numbers in the console log.
+# If the length of the line number exceeds this, the number of digits used in the line number will be increased accordingly.
+# @type {Number}
+minLineNumberDigits: 3
+# The maximum age of an unverified command that will be set to status error in the log when the SPJS closes [ms].
+# null - No age limit.
+# @type {Number}
+errorCmdOnSpjsCloseMaxAge: null
+# The maximum age of a command in the Spjs that can be assigned the status "sent".
+# To prevent messages from being marked as stale, set this to 0.
+# @type {Number}
+sentSpjsCmdMaxAge: 10000
+# Sets if the time to verify a given command is added beside the command in the console log as a comment.
+# @type {Boolean}
+commentTimeToVerify: true
+# Add a comment to every command to show it"s id. Very useful for debugging.
+# @type {Boolean}
+commentCmdId: true
+# The delimiters to use on either side of log bot messages in the console log.
+# @type {Array}
+logBotLineDelimiter: [
+  "<-- "
+  " -->"
+]
+
+# Set this to have the have the log bot add info about a port open event to the top of the port"s console log.
+# @type {Boolean}
+logBotOnPortOpen: true
+# Set this to enable/disable the log bot messages in the port and SPJS console logs when there is a abnormal status code.
+# "off"  - Do not the messages in any logs.
+# "port" - Only show the messages in the port"s console log.
+# "spjs" - Only show the messages in the SPJS console log.
+# "both" - Only show the messages in both the port"s and the SPJS console log.
+# @type {String}
+logBotOnStatusCode: "both"
+# Set the default line endings to be used for messages sent to ports on the SPJS.
+# This is over-ridden by lineEnding inside each port"s respective deviceMeta object.
+# "NONE" - No characters will be added to the end of port messages.
+# "CR"   - Add a carriage-return character "\r".
+# "LF"   - Add a line-feed character "\n".
+# "CRLF" - Add a carriage-return and line-feed character "\r\n".
+# @type {String}
+defaultLineEnding: "LF"
+# Define each line ending.
+# @type {Object}
+lineEndings:
+  NONE: ""
+  CR: "\\r"
+  LF: "\\n"
+  CRLF: "\\r\\n"
+
+# Enable recursive searching of the console log for message matches.
+# @type {Boolean}
+enableRecursiveUpdate: false
+# Distance from the bottom of the panel that the panel will still automatically scroll down on.
+# @type {number}
+autoScrollThreshold: 50
+SPJS:
+  # placeholder [string] - Stores the text used as the placeholder for the <input> element.
+  placeholder: "SPJS Command"
+  msgShow:
+    default: true
+    stdout: true
+    stderr: true
+    Version: true
+    Commands: true
+    BufferAlgorithm: true
+    BaudRate: true
+    Hostname: true
+    SerialPorts: true
+    Open: true
+    OpenFail: true
+    Close: true
+    Broadcast: true
+    WipedQueue: true
+    Queued: true
+    Write: true
+    Complete: true
+    CompleteFake: true
+    Error: true
+    FeedRateOverride: true
+    RawPortData: true
+    Cayenn: true
+    GarbageCollection: true
+    GarbageHeap: true
+    ExecRuntimeStatus: true
+    ExecStatus: true
+    Command: true
+    MdiCommand: true
+    CommandEcho: false
+    LogBot: true
+
+# Set the style of messages in the console log.
+# The <samp> tag has no hiliting.
+# The <code> tag has hilited background.
+# Default tag is <code>, add "samp" to use <samp> tag.
+# @type {Object}
+style:
+  lineWrap: false
+  default: "text-default"
+  stdout: "samp text-muted"
+  stderr: "samp text-muted"
+  Version: "text-muted"
+  Commands: "text-muted"
+  BufferAlgorithm: "text-muted"
+  BaudRate: "text-muted"
+  Hostname: "text-muted"
+  SerialPorts: "text-muted"
+  Open: "text-success"
+  OpenFail: "text-danger"
+  Close: "text-danger"
+  Broadcast: "text-info"
+  WipedQueue: "text-success"
+  Queued: "text-warning"
+  Write: "hilite-blue"
+  Complete: "text-success"
+  CompleteFake: "text-success"
+  Error: "text-danger"
+  FeedRateOverride: "text-info"
+  RawPortData: "text-info"
+  Cayenn: "text-muted"
+  GarbageCollection: "text-muted"
+  GarbageHeap: "text-muted"
+  ExecRuntimeStatus: "text-muted"
+  ExecStatus: "text-muted"
+  SpjsCommand: "text-default"
+  Command: "samp text-default"
+  MdiCommand: "samp hilite-blue"
+  CmdComment: "samp text-muted"
+  CommandEcho: "text-default"
+  LogBot: "samp text-muted"
+
+# Command Verification Steps:
+#  Sent - Your Gcode has been sent to the SPJS.
+#  Queued - Gcode is queued inside the SPJS and waiting to be sent to the CNC controller"s serial buffer.
+#  Written - Gcode has been written to the serial buffer of your CNC controller and removed from the SPJS"s buffer.
+#  Completed - Gcode is completed when the CNC controller tells us it read the Gcode from it"s serial buffer and placed the Gcode into it"s planner buffer (this means the Gcode may only get executed seconds into the future as the planner buffer works it"s way through lines).
+#    Executed (optional) - The CNC controller tells us that your Gcode was actually executed. This is the final step. On controllers like TinyG this data only comes back if line numbers are in your Gcode.
+#    Warning (optional)
+#    Error (optional) - The CNC controller failed to execute the line of Gcode. This could indicate a problem with your Gcode syntax, or that your CNC controller does not understand a particular Gcode command.
+verifyStyle:
+  New: "fa-check text-muted"
+  Sent: "fa-check text-default"
+  Queued: "fa-check text-warning"
+  Written: "fa-check hilite-blue"
+  Completed: "fa-check text-success"
+  Executed: "fa-check text-success"
+  Warning: "fa-exclamation-triangle text-warning"
+  Error: "fa-times text-danger"
+
+# Used to create the msgShow object in each port"s consoleLog object.
+msgShowDefault:
+  default: true
+  Open: true
+  OpenFail: true
+  Close: true
+  Broadcast: true
+  WipedQueue: true
+  Queued: true
+  Write: true
+  Complete: true
+  CompleteFake: true
+  Error: true
+  FeedRateOverride: true
+  RawPortData: true
+  SpjsCommand: true
+  Command: true
+  MdiCommand: true
+  LogBot: true

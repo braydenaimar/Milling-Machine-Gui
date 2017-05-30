@@ -1,0 +1,48 @@
+# Serial Port JSON Server Settings
+
+# Enable the gpio websocket tcp server when the host is a Raspberry Pi.
+# @type {Boolean}
+launchGpioServerOnLinux: false
+# Sets the time (msec) that the program will wait between attempting to connect to the WebSocket.
+# If wsReconnectDelay has a value of 0, no auto reconnection attempts will be made.
+# @type {number}
+wsReconnectDelay: 4000
+# Sets if a new spjs is launched after an exit command is issued to the current spjs.
+# If false, a new spjs may be launched based on the setting of wsReconnectDelay.
+# @type {Boolean}
+wsReconnectOnExitCmd: true
+# Sets the time (msec) that the program will wait between getting the port list when there are no available ports.
+# If requestListDelay has a value of 0, no automatic list requests will be sent.
+# Use a value greater than approx 500ms to ensure the stability of the program.
+# @type {number}
+requestListDelay: 4000
+# Enable automatic relaunching of the Serial Port JSON Server if this process did not launch it and no devices are connected.
+# @type {Boolean}
+exitUntrustedSpjs: true
+# Keep track of wether or not buffered sending is paused.
+# @type {Boolean}
+pauseBufferedSend: false
+# Set by user to pause and resume buffering of gcode to the the SPJS.
+# @type {Boolean}
+userPauseBufferedSend: false
+# The number of lines queued in the SPJS buffer above which sending of buffered instructions will be paused.
+# @type {number}
+pauseOnQueueCount: 40
+# The number of lines queued in the SPJS buffer below which sending of buffered instructions will be resumed.
+# @type {number}
+resumeOnQueueCount: 20
+# The maximum number of instructions that can be sent to the SPJS at a time.
+# @type {number}
+maxLinesAtATime: 8
+# The minimum time [ms] between data buffered to the SPJS.
+# @type {number}
+minWaitBetweenBufferSend: 100
+# Enable a feedhold command to be sent when user stops buffering gcode.
+# @type {Boolean}
+sendFeedholdOnBufferStop: true
+# The time [ms] that is waited before sending a queue flush command to a device after the feedstop command.
+# @type {number}
+waitQueueFlushOnFeedstop: 2000
+# The time [ms] that is waited before sending a cycle resume command to a device after the queue flush command.
+# @type {number}
+waitCycleResumeOnFeedstop: 500

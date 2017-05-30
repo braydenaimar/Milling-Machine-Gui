@@ -1,0 +1,161 @@
+# Init Scripts CSON File
+
+# InitScripts are sent to a device with matching information when a port is opened to the device.
+# Conditions: Friendly, Baud, Buffer, SerialNumber
+InitScripts: [
+  { # Arduino Uno (GRBL Board)
+    SerialNumber: "USB\\VID_2341&PID_0043\\5533031373535160F0B2"
+    script: [
+      "{sn:n}"
+      "{fb:n}"
+    ]
+    pause: 100
+  }
+  { # Punch Press TinyG (Windows Platform)
+    SerialNumber: "DN00Z9XL"
+    script: [
+      # { Msg: "{ec:0}", Pause: 50 }    # Expand LF to CRLF on TX [ 0 = off, 1 = on ]
+      # { Msg: "{ej:1}", Pause: 50 }    # Enable JSON Mode [ 0 = text, 1 = JSON ]
+      # { Msg: "{js:1}", Pause: 50 }    # JSON Serialize Style [ 0 = relaxed, 1 = strict ]
+      # { Msg: "{jv:4}", Pause: 200 }   # JSON Verbosity [ 0 = silent, 1 = footer, 2 = messages, 3 = configs, 4 = linenum, 5 = verbose ]
+      { Msg: "%", Pause: 100 }  # Queue Flush
+      { Msg: "%", Pause: 100 }  # Queue Flush
+      { Msg: "%", Pause: 100 }  # Queue Flush
+      { Msg: "%", Pause: 100 }  # Queue Flush
+      { Msg: "%", Pause: 200 }  # Queue Flush
+      # { Msg: "{si:250}", Pause: 50 }  # Status Interval [ms]
+      # { Msg: "{sv:1}", Pause: 50 }    # Status Report Verbosity [ 0 = off, 1 = filtered, 2 = verbose ]
+      # { Msg: "{sr:{line:t,posx:t,posy:t,posz:t,vel:t,unit:t,stat:t,feed:t,coor:t,momo:t,plan:t,path:t,dist:t}}", Pause: 200 }
+      # { Msg: "{qv:2}", Pause: 50 }    # Queue Report Verbosity [ 0 = off, 1 = single, 2 = tripple ]
+      { Msg: "{z:{am:1,vm:571,fr:571,tn:0,tm:96.063,jm:9.055,jh:31.5,jd:0.0020,sn:1,sx:0,sv:79,lv:8,lb:0.984,zb:0.010}}", Pause: 1000 }    # X-Axis Settings (mapped to z-axis due to x-axis on controller not functioning)
+      { Msg: "{y:{am:1,vm:150,fr:150,tn:0,tm:28.346,jm:0.5906,jh:3.937,jd:0.0020,sn:1,sx:0,sv:79,lv:8,lb:3.937,zb:0.188}}", Pause: 1000 }  # Y-Axis Settings
+      { Msg: "{2:{ma:2,sa:1.8,tr:0.5233,mi:8,po:1,pm:3}}", Pause: 500 }  # Motor 2 Settings [y-axis]
+      { Msg: "{3:{ma:1,sa:1.8,tr:1.1515,mi:8,po:1,pm:3}}", Pause: 500 }  # Motor 3 Settings [x-axis]
+      { Msg: "{g54z:0}", Pause: 300 }  # Zero the G54 X Work Offset
+      { Msg: "{g54y:0}", Pause: 300 }  # Zero the G54 Y Work Offset
+      { Msg: "G91", Pause: 500 }
+      { Msg: "G91 G0 Y1 Z1", Pause: 500 }
+      { Msg: "Y-1 Z-1", Pause: 500 }
+      { Msg: "G90", Pause: 500 }
+      { Msg: "G90", Pause: 500 }
+      { Msg: "M08", Pause: 300 } 					      # Lift the Finger Solenoid
+      { Msg: "G28.2 Y0 Z0", Pause: 2000 } 			  # Home Axes
+      { Msg: "M09", Pause: 300 }						  # Drop the Finger Solenoid
+      { Msg: "G10 L2 P1 Y-3.578 Z-6.526", Pause: 200 }  # Set the G54 Work Offsets
+      { Msg: "G90", Pause: 500 }
+      { Msg: "G90", Pause: 500 }
+      { Msg: "{sr:n}", Pause: 50 }  # Request Status Report
+      { Msg: "{qr:n}", Pause: 50 }  # Request Queue Report
+    ]
+    pause: 500
+  }
+  {   # Punch Press TinyG (Linux Platform)
+    SerialNumber: "FTDIBUS\\VID_0403+PID_6015+DN00Z9XLA\\0000"
+    script: [
+      # { Msg: "{ec:0}", Pause: 50 }    # Expand LF to CRLF on TX [ 0 = off, 1 = on ]
+      # { Msg: "{ej:1}", Pause: 50 }    # Enable JSON Mode [ 0 = text, 1 = JSON ]
+      # { Msg: "{js:1}", Pause: 50 }    # JSON Serialize Style [ 0 = relaxed, 1 = strict ]
+      # { Msg: "{jv:4}", Pause: 200 }   # JSON Verbosity [ 0 = silent, 1 = footer, 2 = messages, 3 = configs, 4 = linenum, 5 = verbose ]
+      { Msg: "%", Pause: 100 }  # Queue Flush
+      { Msg: "%", Pause: 100 }  # Queue Flush
+      { Msg: "%", Pause: 100 }  # Queue Flush
+      { Msg: "%", Pause: 100 }  # Queue Flush
+      { Msg: "%", Pause: 200 }  # Queue Flush
+      # { Msg: "{si:250}", Pause: 50 }  # Status Interval [ms]
+      # { Msg: "{sv:1}", Pause: 50 }    # Status Report Verbosity [ 0 = off, 1 = filtered, 2 = verbose ]
+      # { Msg: "{sr:{line:t,posx:t,posy:t,posz:t,vel:t,unit:t,stat:t,feed:t,coor:t,momo:t,plan:t,path:t,dist:t}}", Pause: 200 }
+      # { Msg: "{qv:2}", Pause: 50 }    # Queue Report Verbosity [ 0 = off, 1 = single, 2 = tripple ]
+      { Msg: "{z:{am:1,vm:571,fr:571,tn:0,tm:96.063,jm:9.055,jh:31.5,jd:0.0020,sn:1,sx:0,sv:79,lv:8,lb:0.984,zb:0.010}}", Pause: 1000 }    # X-Axis Settings (mapped to z-axis due to x-axis on controller not functioning)
+      { Msg: "{y:{am:1,vm:150,fr:150,tn:0,tm:28.346,jm:0.5906,jh:3.937,jd:0.0020,sn:1,sx:0,sv:79,lv:8,lb:3.937,zb:0.188}}", Pause: 1000 }  # Y-Axis Settings
+      { Msg: "{2:{ma:2,sa:1.8,tr:0.5233,mi:8,po:1,pm:3}}", Pause: 500 }  # Motor 2 Settings [y-axis]
+      { Msg: "{3:{ma:1,sa:1.8,tr:1.1515,mi:8,po:1,pm:3}}", Pause: 500 }  # Motor 3 Settings [x-axis]
+      { Msg: "{g54z:0}", Pause: 300 }  # Zero the G54 X Work Offset
+      { Msg: "{g54y:0}", Pause: 300 }  # Zero the G54 Y Work Offset
+      { Msg: "G91", Pause: 500 }
+      { Msg: "G91 G0 Y1 Z1", Pause: 500 }
+      { Msg: "Y-1 Z-1", Pause: 500 }
+      { Msg: "G90", Pause: 500 }
+      { Msg: "G90", Pause: 500 }
+      { Msg: "M08", Pause: 300 } 					      # Lift the Finger Solenoid
+      { Msg: "G28.2 Y0 Z0", Pause: 2000 } 			  # Home Axes
+      { Msg: "M09", Pause: 300 }						  # Drop the Finger Solenoid
+      { Msg: "G10 L2 P1 Y-3.578 Z-6.526", Pause: 200 }  # Set the G54 Work Offsets
+      { Msg: "G90", Pause: 500 }
+      { Msg: "G90", Pause: 500 }
+      { Msg: "{sr:n}", Pause: 50 }  # Request Status Report
+      { Msg: "{qr:n}", Pause: 50 }  # Request Queue Report
+    ]
+    pause: 500
+  }
+  { # Arduino Due
+    Buffer: "tinygg2"
+    script: [
+      { Msg: "{sr:{line:t,posx:t,posy:t,posz:t,vel:t,unit:t,stat:t,feed:t,coor:t,momo:t,plan:t,path:t,dist:t,mpox:t,mpoy:t,mpoz:t}}", Pause: 200 }
+      "{sv:1}"  # Status Report Verbosity [ 0 = off, 1 = filtered, 2 = verbose ]
+      # "{qv:2}",
+      # "{jv:4}",
+      # { Msg: "{sr:{line:f,posx:f,posy:f,posz:t,vel:t,unit:f,stat:f,feed:f,coor:f,momo:f,plan:f,path:f,dist:f,mpox:t,mpoy:t,mpoz:t}}", Pause: 200 },
+      "{si:250}"
+      "{qv:1}"
+      "{jv:4}"
+      "{x:{vm:40000,fr:40000,jm:200}}"
+      "{y:{vm:40000,fr:40000,jm:200}}"
+      "{z:{vm:20000,fr:20000,jm:100}}"
+      "{hp:n}"
+      "{fb:n}"
+      "{sr:n}"
+      "{qr:n}"
+    ]
+    pause: 1000
+  }
+  { # TinyG
+    Buffer: "tinyg"
+    script: [
+      { Msg: "{ec:0}", Pause: 50 }    # Expand LF to CRLF on TX [ 0 = off, 1 = on ]
+      { Msg: "{ej:1}", Pause: 50 }    # Enable JSON Mode [ 0 = text, 1 = JSON ]
+      { Msg: "{js:1}", Pause: 50 }    # JSON Serialize Style [ 0 = relaxed, 1 = strict ]
+      { Msg: "{jv:5}", Pause: 200 }   # JSON Verbosity [ 0 = silent, 1 = footer, 2 = messages, 3 = configs, 4 = linenum, 5 = verbose ]
+      { Msg: "{si:250}", Pause: 50 }  # Status Interval [ms]
+      { Msg: "{sv:1}", Pause: 50 }    # Status Report Verbosity [ 0 = off, 1 = filtered, 2 = verbose ]
+      "{sr:n}"
+    ]
+    "pause": 100
+  }
+  { # Brayden"s MSP430F5529
+    SerialNumber: "111D871D"
+    script: [
+      "$G 0 0"
+      "$G 1 1"
+    ]
+    pause: 1000
+  }
+  {
+    Buffer: "default"
+    script: [
+      "{sr:n}"
+      "{fb:n}"
+    ]
+    pause: 100
+  }
+]
+
+# connectScripts are sent to a device with matching info if a port is already opened to the device on the SPJS but the UI just connected to the SPJS.
+ConnectScripts: [
+  { # Arduino Due
+    Buffer: "tinygg2"
+    script: [
+      "{hp:n}"
+      "{fb:n}"
+      "{sr:n}"
+      "{qr:n}"
+    ]
+    pause: 100
+  }
+  { # TinyG
+    Buffer: "tinyg"
+    script: [
+      "{sr:n}"
+    ]
+    pause: 100
+  }
+]
