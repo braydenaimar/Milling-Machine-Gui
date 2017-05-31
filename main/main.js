@@ -50,8 +50,7 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 				debug[key] = console[key];
 
-			}
-			else if (key === 'error') {
+			} else if (key === 'error') {
 
 				debug[key] = ((...args) => {
 
@@ -59,8 +58,7 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 				});
 
-			}
-			else {
+			} else {
 
 				debug[key] = console[key].bind(console);
 
@@ -68,8 +66,7 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 		}
 
-	}
-	else {
+	} else {  // If debug mode is not enabled
 
 		const keys = Object.keys(console);
 		const banned = [ 'log', 'info', 'table' ];  // Console log methods that will be ignored
@@ -93,17 +90,8 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 	/* eslint-enable no-console*/
 
-	// Press Ctrl-Shift-I to launch development tools.
-	Mousetrap.bind('ctrl+shift+i', () => ipc.send('open-dev-tools'));
-
-	// Press Ctrl-Shift-R to reload the program.
-	Mousetrap.bind('ctrl+shift+r', () => location.reload(true));
-
-	// Keyboard shortcuts for use throughout the program.
-	Mousetrap.bind('ctrl+pageup', () => publish('keyboard-shortcut', 'ctrl+pageup'));      // Connection Widget: Show device log to the left
-	Mousetrap.bind('ctrl+pagedown', () => publish('keyboard-shortcut', 'ctrl+pagedown'));  // Connection Widget: Show device log to the right
-	Mousetrap.bind('ctrl+o', () => publish('keyboard-shortcut', 'ctrl+o'));  // Load Widget: Open a file
-	Mousetrap.bind('ctrl+s', () => publish('keyboard-shortcut', 'ctrl+s'));  // Load Widget: Save a file
+	Mousetrap.bind('ctrl+shift+i', () => ipc.send('open-dev-tools'));  // Press Ctrl-Shift-I to launch development tools.
+	Mousetrap.bind('ctrl+shift+r', () => location.reload(true));       // Press Ctrl-Shift-R to reload the program.
 
 	// Store information about the system.
 	hostMeta = {
@@ -324,25 +312,21 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 	/**
 	 *  Same as respective widget's id, filename, reference object, and DOM container.
-	 *
+	 *  Ex. [ 'statusbar-widget', 'run-widget', 'connection-widget', 'settings-widget' ]
 	 *  @type {Array}
 	 */
 	wgtMap = [];
-	// wgtMap = [ 'statusbar-widget', 'load-widget', 'run-widget', 'mdi-widget', 'connection-widget', 'settings-widget', 'about-widget' ];
 	/**
 	 *  Stores the loaded/not-loaded state of each widget.
 	 *  This is initialized at runtime and each element gets set to true as the respective widget publishes '/widget-loaded'.
 	 *  Eg. [ false, false, ..., false ]
-	 *
 	 *  @type {Array}
 	 */
 	wgtLoaded = [];
 	/**
 	 *  Set which widget is visible at program load.
-	 *
 	 *  @type {string}
 	 */
-	// wgtVisible = 'connection-widget';
 	wgtVisible = '';
 	/**
 	 *  Set which widgets require html files to be loaded and sidebar buttons to be created.
@@ -350,7 +334,6 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 	 *  @param {Boolean} loadHtml	Specifies if the respective widget has DOM elements that need to be loaded.
 	 *  @param {Boolean} sidebarBtn	Specifies how the button should be created.
 	 *                              (true: Make and show button; false: Do not create a button)
-	 *
 	 *  @type {Object}
 	 */
 	widget = {};
@@ -416,8 +399,7 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 				ipc.send('open-dev-tools');
 
-			}
-			else {
+			} else {
 
 				debug.log('  check non-resultant');
 
@@ -464,8 +446,7 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 				createWidgetContainer(wgt);
 				loadHtmlWidget(wgt);
 
-			}
-			else {
+			} else {
 
 				loadJsWidget(wgt);
 
@@ -546,8 +527,7 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 				debug.log('    ...jk, not creating sidebar button.');
 
-			}
-			else if (widgetItem.icon.includes('material-icons')) {
+			} else if (widgetItem.icon.includes('material-icons')) {
 
 				let btnHtml = `<span id="btn-${widgetIndex}" evt-data="${widgetIndex}" class="btn btn-${widgetItem.btnTheme}`;
 				btnHtml += (widgetItem.sidebarBtn) ? '' : ' hidden';
@@ -557,8 +537,7 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 				$('#sidebar').append(btnHtml);
 
-			}
-			else {
+			} else {
 
 				let btnHtml = `<span id="btn-${widgetIndex}" evt-data="${widgetIndex}" class="btn btn-${widgetItem.btnTheme}`;
 				btnHtml += (widgetItem.sidebarBtn) ? '' : ' hidden';
@@ -628,12 +607,14 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 		let terminal = null;
 
-		// Skip the update if host is my laptop or if there is no internet connection.
-		if (hostMeta.hostName === 'BRAYDENS-LENOVO' || !navigator.onLine) return false;
+		const { hostName } = hostMeta;
+
+		if (developerHosts.includes(hostName) || !navigator.onLine) // If on a developer host or no internet connection
+			return false;
 
 		debug.log('Pulling latest repo from GitHub.');
 
-		terminal = spawn('git pull', [], { shell: true });
+		terminal = spawn('git pull', [], { shell: false });
 
 		terminal.stdout.on('data', (data) => {
 
@@ -642,15 +623,13 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 			for (let i = 0; i < msgBuffer.length; i++) {
 
-				if (msgBuffer[i]) debug.log(`Git pull stdout: ${msgBuffer[i]}`);
+				if (msgBuffer[i])
+					debug.log(`Git pull stdout: ${msgBuffer[i]}`);
 
-				// If a newer repository was found, reload the GUI so the new scripts are used.
-				if (msgBuffer[i].includes('Updating')) {
+				if (msgBuffer[i].includes('Updating')) {  // If a newer repository was found
 
 					debug.log('Repository was updated.');
-
-					// Reload the program to make use of any new updates.
-					location.reload(true);
+					location.reload(true);  // Reload the program to make use of any new updates.
 
 				}
 

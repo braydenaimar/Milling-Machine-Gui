@@ -20,12 +20,13 @@ define([ 'jquery' ], $ => ({
 	icon: 'fa fa-envelope-open-o',
 	// icon: 'material-icons open_in_browser',
 	desc: 'User interface for loading Gcode files to be run by the machine.',
-	publish: {},
-	subscribe: {},
-	foreignPublish: {
-		'/main/widget-loaded': ''
+	publish: {
+		'/main/widget-loaded': '',
+		'gcode-data/file-loaded': ''
 	},
-	foreignSubscribe: {
+	subscribe: {
+		'/main/widget-resize': '',
+		'/main/widget-visible': '',
 		'/main/all-widgets-loaded': ''
 	},
 
@@ -45,16 +46,16 @@ define([ 'jquery' ], $ => ({
 
 		publish('/main/widget-loaded', this.id);
 
-		// Open File Button.
-		$(`#${this.id} .load-panel .panel-body`).on('click', 'span.btn', (evt) => {
+		$(`#${this.id} .load-panel .panel-body`).on('click', 'span.btn', (evt) => {  // Open File Button.
 
 			const evtData = $(evt.currentTarget).attr('evt-data');
 
-			if (evtData === 'open-file') this.fileOpenDialog();       // Launch the file open dialog
+			if (evtData === 'open-file')  // Launch the file open dialog
+				this.fileOpenDialog();
 
 		});
 
-		subscribe('keyboard-shortcut', this, this.keyboardShortcuts);
+		Mousetrap.bind('ctrl+o', this.keyboardShortcuts.bind(this, 'ctrl+o'));  // Launch file open dialog
 
 		return true;
 
@@ -62,8 +63,8 @@ define([ 'jquery' ], $ => ({
 	resizeWidgetDom() {
 
 		/* eslint-disable prefer-const*/
-		// If this widget is not visible, do not bother updating the DOM elements.
-		if (!this.widgetVisible) return false;
+		if (!this.widgetVisible)  // If this widget is not visible
+			return false;
 
 		const that = this;
 
@@ -73,8 +74,8 @@ define([ 'jquery' ], $ => ({
 
 		for (let i = 0; i < this.widgetDom.length; i++) {
 
-			let panel = that.widgetDom[i];
-			let panelDom = $(`#${that.id} .${panel}`);
+			const panel = that.widgetDom[i];
+			const panelDom = $(`#${that.id} .${panel}`);
 
 			marginSpacing += Number(panelDom.css('margin-top').replace(/px/g, ''));
 
@@ -82,7 +83,7 @@ define([ 'jquery' ], $ => ({
 
 				marginSpacing += Number(panelDom.css('margin-bottom').replace(/px/g, ''));
 
-				let panelHeight = containerHeight - (marginSpacing + panelSpacing);
+				const panelHeight = containerHeight - (marginSpacing + panelSpacing);
 
 				panelDom.css({ height: `${panelHeight}px` });
 
@@ -112,27 +113,33 @@ define([ 'jquery' ], $ => ({
 		}
 
 	},
-	keyboardShortcuts(data) {
+	keyboardShortcuts(keys) {
 
-		// If this widget is not visible, do not apply any keyboard shortcuts and abort this method.
-		if (!this.widgetVisible) return false;
+		if (!this.widgetVisible)  // If this widget is not visible
+			return false;
 
-		if (data === 'ctrl+o') this.fileOpenDialog();  // Press Ctrl-o to open a file
+		if (typeof keys == 'undefined') {  // If the keys argument is invalid
 
-		return true;
+			debug.error('The keys argument is invalid.');
+			return false;
+
+		}
+
+		if (keys === 'ctrl+o')  // ctrl-o
+			this.fileOpenDialog();  // Launch file open dialog
 
 	},
 
 	/**
 	 *  Launches the system's file explorer for the user to select a file to open.
-	 *
 	 *  @method openFileDialog
-	 *
 	 *  @return {string}       the global file path selected by user
 	 */
 	fileOpenDialog() {
 
-		if (this.lastOpenFileDialogTime && Date.now() - this.lastOpenFileDialogTime < 1000) return;
+		if (this.lastOpenFileDialogTime && Date.now() - this.lastOpenFileDialogTime < 1000)
+			return;
+
 		this.lastOpenFileDialogTime = Date.now();
 
 		const openOptions = {
@@ -225,11 +232,8 @@ define([ 'jquery' ], $ => ({
 
 		lineData = lineData.filter((value) => {
 
-			if (/^%|^\n/i.test(value) || value === '' || value === '\n') {
-
+			if (/^%|^\n/i.test(value) || value === '' || value === '\n')
 				return false;
-
-			}
 
 			return true;
 
@@ -310,23 +314,14 @@ define([ 'jquery' ], $ => ({
 			const lineIndex = gcodeData.lineIndex[i];
 			const line = lineData[lineIndex];
 
-			if (/x[-0-9.]+/i.test(line)) {
-
+			if (/x[-0-9.]+/i.test(line))  // If an x position is in the line
 				lineData[lineIndex] = line.replace(/x[-0-9.]+/i, `X${xVal}`);
 
-			}
-
-			if (/y[-0-9.]+/i.test(line)) {
-
+			if (/y[-0-9.]+/i.test(line))  // If a y position is in the line
 				lineData[lineIndex] = line.replace(/y[-0-9.]+/i, `Y${yVal}`);
 
-			}
-
-			if (/z[-0-9.]+/i.test(line)) {
-
+			if (/z[-0-9.]+/i.test(line))  // If a z position is in the line
 				lineData[lineIndex] = line.replace(/z[-0-9.]+/i, `Z${zVal}`);
-
-			}
 
 		}
 
@@ -337,6 +332,11 @@ define([ 'jquery' ], $ => ({
 
 	},
 
+	/**
+	 *  [plotData description]
+	 *  @param  {[type]} data [description]
+	 *  @return {[type]}      [description]
+	 */
 	plotData(data) {
 
 		const trace1 = {

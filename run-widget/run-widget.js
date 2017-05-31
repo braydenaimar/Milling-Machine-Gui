@@ -148,15 +148,11 @@ define([ 'jquery' ], $ => ({
 
 		console.log(`got port list data:\n${JSON.stringify(data)}`);
 
-		if (OpenPorts && OpenPorts.length) {  // If there are any open ports
-
+		if (OpenPorts && OpenPorts.length)  // If there are any open ports
 			[ this.mainDevicePort ] = OpenPorts;  // Use the alphanumerically first port that is open as the main port
 
-		} else {  // If there are no open ports
-
+		else  // If there are no open ports
 			this.mainDevicePort = '';
-
-		}
 
 	},
 
