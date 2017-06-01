@@ -1,0 +1,4 @@
+[submodule "connection-widget"]
+	path = connection-widget
+	url = https://github.com/braydenaimar/connection-widget.git
+	ignore = dirty

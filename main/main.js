@@ -26,7 +26,6 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 	os = require('os');
 	({ spawn } = require('child_process'));
 
-	// The ipc module aLlows for communication between the main and render processes.
 	electron = require('electron');
 	({ ipcRenderer: ipc } = electron);
 
@@ -46,23 +45,14 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 			const key = keys[i];
 
-			if (key === 'memory') {
-
+			if (key === 'memory')
 				debug[key] = console[key];
 
-			} else if (key === 'error') {
+			else if (key === 'error')
+				debug[key] = ((...args) => { throw new Error(...args); });  // eslint-disable-line padded-blocks
 
-				debug[key] = ((...args) => {
-
-					throw new Error(...args);
-
-				});
-
-			} else {
-
+			else
 				debug[key] = console[key].bind(console);
-
-			}
 
 		}
 
@@ -76,7 +66,7 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 			const key = keys[i];
 
 			if (banned.includes(key))  // If not allowed
-				debug[key] = () => false;
+				debug[key] = () => undefined;
 
 			else if (key === 'memory')
 				debug[key] = console[key];
@@ -147,150 +137,6 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 		debug.log('User info:', os.userInfo());
 		debug.groupEnd();
 
-		// var sg = require('sendgrid')(process.env.SENDGRID_API_KEY);
-		// var request = sg.emptyRequest({
-		//   method: 'POST',
-		//   path: '/v3/mail/send',
-		//   body: {
-		//     personalizations: [
-		//       {
-		//         to: [
-		//           {
-		//             email: 'baimar97@hotmail.com',
-		//           },
-		//         ],
-		//         subject: 'Hello World from the SendGrid Node.js Library!',
-		//       },
-		//     ],
-		//     from: {
-		//       email: 'brayden.aimar@gmail.com',
-		//     },
-		//     content: [
-		//       {
-		//         type: 'text/plain',
-		//         value: 'Hello, Email!',
-		//       },
-		//     ],
-		//   },
-		// });
-		//
-		// //With promise
-		// sg.API(request)
-		//   .then(response => {
-		//     debug.log(response.statusCode);
-		//     debug.log(response.body);
-		//     debug.log(response.headers);
-		//   })
-		//   .catch(error => {
-		//     //error is an instance of SendGridError
-		//     //The full response is attached to error.response
-		//     debug.log(error.response.statusCode);
-		//   });
-		//
-		// //With callback
-		// sg.API(request, function(error, response) {
-		//   if (error) {
-		//     debug.log('Error response received');
-		//   }
-		//   debug.log(response.statusCode);
-		//   debug.log(response.body);
-		//   debug.log(response.headers);
-		// });
-
-		// // using SendGrid's v3 Node.js Library
-		// // https://github.com/sendgrid/sendgrid-nodejs
-		// var helper = require('sendgrid').mail;
-		//
-		// from_email = new helper.Email("baimar97@hotmail.com");
-		// to_email = new helper.Email("brayden.aimar@gmail.com");
-		// subject = "Sending with SendGrid is Fun";
-		// content = new helper.Content("text/plain", "and easy to do anywhere, even with Node.js");
-		// mail = new helper.Mail(from_email, subject, to_email, content);
-		//
-		// var sg = require('sendgrid')(process.env.SENDGRID_API_KEY);
-		// var request = sg.emptyRequest({
-		//   method: 'POST',
-		//   path: '/v3/mail/send',
-		//   body: mail.toJSON()
-		// });
-		//
-		// sg.API(request, function(error, response) {
-		//   debug.log(response.statusCode);
-		//   debug.log(response.body);
-		//   debug.log(response.headers);
-		// })
-
-		// // single keys
-		// Mousetrap.bind('4', function() { debug.log('4'); });
-		// Mousetrap.bind("?", function() { debug.log('show shortcuts!'); });
-		// Mousetrap.bind('esc', function() { debug.log('escape'); }, 'keyup');
-		//
-		// // combinations
-
-		// Open the debug.log.
-		// Mousetrap.bind('ctrl+shift+i', () => ipc.send('open-dev-tools'));
-
-		// // map multiple combinations to the same callback
-		// Mousetrap.bind(['command+k', 'ctrl+k'], function() {
-		//
-		//     debug.log('command k or control k');
-		//
-		//     // return false to prevent default browser behavior
-		//     // and stop event from bubbling
-		//     return false;
-		//
-		// });
-		//
-		// // gmail style sequences
-		// Mousetrap.bind('g i', function() { debug.log('go to inbox'); });
-		// Mousetrap.bind('* a', function() { debug.log('select all'); });
-		//
-		// // konami code!
-		// Mousetrap.bind('up up down down left right left right b a enter', function() {
-		//     debug.log('konami code');
-		//
-		// });
-
-		// debug.log(`returned value: ${ 0 || '' || 'helloworld' || 'stuff' }`);
-
-		// const saveBtn = document.getElementById('save-dialog')
-		//
-		// saveBtn.addEventListener('click', function (event) {
-		// 	ipc.send('save-dialog');
-		// })
-		//
-		// ipc.on('saved-file', function (event, path) {
-		// 	if (!path) path = 'No path';
-		// 	document.getElementById('file-saved').innerHTML = `Path selected: ${path}`;
-		// })
-
-		// // Asynchronous file read
-		// fs.readFile('input.txt', function (err, data) {
-		// 	if (err) {
-		//     	return debug.error(err);
-		// 	}
-		// 	debug.log(`Asynchronous read: ${data.toString()}`);
-		// 	debug.log("Going to write into existing file");
-		// 	fs.writeFile('input.txt', data.toString() + 'Simply Easy Learning!',  function(err) {
-		// 	   if (err) {
-		// 	      return debug.error(err);
-		// 	   }
-		//
-		// 	   debug.log("Data written successfully!");
-		// 	   debug.log("Let's read newly written data");
-		// 	   fs.readFile('input.txt', function (err, data) {
-		// 	      if (err) {
-		// 	         return debug.error(err);
-		// 		 }
-		// 	      debug.log(`Asynchronous read: ${data.toString()}`);
-		// 	   });
-		// 	});
-		// });
-		//
-		// // Synchronous file read
-		// var data = fs.readFileSync('input.txt');
-		// debug.log("Synchronous read: " + data.toString());
-
 	}()); /* eslint-enable */
 
 	// WorkSpace.
@@ -325,7 +171,7 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 	wgtLoaded = [];
 	/**
 	 *  Set which widget is visible at program load.
-	 *  @type {string}
+	 *  @type {String}
 	 */
 	wgtVisible = '';
 	/**
@@ -378,7 +224,7 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 		});
 
-		widgetLoadCheck = setTimeout(function () {
+		widgetLoadCheck = setTimeout(() => {
 
 			debug.log('widgetLoadCheck timeout function running');
 
@@ -395,7 +241,7 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 				debug.error(errorLog);
 
-				alert(errorLog);
+				alert(errorLog);  // eslint-disable-line no-alert
 
 				ipc.send('open-dev-tools');
 
@@ -456,9 +302,10 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 		debug.log('Initializing sidebar button click events.');
 
-		$('#sidebar').on('click', 'span.btn', function (evt) {
+		$('#sidebar').on('click', 'span.btn', (evt) => {
 
-			makeWidgetVisible($(this).attr('evt-data'));
+			const evtData = $(evt.currentTarget).attr('evt-data');
+			makeWidgetVisible(evtData);
 
 		});
 
@@ -515,7 +362,7 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 	};
 
-	createSidebarBtns = function createSidebarBtns(wgt) {
+	createSidebarBtns = function createSidebarBtns() {
 
 		debug.log('Creating Sidebar Buttons');
 

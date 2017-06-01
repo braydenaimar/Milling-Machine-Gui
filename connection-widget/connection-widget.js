@@ -20,7 +20,11 @@
 
 define([ 'jquery' ], $ => ({
 
-	// id - must match the widget name (the name given to this file).
+	/**
+	 *  Id of this widget.
+	 *  This must match the name given to this file and directory.
+	 *  @type {String}
+	 */
 	id: 'connection-widget',
 	// name - The moniker that appears in the top left-hand corner ow the app.
 	name: 'Terminal',

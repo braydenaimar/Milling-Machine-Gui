@@ -9,7 +9,6 @@
  *  @author Brayden Aimar
  */
 
- /* eslint-disable no-console */
 
 define([ 'jquery' ], $ => ({
 
@@ -37,7 +36,7 @@ define([ 'jquery' ], $ => ({
 
 	initBody() {
 
-		console.group(`${this.name}.initBody()`);
+		debug.group(`${this.name}.initBody()`);
 
 		subscribe('/main/window-resize', this, this.resizeWidgetDom.bind(this));
 		subscribe('/main/widget-visible', this, this.visibleWidget.bind(this));
@@ -62,30 +61,26 @@ define([ 'jquery' ], $ => ({
 	},
 	resizeWidgetDom() {
 
-		/* eslint-disable prefer-const*/
 		if (!this.widgetVisible)  // If this widget is not visible
 			return false;
 
-		const that = this;
+		const { widgetDom, id } = this;
 
-		let containerHeight = $(`#${this.id}`).height();
+		const containerHeight = $(`#${id}`).height();
 		let marginSpacing = 0;
 		let panelSpacing = 0;
 
-		for (let i = 0; i < this.widgetDom.length; i++) {
+		for (let i = 0; i < widgetDom.length; i++) {
 
-			const panel = that.widgetDom[i];
-			const panelDom = $(`#${that.id} .${panel}`);
+			const panel = widgetDom[i];
+			const panelDom = $(`#${id} .${panel}`);
 
 			marginSpacing += Number(panelDom.css('margin-top').replace(/px/g, ''));
 
-			if (i === that.widgetDom.length - 1) {
+			if (i === widgetDom.length - 1) {
 
 				marginSpacing += Number(panelDom.css('margin-bottom').replace(/px/g, ''));
-
-				const panelHeight = containerHeight - (marginSpacing + panelSpacing);
-
-				panelDom.css({ height: `${panelHeight}px` });
+				panelDom.css({ height: `${containerHeight - (marginSpacing + panelSpacing)}px` });
 
 			} else {
 
@@ -95,18 +90,19 @@ define([ 'jquery' ], $ => ({
 
 		}
 
-		/* eslint-enable prefer-const */
 		return true;
 
 	},
 	visibleWidget(wgtVisible, wgtHidden) {
 
-		if (wgtVisible === this.id) {
+		const { id } = this;
+
+		if (wgtVisible === id) {
 
 			this.widgetVisible = true;
 			this.resizeWidgetDom();
 
-		} else if (wgtHidden === this.id) {
+		} else if (wgtHidden === id) {
 
 			this.widgetVisible = false;
 
@@ -133,7 +129,7 @@ define([ 'jquery' ], $ => ({
 	/**
 	 *  Launches the system's file explorer for the user to select a file to open.
 	 *  @method openFileDialog
-	 *  @return {string}       the global file path selected by user
+	 *  @return {String}       the global file path selected by user
 	 */
 	fileOpenDialog() {
 
@@ -150,18 +146,14 @@ define([ 'jquery' ], $ => ({
 			properties: [ 'openFile' ]
 		};
 
-		console.log('open dialog');
+		debug.log('open dialog');
 
-		// Launch the file explorer dialog.
-		ipc.send('open-dialog', openOptions);
+		ipc.send('open-dialog', openOptions);  // Launch the file explorer dialog
 
-		// Callback for file explorer dialog.
-		ipc.on('opened-file', (event, path) => {
+		ipc.on('opened-file', (event, path) => {  // Callback for file explorer dialog
 
-			console.log(`Open path selected: ${path}`);
-
-			// If a file was selected, parse the selected file.
-			path && this.openFile(path);
+			debug.log(`Open path selected: ${path}`);
+			path && this.openFile(path);  // If a file was selected, parse the selected file
 
 		});
 
@@ -169,14 +161,13 @@ define([ 'jquery' ], $ => ({
 
 	openFile(filePath) {
 
-		if (this.lastParseFileTime && Date.now() - this.lastParseFileTime < 1000) return;
+		if (this.lastParseFileTime && Date.now() - this.lastParseFileTime < 1000)
+			return;
+
 		this.lastParseFileTime = Date.now();
 
-		console.log(typeof filePath);
-		console.log(filePath);
-
-		// Check that a valid file path was passed.
-		if (!filePath) throw new Error('Invalid file path.');
+		if (!filePath)  // Check that a valid file path was passed
+			return debug.error('Invalid file path.');
 
 		const [ fileName ] = filePath;
 
@@ -184,18 +175,18 @@ define([ 'jquery' ], $ => ({
 
 		// const data = fs.readFileSync(filePath[0]).toString().split('\n');  // Read the gcode file
 
-		// Asynchronous file read
-		fs.readFile(fileName, (err, data) => {
+		fs.readFile(fileName, (err, data) => {  // Asynchronous file read
 
-			if (err) return console.error(err);  // If there was an error openning the file, abort the file read
+			if (err)  // If there was an error openning the file
+				return debug.error(err);
 
 			const lineData = data.toString().split('\n');
 
 			$(`#${this.id} .file-data.file-lines`).text(`${lineData.length} lines`);
 
-			console.groupCollapsed('File Data');
-			console.log(lineData);
-			console.groupEnd();
+			debug.groupCollapsed('File Data');
+			debug.log(lineData);
+			debug.groupEnd();
 
 			return this.parseFile(fileName, lineData);
 
@@ -216,13 +207,14 @@ define([ 'jquery' ], $ => ({
 
 		for (let i = 0; i < lineData.length; i++) {  // Remove all carriage-return characters
 
-			if (lineData[i].includes('\r')) lineData[i] = lineData[i].replace('\r', '');
+			if (lineData[i].includes('\r'))
+				lineData[i] = lineData[i].replace('\r', '');
 
 			if (/F[0-9]+/i.test(lineData[i]) && inDebugMode) {
 
-				const [ matchStr, matchNum ] = lineData[i].match(/F([0-9]+)/i);
+				const [ , matchNum ] = lineData[i].match(/F([0-9]+)/i);
 
-				alert(`Crazy multiplier on feedrate: ${80}`);
+				alert(`Crazy multiplier on feedrate: ${80}`);  // eslint-disable-line no-alert
 
 				lineData[i] = lineData[i].replace(/F[0-9]+/i, `F${Number(matchNum) * 80}`);
 
@@ -276,22 +268,16 @@ define([ 'jquery' ], $ => ({
 				}
 
 				const matchData = line.match(/[xyz][-0-9.]+/gi);
-				// console.log(matchData);
 
 				for (let j = 0; j < matchData.length; j++) {  // For each match found
 
 					const axis = matchData[j].substr(0, 1).toLowerCase();
 					const value = Number(matchData[j].substr(1));
 
-					// console.log(`  ${axis.toUpperCase()} ${value}`);
-
 					if (axis === 'z' && value > 0 && !gcodeData.z[0]) {
 
-						for (let a = 0; a < gcodeData.z.length && !gcodeData.z[a]; a++) {
-
+						for (let a = 0; a < gcodeData.z.length && !gcodeData.z[a]; a++)
 							gcodeData.z[a] = value;
-
-						}
 
 					}
 
@@ -303,9 +289,10 @@ define([ 'jquery' ], $ => ({
 
 		}
 
-		console.log(gcodeData);
+		debug.log(gcodeData);
 		this.plotData(gcodeData);
 
+		// for (const [ i, value ] of gcodeData.entries()) {
 		for (let i = 0; i < gcodeData.z.length; i++) {
 
 			const xVal = gcodeData.x[i];
@@ -325,8 +312,8 @@ define([ 'jquery' ], $ => ({
 
 		}
 
-		console.log('gcode lines');
-		console.log(lineData);
+		debug.log('gcode lines');
+		debug.log(lineData);
 
 		publish('gcode-data/file-loaded', { FileName: fileName, Data: lineData });  // Publish the parsed gcode lines so that other widgets can use it
 
