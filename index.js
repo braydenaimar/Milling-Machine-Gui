@@ -1,6 +1,6 @@
 /* Main Process JavaScript */
 
-// This script is the first to be ran and loads the HTML file that then loads the appropriate JS and CSS files.
+/* eslint-disable no-console */
 
 const electron = require('electron');
 const os = require('os');
@@ -18,9 +18,10 @@ let indexSaveDialogTime = 0;
 
 ipcMain.on('open-dialog', (event, options) => {
 
-	if (indexOpenDialogTime && Date.now() - indexOpenDialogTime < 1000) return;
-	indexOpenDialogTime = Date.now();
+	if (indexOpenDialogTime && Date.now() - indexOpenDialogTime < 1000)
+		return;
 
+	indexOpenDialogTime = Date.now();
 	console.log('Showing File Open Dialog.');
 
 	dialog.showOpenDialog(options, (filename) => {
@@ -33,9 +34,10 @@ ipcMain.on('open-dialog', (event, options) => {
 
 ipcMain.on('save-dialog', (event, options) => {
 
-	if (indexSaveDialogTime && Date.now() - indexSaveDialogTime < 1000) return;
-	indexSaveDialogTime = Date.now();
+	if (indexSaveDialogTime && Date.now() - indexSaveDialogTime < 1000)
+		return;
 
+	indexSaveDialogTime = Date.now();
 	console.log('Showing File Save Dialog.');
 
 	dialog.showSaveDialog(options, (filename) => {
@@ -56,9 +58,7 @@ app.on('ready', () => {
 
 	let win = null;
 
-	// If running this on braydens laptop, open it in development mode.
-	// if (os.hostname() === 'BRAYDENS-LENOVO') {
-	if (inDebugMode) {
+	if (inDebugMode) {  // If running this on braydens laptop, open it in development mode
 
 		console.log('Opening in development mode.');
 		console.log('electron', electron);
@@ -80,7 +80,7 @@ app.on('ready', () => {
 			icon: `${__dirname}/icons/icon.ico`
 		});
 
-	} else {  // If not running on braydens laptop, open the program in deployment mode.
+	} else {  // If not running on braydens laptop, open the program in deployment mode
 
 		console.log('Opening in deployment mode.');
 
@@ -105,7 +105,8 @@ app.on('ready', () => {
 
 	win.loadURL(`file://${__dirname}/main.html`);
 
-	if (os.hostname() === 'BRAYDENS-LENOVO') win.webContents.openDevTools();
+	if (os.hostname() === 'BRAYDENS-LENOVO')
+		win.webContents.openDevTools();
 
 	win.webContents.on('did-finish-load', () => {
 
@@ -113,11 +114,10 @@ app.on('ready', () => {
 
 	});
 
-	// Called after all widgets initBody() functions and after initial visibility has been set and sidebar buttons have been created.
-	ipcMain.on('all-widgets-loaded', () => {
+	ipcMain.on('all-widgets-loaded', () => {  // Called after all widgets initBody() functions and after initial visibility has been set and sidebar buttons have been created
 
 		win.show();
-
+		win.focus();
 		console.log('Got ipcMain event: \'all-widgets-loaded\'.\n  ...showing window.');
 
 	});
@@ -125,8 +125,15 @@ app.on('ready', () => {
 	ipcMain.on('open-dev-tools', () => {
 
 		win.webContents.openDevTools();
+		win.focus();
 
 		console.log('Got ipcMain event: \'open-dev-tools\'.');
+
+	});
+
+	ipcMain.on('focus-window', () => {
+
+		win.focus();
 
 	});
 

@@ -34,6 +34,8 @@ define([ 'jquery' ], $ => ({
 
 	addLineNumbers: true,
 
+	fro: 1,
+
 	initBody() {
 
 		debug.group(`${this.name}.initBody()`);
@@ -129,7 +131,6 @@ define([ 'jquery' ], $ => ({
 	/**
 	 *  Launches the system's file explorer for the user to select a file to open.
 	 *  @method openFileDialog
-	 *  @return {String}       the global file path selected by user
 	 */
 	fileOpenDialog() {
 
@@ -141,7 +142,8 @@ define([ 'jquery' ], $ => ({
 		const openOptions = {
 			title: 'Open a File',
 			filters: [
-				{ name: 'GCode', extensions: [ 'nc' ] }
+				{ name: 'GCode', extensions: [ 'nc' ] },
+				{ name: 'All', extensions: [ '' ] }
 			],
 			properties: [ 'openFile' ]
 		};
@@ -198,52 +200,51 @@ define([ 'jquery' ], $ => ({
 
 		let gcodeLineNum = 0;
 		let lineData = gcodeLines;
+		let momo = '';  // Motion mode
+		let momoNonModal = '';
+		const { fro } = this;
 		const gcodeData = {
 			x: [],
 			y: [],
 			z: [],
-			lineIndex: []
+			lineIndex: [],
+			tc: []
 		};
 
 		for (let i = 0; i < lineData.length; i++) {  // Remove all carriage-return characters
 
-			if (lineData[i].includes('\r'))
-				lineData[i] = lineData[i].replace('\r', '');
-
-			if (/F[0-9]+/i.test(lineData[i]) && inDebugMode) {
-
-				const [ , matchNum ] = lineData[i].match(/F([0-9]+)/i);
-
-				alert(`Crazy multiplier on feedrate: ${80}`);  // eslint-disable-line no-alert
-
-				lineData[i] = lineData[i].replace(/F[0-9]+/i, `F${Number(matchNum) * 80}`);
-
-			}
-
-		}
-
-		lineData = lineData.filter((value) => {
-
-			if (/^%|^\n/i.test(value) || value === '' || value === '\n')
-				return false;
-
-			return true;
-
-		});
-
-		for (let i = 0; i < lineData.length; i++) {
-
 			let line = lineData[i];
 
-			if (this.addLineNumbers && line && line !== '' && line !== '\n' && line !== '\r' && line !== '\r\n' && line[0] !== '%' && line[0] !== '(' && line[0] !== 'N') {  // If a valid line of gcode and line number is not already added
+			if (line.includes('\r'))
+				lineData[i] = line.replace('\r', '');
 
-				gcodeLineNum += 1;
-				lineData[i] = `N${gcodeLineNum} ${line}`;  // Add line number to gcode line
+			if (/\(|\)/.test(line))  // If the line is a comment
+				continue;
+
+			if (/T[0-9]+/i.test(line))  // If there is a tool change command
+				gcodeData.tc = [ ...gcodeData.tc, line.match(/T[0-9]+/i)[0] ];
+
+			if (/G0?[0-3][^0-9]{1}/i.test(line))  // If there is a motion mode command
+				momo = `G${line.match(/[0-3]{1}/i)[0]}`;
+
+			if (/G28/i.test(line))  // If there is a non modal motion mode command
+				[ momoNonModal ] = line.match(/G28/i);
+			else
+				momoNonModal = '';
+
+			if (/F[0-9]+/i.test(line) && inDebugMode) {
+
+				const [ , matchNum ] = line.match(/F([0-9]+)/i);
+
+				if (fro > 1)
+					alert(`Feed rate override: ${fro}x`);  // eslint-disable-line no-alert
+
+				lineData[i] = line.replace(/F[0-9]+/i, `F${Math.roundTo(Number(matchNum) * fro, 3)}`);  // Apply feedrate override
 				line = lineData[i];
 
 			}
 
-			if (/[xyz][-0-9.]+/i.test(line)) {
+			if (/[xyz][-0-9.]+/i.test(line) && (momo === 'G0' || momo === 'G1' || momo === 'G2' || momo === 'G3') && momoNonModal === '') {  // If there is an x, y, or z axis movement in this line
 
 				gcodeData.x.push(0);
 				gcodeData.y.push(0);
@@ -269,15 +270,21 @@ define([ 'jquery' ], $ => ({
 
 				const matchData = line.match(/[xyz][-0-9.]+/gi);
 
-				for (let j = 0; j < matchData.length; j++) {  // For each match found
+				for (let j = 0; j < matchData.length; j++) {  // For each x, y, and z position command in this line
 
 					const axis = matchData[j].substr(0, 1).toLowerCase();
 					const value = Number(matchData[j].substr(1));
 
-					if (axis === 'z' && value > 0 && !gcodeData.z[0]) {
+					if (axis === 'z' && value > 0 && gcodeData.z.length > 1 && !gcodeData.z[0]) {  // If there is a xy movement before a z movement
 
 						for (let a = 0; a < gcodeData.z.length && !gcodeData.z[a]; a++)
 							gcodeData.z[a] = value;
+
+						const prevLine = lineData[i - 1];
+						lineData[i - 1] = `${momo} ${line}`;
+						lineData[i] = prevLine.replace(/G[0-9]{1,2} /i, '');
+
+						return this.parseFile(fileName, lineData);  // Restart parsing of gcode
 
 					}
 
@@ -289,41 +296,59 @@ define([ 'jquery' ], $ => ({
 
 		}
 
+		lineData = lineData.filter((value) => {  // Remove empty lines and % commands
+
+			if (/^%|^\n/i.test(value) || value === '' || value === '\n')
+				return false;
+
+			return true;
+
+		});
+
+		for (let i = 0; i < lineData.length; i++) {  // Add line numbers
+
+			let line = lineData[i];
+
+			if (this.addLineNumbers && line && line !== '' && line !== '\n' && line !== '\r' && line !== '\r\n' && line[0] !== '%' && line[0] !== '(' && line[0] !== 'N') {  // If a valid line of gcode and line number is not already added
+
+				gcodeLineNum += 1;
+				lineData[i] = `N${gcodeLineNum} ${line}`;  // Add line number to gcode line
+				line = lineData[i];
+
+			}
+
+		}
+
 		debug.log(gcodeData);
 		this.plotData(gcodeData);
 
 		// for (const [ i, value ] of gcodeData.entries()) {
-		for (let i = 0; i < gcodeData.z.length; i++) {
-
-			const xVal = gcodeData.x[i];
-			const yVal = gcodeData.y[i];
-			const zVal = gcodeData.z[i];
-			const lineIndex = gcodeData.lineIndex[i];
-			const line = lineData[lineIndex];
-
-			if (/x[-0-9.]+/i.test(line))  // If an x position is in the line
-				lineData[lineIndex] = line.replace(/x[-0-9.]+/i, `X${xVal}`);
-
-			if (/y[-0-9.]+/i.test(line))  // If a y position is in the line
-				lineData[lineIndex] = line.replace(/y[-0-9.]+/i, `Y${yVal}`);
-
-			if (/z[-0-9.]+/i.test(line))  // If a z position is in the line
-				lineData[lineIndex] = line.replace(/z[-0-9.]+/i, `Z${zVal}`);
-
-		}
+		// for (let i = 0; i < gcodeData.z.length; i++) {
+		//
+		// 	const xVal = gcodeData.x[i];
+		// 	const yVal = gcodeData.y[i];
+		// 	const zVal = gcodeData.z[i];
+		// 	const lineIndex = gcodeData.lineIndex[i];
+		// 	const line = lineData[lineIndex];
+		//
+		// 	// if (/x[-0-9.]+/i.test(line))  // If an x position is in the line
+		// 	// 	lineData[lineIndex] = line.replace(/x[-0-9.]+/i, `X${xVal}`);
+		// 	//
+		// 	// if (/y[-0-9.]+/i.test(line))  // If a y position is in the line
+		// 	// 	lineData[lineIndex] = line.replace(/y[-0-9.]+/i, `Y${yVal}`);
+		// 	//
+		// 	// if (/z[-0-9.]+/i.test(line))  // If a z position is in the line
+		// 	// 	lineData[lineIndex] = line.replace(/z[-0-9.]+/i, `Z${zVal}`);
+		//
+		// }
 
 		debug.log('gcode lines');
 		debug.log(lineData);
 
-		publish('gcode-data/file-loaded', { FileName: fileName, Data: lineData });  // Publish the parsed gcode lines so that other widgets can use it
+		publish('gcode-data/file-loaded', { FileName: fileName, Lines: lineData, Data: gcodeData });  // Publish the parsed gcode lines so that other widgets can use it
 
 	},
 
-	/**
-	 *  [plotData description]
-	 *  @param  {[type]} data [description]
-	 *  @return {[type]}      [description]
-	 */
 	plotData(data) {
 
 		const trace1 = {
@@ -363,7 +388,7 @@ define([ 'jquery' ], $ => ({
 			}
 		};
 
-		Plotly.newPlot('gcode-plot', plotData, layout);
+		Plotly.newPlot('load-widget-gcode-plot', plotData, layout);
 
 	}
 

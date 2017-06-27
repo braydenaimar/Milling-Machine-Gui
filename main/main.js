@@ -25,19 +25,14 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 	fs = require('fs');
 	os = require('os');
 	({ spawn } = require('child_process'));
+	Math.roundTo = gui.roundTo;
 
 	electron = require('electron');
 	({ ipcRenderer: ipc } = electron);
 
 	({ publish, subscribe, unsubscribe } = amplify);
 
-	DEBUG_ENABLED = true;  // Enable debugging mode
-	const developerHosts = [ 'BRAYDENS-LENOVO' ];  // List of developer host devices
-	inDebugMode = DEBUG_ENABLED && developerHosts.includes(os.hostname());
-
-	debug = {};
-
-	if (inDebugMode && (typeof console != 'undefined')) {  // If debug mode is enabled
+	enableConsole = function enableConsole() {  // Enable the console log for debugging
 
 		const keys = Object.keys(console);
 
@@ -46,20 +41,25 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 			const key = keys[i];
 
 			if (key === 'memory')
-				debug[key] = console[key];
+			debug[key] = console[key];
 
 			else if (key === 'error')
-				debug[key] = ((...args) => { throw new Error(...args); });  // eslint-disable-line padded-blocks
+			debug[key] = ((...args) => { throw new Error(...args); });  // eslint-disable-line padded-blocks
 
 			else
-				debug[key] = console[key].bind(console);
+			debug[key] = console[key].bind(console);
 
 		}
 
-	} else {  // If debug mode is not enabled
+	};
+
+	disableConsole = function disableConsole() {  // Disable the console for better performance when it is not needed
+
+		for (let i = 0; i < 10; i++)  // Escape any active console groups
+			console.groupEnd();
 
 		const keys = Object.keys(console);
-		const banned = [ 'log', 'info', 'table' ];  // Console log methods that will be ignored
+		const banned = [ 'log', 'info', 'table', 'groupCollapsed', 'groupEnd' ];  // Console log methods that will be ignored
 
 		for (let i = 0; i < keys.length; i++) {
 
@@ -76,7 +76,19 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 		}
 
-	}
+	};
+
+	DEBUG_ENABLED = true;  // Enable debugging mode
+	const developerHosts = [ 'BRAYDENS-LENOVO' ];  // List of developer host devices
+	inDebugMode = DEBUG_ENABLED && developerHosts.includes(os.hostname());
+
+	debug = {};
+
+	if (inDebugMode && (typeof console != 'undefined'))  // If debug mode is enabled
+		enableConsole();
+
+	else  // If debug mode is not enabled
+		disableConsole();
 
 	/* eslint-enable no-console*/
 
@@ -253,6 +265,9 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 		}, 2000);
 
+		Mousetrap.bind('ctrl+alt+pageup', this.makeWidgetVisible.bind(this, 'up'));
+		Mousetrap.bind('ctrl+alt+pagedown', this.makeWidgetVisible.bind(this, 'down'));
+
 		// This gets published at the end of each widget's initBody() function.
 		subscribe(`/${this.ws.id}/widget-loaded`, this, (wgt) => {
 
@@ -261,8 +276,7 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 			// If this is the first time being called, set timer to check that all widgets are loaded within a given timeframe. If any widgets have not loaded after that time has elapsed, create an alert and log event listing the widget(s) that did not load.
 			wgtLoaded[wgtMap.indexOf(wgt)] = true;
 
-			// If all of the widgets are loaded.
-			if (!wgtLoaded.includes(false)) {
+			if (!wgtLoaded.includes(false)) {  // If all of the widgets are loaded
 
 				createSidebarBtns();
 				initWidgetVisible();
@@ -368,9 +382,9 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 		$.each(widget, (widgetIndex, widgetItem) => {
 
-			// Check if the respective widget wants a sidebar button made
 			debug.log(`  ${widgetIndex}`);
-			if (!widgetItem.sidebarBtn) {
+
+			if (!widgetItem.sidebarBtn) {  // If this widget has no sidebar button
 
 				debug.log('    ...jk, not creating sidebar button.');
 
@@ -409,23 +423,46 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 	initWidgetVisible = function initWidgetVisible() {
 
-		// Show the initial widget.
-		debug.log(`Show wgt: ${wgtVisible}`);
+		debug.log(`Show wgt: ${wgtVisible}`);  // Show the initial widget
 
 		$(`#${wgtVisible}`).removeClass('hidden');
 
-		$('#header-widget-label').text(widget[wgtVisible].name); // Set header bar label.
-		// $('#header-widget-icon').addClass(widget[wgtVisible].icon); // Set header bar icon.
+		$('#header-widget-label').text(widget[wgtVisible].name);  // Set header bar label
+		// $('#header-widget-icon').addClass(widget[wgtVisible].icon);  // Set header bar icon
 
 		publish(`/${this.ws.id}/widget-visible`, wgtVisible, null);
 
 	};
 
-	makeWidgetVisible = function makeWidgetVisible(wgt) {
+	makeWidgetVisible = function makeWidgetVisible(key) {
 
-		// If wgt is already visible, do nothing.
-		if (wgt === wgtVisible) return;
-		// debug.log("  wgt: " + wgt + "\n  wgtVisible: " + wgtVisible);
+		if (widget[key] && !widget[key].loadHtml)  // If a widget with no html was called
+			return debug.error('Invalid key argument.');
+
+		if (key === wgtVisible)  // If the widget is already visible
+			return false;
+
+		if ((key === 'up' && wgtMap.indexOf(wgtVisible) === 0) || (key === 'down' && wgtMap.indexOf(wgtVisible) === wgtMap - 1))  // If already at the limits of widget list
+			return false;
+
+		let wgt = key;
+
+		for (let i = wgtMap.indexOf(wgtVisible) - 1; wgt === 'up' && i >= 0; i--) {  // Search for the closest next widget that has html
+
+			if (widget[wgtMap[i]].loadHtml)
+				wgt = wgtMap[i];
+
+		}
+
+		for (let i = wgtMap.indexOf(wgtVisible) + 1; wgt === 'down' && i < wgtMap.length; i++) {  // Search for the closest next widget that has html
+
+			if (widget[wgtMap[i]].loadHtml)
+				wgt = wgtMap[i];
+
+		}
+
+		if (!wgtMap.includes(wgt))
+			return false;
 
 		$(`#btn-${wgt}`).removeClass('btn-default');
 		$(`#btn-${wgt}`).addClass('btn-primary');
@@ -433,12 +470,10 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 		$(`#btn-${wgtVisible}`).removeClass('btn-primary');
 		$(`#btn-${wgtVisible}`).addClass('btn-default');
 
-		// Hide previously visible widget.
-		$(`#${wgtVisible}`).addClass('hidden');
+		$(`#${wgtVisible}`).addClass('hidden');  // Hide previously visible widget
 		// $('#header-widget-icon').removeClass(widget[wgtVisible].icon);
 
-		// Show the requested widget.
-		$(`#${wgt}`).removeClass('hidden');
+		$(`#${wgt}`).removeClass('hidden');  // Show the requested widget
 
 		$('#header-widget-label').text(widget[wgt].name);  // Set header bar label.
 		// $('#header-widget-icon').addClass(widget[wgt].icon);  // Set header bar icon.
@@ -451,7 +486,6 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 	updateGitRepo = function updateGitRepo() {
 
 		// Pulls the latest repository from the master branch on GitHub.
-
 		let terminal = null;
 
 		const { hostName } = hostMeta;

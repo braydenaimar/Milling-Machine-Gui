@@ -1,7 +1,7 @@
 # Main Settings
 
 # Widget to show on program load (default: first html widget loaded).
-wgtVisible: ""
+wgtVisible: "run-widget"
 
 widget: {
   "statusbar-widget": {

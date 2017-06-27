@@ -1,53 +1,50 @@
 <!-- Run Widget HTML -->
 
-<div class="panel panel-default gcode-run-panel">
+<div class="left-panel-column">
 
-	<div class="panel-heading">
-		<h3>GCode Run</h3>
+	<div class="panel panel-default gcode-view-panel">
 
-		<div class="btn-group">
+		<div class="panel-heading">
 
-			<!-- Hide Panel Button -->
-			<span evt-signal="hide-body" evt-data="gcode-run-panel" class="btn btn-xs btn-default">
-				<span class="glyphicon glyphicon-chevron-up"></span>
-			</span>
+			<h3 class="gcode-file-name">GCode File</h3>
+
+			<div class="btn-group">
+
+				<span evt-signal="" evt-data="open-file" class="btn btn-xs btn-default open-file-btn">
+					<span class="fa fa-envelope-open-o"></span>
+				</span>
+
+			</div>
+
+			<div class="btn-group">
+
+				<span evt-signal="" evt-data="play" class="btn btn-xs btn-default gcode-play-btn">
+					<span class="material-icons">play_arrow</span>
+				</span>
+
+				<span evt-signal="gcode-buffer/control" evt-data="pause" class="btn btn-xs btn-default gcode-pause-btn">
+					<span class="material-icons">pause</span>
+				</span>
+
+				<span evt-signal="gcode-buffer/control" evt-data="stop" class="btn btn-xs btn-default gcode-stop-btn">
+					<span class="material-icons">stop</span>
+				</span>
+
+			</div>
 
 		</div>
 
-		<div class="btn-group">
-
-			<!-- Request SPJS List Button -->
-			<span evt-signal="/connection-widget/spjs-send" evt-data="list" class="btn btn-xs btn-default">
-				<span class="glyphicon glyphicon-refresh"></span>
-			</span>
-
-			<!-- Restart SPJS Button -->
-			<!-- <span evt-signal="/connection-widget/spjs-send" evt-data="restart" class="btn btn-xs btn-default">
-				<span class="glyphicon glyphicon-retweet" style="color: red;"></span>
-			</span> -->
-
+		<div class="panel-body">
+			<div class="gcode-file-text"></div>
 		</div>
+
 	</div>
 
-	<div class="panel-body run-panel">
+	<div class="panel panel-default path-view-panel">
 
-		<span class="btn btn-xs btn-default auto-gcode-paused">
-			<span class="material-icons">schedule</span>
-		</span>
+		<div class="panel-body">
 
-		<div class="btn-group">
-
-			<span evt-signal="" evt-data="play" class="btn btn-xs btn-default gcode-play-btn">
-				<span class="material-icons">play_arrow</span>
-			</span>
-
-			<span evt-signal="gcode-buffer/control" evt-data="pause" class="btn btn-xs btn-default gcode-pause-btn">
-				<span class="material-icons">pause</span>
-			</span>
-
-			<span evt-signal="gcode-buffer/control" evt-data="stop" class="btn btn-xs btn-default gcode-stop-btn">
-				<span class="material-icons">stop</span>
-			</span>
+			<div id="run-widget-gcode-plot" class="gcode-plot"></div>
 
 		</div>
 
@@ -55,14 +52,135 @@
 
 </div>
 
-<div class="panel panel-default gcode-file-panel">
+<div class="right-panel-column">
 
-	<div class="panel-heading">
-		<h3 class="gcode-file-name">GCode File</h3>
+	<div class="panel panel-default feedrate-panel status-panel">
+
+		<div class="panel-body">
+
+			<div class="status-label feedrate-label">Feedrate</div>
+			<div class="status-units feedrate-units">--</div>
+			<div class="status-value feedrate-value">--</div>
+
+			<div class="progress">
+				<div class="progress-bar progress-bar-danger feedrate-progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="min-width: 1em; width: 0%"></div>
+			</div>
+
+		</div>
+
 	</div>
 
-	<div class="panel-body">
-		<div class="gcode-file-text"></div>
+	<div class="panel panel-default spindle-panel status-panel">
+
+		<div class="panel-body">
+
+			<div class="status-label spindle-label">Spindle</div>
+			<div class="status-units spindle-units">rpm</div>
+			<div class="status-value spindle-value">--</div>
+			<span class="material-icons spindle-cw hidden">rotate_right</span>
+			<span class="material-icons spindle-ccw hidden">rotate_left</span>
+
+			<div class="progress">
+				<div class="progress-bar progress-bar-danger spindle-progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="min-width: 1em; width: 0%"></div>
+			</div>
+
+		</div>
+
+	</div>
+
+	<div class="panel panel-default dro-panel">
+
+		<div class="panel-body">
+
+			<!-- X Axis DRO -->
+			<div class="x-axis-dro">
+
+				<!-- Home X Axis Button -->
+				<div evt-signal="" evt-data="home-x" class="btn btn-sm btn-default btn-home">
+					<span class="glyphicon glyphicon-home"></span>
+				</div>
+
+				<!-- DRO Label -->
+				<div class="dro-label">X</div>
+
+				<!-- DRO Value -->
+				<div class="dro-value">
+					<span class="negpos digits-dimmed">-</span><span class="intgray digits-dimmed">00</span><span class="intblack">0</span>.<span class="decblack">0</span><span class="decgray digits-dimmed"></span>
+					<span class="dro-units">mm</span>
+				</div>
+
+			</div>
+
+			<!-- Y Axis DRO -->
+			<div class="y-axis-dro">
+
+				<!-- Home X Axis Button -->
+				<div evt-signal="" evt-data="home-y" class="btn btn-sm btn-default btn-home">
+					<span class="glyphicon glyphicon-home"></span>
+				</div>
+
+				<!-- DRO Label -->
+				<div class="dro-label">Y</div>
+
+				<!-- DRO Value -->
+				<div class="dro-value">
+					<span class="negpos digits-dimmed">-</span><span class="intgray digits-dimmed">00</span><span class="intblack">0</span>.<span class="decblack">0</span><span class="decgray digits-dimmed"></span>
+					<!-- <span class="digits-negpos digits-dimmed">-</span><span class="digits-intgray digits-dimmed">00</span><span class="digits-intblack">0</span>.<span class="digits-decimal">000</span> -->
+					<span class="dro-units">mm</span>
+				</div>
+
+			</div>
+
+			<!-- Z Axis DRO -->
+			<div class="z-axis-dro">
+
+				<!-- Home X Axis Button -->
+				<div evt-signal="" evt-data="home-z" class="btn btn-sm btn-default btn-home">
+					<span class="glyphicon glyphicon-home"></span>
+				</div>
+
+				<!-- DRO Label -->
+				<div class="dro-label">Z</div>
+
+				<!-- DRO Value -->
+				<div class="dro-value">
+					<span class="negpos digits-dimmed">-</span><span class="intgray digits-dimmed">00</span><span class="intblack">0</span>.<span class="decblack">0</span><span class="decgray digits-dimmed"></span>
+					<!-- <span class="digits-negpos digits-dimmed">-</span><span class="digits-intgray digits-dimmed">00</span><span class="digits-intblack">0</span>.<span class="digits-decimal">000</span> -->
+					<span class="dro-units">mm</span>
+				</div>
+
+			</div>
+
+		</div>
+
+	</div>
+
+	<div class="panel panel-default vertical-probe-panel">
+
+		<div class="panel-heading">
+			<h3>Vertical Probe</h3>
+		</div>
+
+		<div class="panel-body">
+
+			<div class="btn-group">
+
+				<span evt-signal="" evt-data="play" class="btn btn-xs btn-default gcode-play-btn">
+					<span class="material-icons">play_arrow</span>
+				</span>
+
+				<span evt-signal="" evt-data="pause" class="btn btn-xs btn-default gcode-pause-btn">
+					<span class="material-icons">pause</span>
+				</span>
+
+				<span evt-signal="" evt-data="stop" class="btn btn-xs btn-default gcode-stop-btn">
+					<span class="material-icons">stop</span>
+				</span>
+
+			</div>
+
+		</div>
+
 	</div>
 
 </div>

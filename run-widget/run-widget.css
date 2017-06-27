@@ -1,7 +1,83 @@
 /* Run Widget CSS */
 
-.gcode-run-panel .panel-body {
-    padding: 8px;
+#run-widget .left-panel-column,
+#run-widget .right-panel-column {
+    float: left;
+}
+
+#run-widget .left-panel-column {
+    width: 50%;
+}
+#run-widget .right-panel-column {
+    width: 50%;
+}
+
+#run-widget .right-panel-column .panel {
+    margin-left: 2px;
+}
+
+/* -- File Panel -- */
+.gcode-view-panel .panel-heading .btn-group {
+    float: right;
+    margin-left: 6px;
+}
+.gcode-view-panel .panel-heading .btn-group .btn {
+    height: 20px;
+    width: 21px;
+    padding: 1px 2px;
+}
+.gcode-view-panel .panel-heading .btn-group .btn.open-file-btn {
+    padding: 0;
+}
+.gcode-view-panel .panel-heading .btn-group .btn .fa {
+    font-size: 12px;
+}
+.gcode-view-panel .panel-heading .btn-group .btn .material-icons {
+    font-size: 17px;
+}
+.gcode-view-panel .panel-body {
+    padding: 0;
+}
+.gcode-file-text {
+    overflow: auto;
+    padding: 2px 5px;
+}
+.gcode-file-text samp,
+.gcode-file-text code {
+    /*margin: 2px;*/
+    font-size: 12px;
+    line-height: 13px;
+}
+
+/* -- 3d View Panel */
+.gcode-file-panel .panel-body {
+    min-height: 100px;
+}
+.gcode-file-panel .gcode-plot {
+    float: right;
+}
+.gcode-file-panel .left-column {
+    float: left;
+}
+.gcode-file-panel .file-stats {
+    position: relative;
+    top: auto;
+    max-width: 160px;
+}
+.gcode-file-panel .stat-pair {
+    display: inline-flex;
+}
+.gcode-file-panel .stat-label {
+    float: left;
+    width: 105px;
+}
+.gcode-file-panel .stat-value {
+    float: right;
+    /*padding-left: 12px;*/
+}
+
+/* -- Run Panel -- */
+/*.gcode-run-panel {
 }
 .gcode-run-panel .panel-heading div.btn-group {
 	float: right;
@@ -9,22 +85,96 @@
 	padding: 0;
 }
 .gcode-run-panel .panel-heading .btn {
-	/*float: right;*/
 	padding-top: 3px;
 	font-size: 11px;
+}*/
+
+/* -- Feedrate & Spindle Status -- */
+.status-panel .status-label {
+    float: left;
+    font-size: 24px;
+}
+.status-panel .status-value {
+    float: right;
+    font-size: 24px;
+    padding-right: 22px;
+}
+.status-panel .status-units {
+    position: relative;
+    right: 6px;
+    font-size: 13px;
+    float: right;
+    width: 30px;
+}
+.status-panel .progress {
+    margin-top: 38px;
+    margin-bottom: 6px;
+    height: 10px;
 }
 
-.gcode-file-panel .panel-heading {
-	height: 28px;
-	/*padding-bottom: 0;*/
+/* -- Feedrate Status -- */
+
+/* -- Spindle Status -- */
+.spindle-panel .spindle-ccw,
+.spindle-panel .spindle-cw {
+    float: right;
+    margin-top: 6px;
+    margin-right: 4px;
+    font-size: 18px;
 }
-.gcode-file-text {
-	overflow: auto;
-	padding: 2px 5px;
+
+/* -- Machine Status -- */
+.dro-panel .panel-body {
+    padding: 0 8px;
 }
-.gcode-file-text samp,
-.gcode-file-text code {
-	/*margin: 2px;*/
-	font-size: 12px;
-	line-height: 13px;
+.dro-panel .panel-body > div {
+    height: 35px;
+}
+.dro-panel .btn-home,
+.dro-panel .dro-label,
+.dro-panel .dro-value {
+    height: 100%;
+    border: 1px;
+    border-color: #ddd;
+    border-radius: 0;
+    border-style: none;
+    box-shadow: none;
+    -webkit-box-shadow: none;
+}
+.dro-panel .y-axis-dro > div,
+.dro-panel .z-axis-dro > div {
+    border-top-style: solid;
+}
+.dro-panel .btn-home {
+    width: 10%;
+    float: left;
+    font-size: 17px;
+    text-align: center;
+    padding: 5px 0 0 0;
+}
+.dro-panel .dro-label {
+    width: 10%;
+    float: left;
+    padding-top: 2px;
+    font-size: 24px;
+    text-align: center;
+}
+.dro-panel .dro-value {
+    width: 80%;
+    float: right;
+    font-size: 28px;
+    text-align: right;
+    padding-right: 20px;
+    /*background-color: #f9f9f9;*/
+}
+.dro-panel .dro-units {
+    position: relative;
+    left: 11px;
+    width: 25px;
+    font-size: 13px;
+    text-align: left;
+    float: right;
+}
+.digits-dimmed {
+    color: #e9e9e9;
 }

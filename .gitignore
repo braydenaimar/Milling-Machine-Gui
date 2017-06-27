@@ -67,6 +67,9 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+
 sendgrid.env
 js/serial-log.json
 js/lib/debug.js
+probing-notes.nc
+chilipeppr-probing-notes.nc

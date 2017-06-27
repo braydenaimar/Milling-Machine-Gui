@@ -15,6 +15,9 @@
 	padding-top: 3px;
 	font-size: 11px;
 }
+#connection-widget .splist-panel .panel-body {
+	padding: 0;
+}
 #connection-widget .splist .spjs-connection-warning,
 #connection-widget .splist .serialport-connection-warning {
 	padding: 8px 10px;
@@ -63,6 +66,9 @@
 	float: right;
 	margin-right: 10px;
 	/*position: relative;*/
+}
+#connection-widget .console-log-panel .panel-body {
+	padding: 0;
 }
 
 /* -- SPJS Log -- */

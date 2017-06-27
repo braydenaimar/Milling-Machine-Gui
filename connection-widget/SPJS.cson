@@ -36,13 +36,13 @@ resumeOnQueueCount: 20
 maxLinesAtATime: 8
 # The minimum time [ms] between data buffered to the SPJS.
 # @type {number}
-minWaitBetweenBufferSend: 100
+minWaitBetweenBufferSend: 300
 # Enable a feedhold command to be sent when user stops buffering gcode.
 # @type {Boolean}
 sendFeedholdOnBufferStop: true
 # The time [ms] that is waited before sending a queue flush command to a device after the feedstop command.
 # @type {number}
-waitQueueFlushOnFeedstop: 2000
+waitQueueFlushOnFeedstop: 0
 # The time [ms] that is waited before sending a cycle resume command to a device after the queue flush command.
 # @type {number}
 waitCycleResumeOnFeedstop: 500

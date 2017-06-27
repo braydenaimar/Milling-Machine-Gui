@@ -39,7 +39,7 @@ code.text-default {
 	border-bottom: 1px solid #ddd;
 }
 .panel > .panel-body {
-	padding: 0;
+	padding: 8px;
 }
 .panel > .panel-footer {
 	border-top: 1px solid #ddd;
