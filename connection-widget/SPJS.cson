@@ -27,13 +27,13 @@ pauseBufferedSend: false
 userPauseBufferedSend: false
 # The number of lines queued in the SPJS buffer above which sending of buffered instructions will be paused.
 # @type {number}
-pauseOnQueueCount: 40
+pauseOnQueueCount: 150
 # The number of lines queued in the SPJS buffer below which sending of buffered instructions will be resumed.
 # @type {number}
-resumeOnQueueCount: 20
+resumeOnQueueCount: 80
 # The maximum number of instructions that can be sent to the SPJS at a time.
 # @type {number}
-maxLinesAtATime: 8
+maxLinesAtATime: 50
 # The minimum time [ms] between data buffered to the SPJS.
 # @type {number}
 minWaitBetweenBufferSend: 300

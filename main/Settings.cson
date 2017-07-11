@@ -5,12 +5,12 @@ wgtVisible: "run-widget"
 
 widget: {
   "statusbar-widget": {
-    loadHtml: false
+    loadHtml: true
     sidebarBtn: false
   }
   "load-widget": {
-    loadHtml: true
-    sidebarBtn: true
+    loadHtml: false
+    sidebarBtn: false
   }
   "run-widget": {
     loadHtml: true

@@ -10,14 +10,6 @@
 
 			<div class="btn-group">
 
-				<span evt-signal="" evt-data="open-file" class="btn btn-xs btn-default open-file-btn">
-					<span class="fa fa-envelope-open-o"></span>
-				</span>
-
-			</div>
-
-			<div class="btn-group">
-
 				<span evt-signal="" evt-data="play" class="btn btn-xs btn-default gcode-play-btn">
 					<span class="material-icons">play_arrow</span>
 				</span>
@@ -32,6 +24,22 @@
 
 			</div>
 
+			<div class="btn-group">
+
+				<span evt-signal="" evt-data="reload-gcode" class="btn btn-xs btn-default reload-gcode-btn">
+					<span class="material-icons">cached</span>
+				</span>
+
+			</div>
+
+			<div class="btn-group">
+
+				<span evt-signal="" evt-data="open-file" class="btn btn-xs btn-default open-file-btn">
+					<span class="fa fa-envelope-open-o"></span>
+				</span>
+
+			</div>
+
 		</div>
 
 		<div class="panel-body">
@@ -40,15 +48,13 @@
 
 	</div>
 
-	<div class="panel panel-default path-view-panel">
+	<!-- <div class="panel panel-default path-view-panel">
 
 		<div class="panel-body">
-
 			<div id="run-widget-gcode-plot" class="gcode-plot"></div>
-
 		</div>
 
-	</div>
+	</div> -->
 
 </div>
 
@@ -62,8 +68,12 @@
 			<div class="status-units feedrate-units">--</div>
 			<div class="status-value feedrate-value">--</div>
 
+			<div class="btn-group status-btns">
+				<span evt-signal="" evt-data="feedhold" class="btn btn-xs btn-default feedhold-btn">Hold</span>
+			</div>
+
 			<div class="progress">
-				<div class="progress-bar progress-bar-danger feedrate-progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="min-width: 1em; width: 0%"></div>
+				<div class="progress-bar progress-bar-danger feedrate-progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
 			</div>
 
 		</div>
@@ -77,11 +87,16 @@
 			<div class="status-label spindle-label">Spindle</div>
 			<div class="status-units spindle-units">rpm</div>
 			<div class="status-value spindle-value">--</div>
-			<span class="material-icons spindle-cw hidden">rotate_right</span>
-			<span class="material-icons spindle-ccw hidden">rotate_left</span>
+			<span class="material-icons spindle-dir spindle-cw hidden">rotate_right</span>
+			<span class="material-icons spindle-dir spindle-ccw hidden">rotate_left</span>
+
+			<div class="btn-group status-btns">
+				<span evt-signal="" evt-data="on" class="btn btn-xs btn-default on-btn">On</span>
+				<span evt-signal="" evt-data="off" class="btn btn-xs btn-default off-btn">Off</span>
+			</div>
 
 			<div class="progress">
-				<div class="progress-bar progress-bar-danger spindle-progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="min-width: 1em; width: 0%"></div>
+				<div class="progress-bar progress-bar-danger spindle-progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
 			</div>
 
 		</div>
@@ -125,7 +140,6 @@
 				<!-- DRO Value -->
 				<div class="dro-value">
 					<span class="negpos digits-dimmed">-</span><span class="intgray digits-dimmed">00</span><span class="intblack">0</span>.<span class="decblack">0</span><span class="decgray digits-dimmed"></span>
-					<!-- <span class="digits-negpos digits-dimmed">-</span><span class="digits-intgray digits-dimmed">00</span><span class="digits-intblack">0</span>.<span class="digits-decimal">000</span> -->
 					<span class="dro-units">mm</span>
 				</div>
 
@@ -145,7 +159,6 @@
 				<!-- DRO Value -->
 				<div class="dro-value">
 					<span class="negpos digits-dimmed">-</span><span class="intgray digits-dimmed">00</span><span class="intblack">0</span>.<span class="decblack">0</span><span class="decgray digits-dimmed"></span>
-					<!-- <span class="digits-negpos digits-dimmed">-</span><span class="digits-intgray digits-dimmed">00</span><span class="digits-intblack">0</span>.<span class="digits-decimal">000</span> -->
 					<span class="dro-units">mm</span>
 				</div>
 
@@ -155,7 +168,65 @@
 
 	</div>
 
-	<div class="panel panel-default vertical-probe-panel">
+	<div class="panel panel-default tool-panel">
+
+		<div class="panel-heading">
+
+			<h3>Tool Change</h3>
+
+			<div class="btn-group">
+				<span evt-signal="" evt-data="complete" class="btn btn-xs btn-success complete-btn hidden">Complete</span>
+			</div>
+
+		</div>
+
+		<div class="panel-body">
+
+			<!-- <div class="tool-item item-1 bg-success">
+
+				<div class="tool-right-info">
+
+					<div class="tool-line">Line 10</div>
+					<div class="tool-gcode">N7 T2 M6</div>
+
+				</div>
+
+				<div class="tool-name">Engrave</div>
+				<div class="tool-desc">T2 <span>D=3.175 CR=0 TAPER=30deg - ZMIN=-0.3 - chamfer mill</span></div>
+
+			</div>
+			<div class="tool-item item-2">
+
+				<div class="tool-right-info">
+
+					<div class="tool-line">Line 2163</div>
+					<div class="tool-gcode">N2106 T1 M6</div>
+
+				</div>
+
+				<div class="tool-name">Contour</div>
+				<div class="tool-desc">T1 <span>D=6.35 CR=0 TAPER=30deg - ZMIN=-0.4 - chamfer mill</span></div>
+
+			</div>
+			<div class="tool-item item-3">
+
+				<div class="tool-right-info">
+
+					<div class="tool-line">Line 32781</div>
+					<div class="tool-gcode">N32694 T3 M6</div>
+
+				</div>
+
+				<div class="tool-name">Bore</div>
+				<div class="tool-desc">T3 <span>D=3.175 CR=0 - ZMIN=-1.851 - flat end mill</span></div>
+
+			</div> -->
+
+		</div>
+
+	</div>
+
+	<!-- <div class="panel panel-default vertical-probe-panel">
 
 		<div class="panel-heading">
 			<h3>Vertical Probe</h3>
@@ -177,6 +248,61 @@
 					<span class="material-icons">stop</span>
 				</span>
 
+			</div>
+
+			<div class="input-group">
+				<span class="input-group-addon" id="basic-addon1"># X</span>
+				<input type="text" class="form-control mousetrap" placeholder="# X" aria-describedby="basic-addon1">
+			</div>
+			<div class="input-group">
+				<span class="input-group-addon" id="basic-addon1"># Y</span>
+				<input type="text" class="form-control mousetrap" placeholder="# Y" aria-describedby="basic-addon1">
+			</div>
+
+			<div class="input-group">
+				<span class="input-group-addon" id="basic-addon1">Start X</span>
+				<input type="text" class="form-control mousetrap" placeholder="Start X" aria-describedby="basic-addon1">
+			</div>
+			<div class="input-group">
+				<span class="input-group-addon" id="basic-addon1">Start Y</span>
+				<input type="text" class="form-control mousetrap" placeholder="Start Y" aria-describedby="basic-addon1">
+			</div>
+
+			<div class="input-group">
+				<span class="input-group-addon" id="basic-addon1">End X</span>
+				<input type="text" class="form-control mousetrap" placeholder="End X" aria-describedby="basic-addon1">
+			</div>
+			<div class="input-group">
+				<span class="input-group-addon" id="basic-addon1">End Y</span>
+				<input type="text" class="form-control mousetrap" placeholder="End Y" aria-describedby="basic-addon1">
+			</div>
+
+			<div class="input-group">
+				<span class="input-group-addon" id="basic-addon1">Clearanze Z</span>
+				<input type="text" class="form-control mousetrap" placeholder="Clearance Z" aria-describedby="basic-addon1">
+			</div>
+			<div class="input-group">
+				<span class="input-group-addon" id="basic-addon1">Max Neg Z</span>
+				<input type="text" class="form-control mousetrap" placeholder="Max Neg Z" aria-describedby="basic-addon1">
+			</div>
+
+		</div>
+
+	</div> -->
+
+	<div class="panel panel-default jog-panel">
+
+		<div class="panel-body">
+
+			<div class="btn-group">
+				<span evt-signal="jog" evt-data="x-pos" class="btn btn-md btn-default jog-xp-btn">x+</span>
+				<span evt-signal="jog" evt-data="x-neg" class="btn btn-md btn-default jog-xn-btn">x-</span>
+				<span evt-signal="jog" evt-data="y-pos" class="btn btn-md btn-default jog-yp-btn">y+</span>
+				<span evt-signal="jog" evt-data="y-neg" class="btn btn-md btn-default jog-yn-btn">y-</span>
+			</div>
+
+			<div class="btn-group">
+				<span evt-signal="probe" evt-data="z" class="btn btn-md btn-default probe-z-btn">probe z</span>
 			</div>
 
 		</div>

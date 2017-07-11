@@ -26,16 +26,79 @@ define([ 'jquery' ], $ => ({
 	},
 
 	widgetDom: [
-		[ '.widget-container', ' .path-view-panel', ' .gcode-view-panel' ],
-		[ '.widget-container', ' .dro-panel', ' .feedrate-panel', ' .spindle-panel', ' .vertical-probe-panel' ],
+		[ '.widget-container', ' .gcode-view-panel' ],
+		[ '.widget-container', ' .dro-panel', ' .feedrate-panel', ' .spindle-panel', ' .tool-panel', ' .jog-panel' ],
 		[ ' .gcode-view-panel', ' .panel-heading', ' .panel-body' ],
 		[ ' .gcode-view-panel .panel-body', ' .gcode-file-text' ]
 	],
 	widgetVisible: false,
 
+	/**
+	 *  Enables the use of zero indexing of line numbers.
+	 *  @type {Boolean}
+	 */
+	zeroIndexLineNumber: false,
+
+	fileName: '',
 	fileGcode: [],      // Origional gcode lines parsed from the gcode file (array[strings])
+	fileData: [],
 	levelledGcode: [],	// GCode with autolevel applied to z values
 	autolevelData: [],  // Probe data used to level the gcode file
+	/**
+	 *  Gcode lines loaded from file.
+	 *  @type {Array}
+	 */
+	fileGcodeData: [],
+	/**
+	 *  The Id of the last gcode line to be buffered to the device.
+	 *  @type {String}
+	 */
+	lastBufferedId: '',
+	toolChange: [],
+	toolChangeGcodeId: [],
+	toolMeta: {},
+	activeToolIndex: 0,
+	startFromIndex: 0,
+
+	FileName: '',
+	Gcode: [],
+	GcodeData: {},
+	/**
+	 *  Tool meta data.
+	 *  Ex. toolMeta: { T2: { Desc: 'D=3.175 CR=0 TAPER=30deg - ZMIN=-0.3 - chamfer mill' }, T3: { ... }, ... }.
+	 *  @type {Object}
+	 */
+	ToolMeta: {},
+	/**
+	*  List of tool changes that take place throughout the gcode file.
+	*  Ex. toolChange: [ { Tool: 'T2', Desc: 'D=3.175 CR=0 TAPER=30deg - ZMIN=-0.3 - chamfer mill', GcodeComment: 'Engrave Text', Gcode: 'N6 T2 M6', Id: 'gcN6', Index: 10 }, { Tool: 'T3', ... }, ... ].
+	*  @type {Array}
+	*/
+	ToolChange: [],
+	idMap: {},
+	idToolChangeMap: {},
+
+	pauseOnToolChange: true,
+	/**
+	 *  The maximum number of gcode lines to be sent to the connection-widget per packet.
+	 *  @type {Number}
+	 */
+	maxGcodeBufferLength: 1000,
+	/**
+	 *  The delay between packets of gcode being sent to the connection-widget in milliseconds [ms].
+	 *  @type {Number}
+	 */
+	gcodeBufferInterval: 500,
+
+	activeIndex: 0,
+	trackMode: 'on-complete',
+	// trackMode: 'on-complete',
+	// trackMode: 'status-report',
+	$gcodeLog: $('#run-widget .gcode-view-panel .gcode-file-text'),
+	gcodeLineScrollOffset: 6,
+	scrollOffsetFactor: 0.4,
+	maxUpdateGapFill: 30,
+	activeLineClearDelay: 0,
 
 	minLineNumberDigits: 3,
 
@@ -66,6 +129,10 @@ define([ 'jquery' ], $ => ({
 		subscribe('gcode-buffer/control', this, this.gcodeBufferControl.bind(this));
 
 		subscribe('connection-widget/queue-count', this, this.onQueueCount.bind(this));  // Receive updates for the queue count
+		subscribe('connection-widget/message-status', this, this.onMessageStatus.bind(this));
+		subscribe('run-widget/update-spindle', this, this.machine.updateSpindle.bind(this.machine));
+
+		Mousetrap.bind('ctrl+o', this.keyboardShortcuts.bind(this, 'ctrl+o'));  // Launch file open dialog
 
 		this.loadSettings();
 		this.initClickEvents();
@@ -86,14 +153,17 @@ define([ 'jquery' ], $ => ({
 	},
 	initClickEvents() {
 
-		$(`#${this.id} .gcode-view-panel .btn-group`).on('click', 'span.btn', (evt) => {  // GCode Run panel buttons
+		const { id } = this;
 
+		$(`#${id} .gcode-view-panel .btn-group`).on('click', 'span.btn', (evt) => {  // GCode Run panel buttons
+
+			const { id } = this;
 			const evtSignal = $(evt.currentTarget).attr('evt-signal');
 			const evtData = $(evt.currentTarget).attr('evt-data');
 
 			if (evtSignal === 'hide-body') {  // Hide panel body
 
-				$(`#${this.id} .${evtData} .panel-body`).addClass('hidden');
+				$(`#${id} .${evtData} .panel-body`).addClass('hidden');
 				$(evt.currentTarget).find('span').removeClass('glyphicon-chevron-up').addClass('glyphicon-chevron-down');
 				$(evt.currentTarget).attr('evt-signal', 'show-body');
 
@@ -101,7 +171,7 @@ define([ 'jquery' ], $ => ({
 
 			} else if (evtSignal === 'show-body') {  // Show panel body
 
-				$(`#${this.id} .${evtData} .panel-body`).removeClass('hidden');
+				$(`#${id} .${evtData} .panel-body`).removeClass('hidden');
 				$(evt.currentTarget).find('span').removeClass('glyphicon-chevron-down').addClass('glyphicon-chevron-up');
 				$(evt.currentTarget).attr('evt-signal', 'hide-body');
 
@@ -111,28 +181,38 @@ define([ 'jquery' ], $ => ({
 
 				disableConsole();  // Disable the console log to prevent program from crashing
 
-				publish('/main/make-widget-visible', 'connection-widget');
-				this.bufferGcode();
+				// publish('/main/make-widget-visible', 'connection-widget');
+				this.bufferGcode({ StartIndex: this.startFromIndex });
 
 			} else if (evtSignal === 'gcode-buffer/control' && (evtData === 'pause' || evtData === 'resume' || evtData === 'stop')) {
 
-				inDebugMode && enableConsole();  // Re-enable the console log for debugging
+				// inDebugMode && enableConsole();  // Re-enable the console log for debugging
 
 				console.log(`pressed ${evtData}`);
 				publish(evtSignal, evtData);
+
+			} else if (evtData === 'reload-gcode') {
+
+				this.reloadFile();
+				// this.fileLoaded({ FileName, Gcode, GcodeData, ToolMeta, ToolChange });
+
+			} else if (evtData === 'open-file') {
+
+				this.fileOpenDialog();
 
 			}
 
 		});
 
-		$(`#${this.id} .vertical-probe-panel .btn-group`).on('click', 'span.btn', (evt) => {  // Vertical probe panel buttons
+		$(`#${this.id} .tool-panel .btn-group`).on('click', 'span.btn', (evt) => {  // Tool Change panel buttons
 
+			const { id, GcodeData, activeIndex } = this;
 			const evtSignal = $(evt.currentTarget).attr('evt-signal');
 			const evtData = $(evt.currentTarget).attr('evt-data');
 
 			if (evtSignal === 'hide-body') {  // Hide panel body
 
-				$(`#${this.id} .${evtData} .panel-body`).addClass('hidden');
+				$(`#${id} .${evtData} .panel-body`).addClass('hidden');
 				$(evt.currentTarget).find('span').removeClass('glyphicon-chevron-up').addClass('glyphicon-chevron-down');
 				$(evt.currentTarget).attr('evt-signal', 'show-body');
 
@@ -140,7 +220,37 @@ define([ 'jquery' ], $ => ({
 
 			} else if (evtSignal === 'show-body') {  // Show panel body
 
-				$(`#${this.id} .${evtData} .panel-body`).removeClass('hidden');
+				$(`#${id} .${evtData} .panel-body`).removeClass('hidden');
+				$(evt.currentTarget).find('span').removeClass('glyphicon-chevron-down').addClass('glyphicon-chevron-up');
+				$(evt.currentTarget).attr('evt-signal', 'hide-body');
+
+				this.resizeWidgetDom();
+
+			} else if (evtData === 'complete') {  // Tool change complete
+
+				this.toolChangeComplete(GcodeData.Id[activeIndex]);
+
+			}
+
+		});
+
+		$(`#${id} .vertical-probe-panel .btn-group`).on('click', 'span.btn', (evt) => {  // Vertical probe panel buttons
+
+			const { id } = this;
+			const evtSignal = $(evt.currentTarget).attr('evt-signal');
+			const evtData = $(evt.currentTarget).attr('evt-data');
+
+			if (evtSignal === 'hide-body') {  // Hide panel body
+
+				$(`#${id} .${evtData} .panel-body`).addClass('hidden');
+				$(evt.currentTarget).find('span').removeClass('glyphicon-chevron-up').addClass('glyphicon-chevron-down');
+				$(evt.currentTarget).attr('evt-signal', 'show-body');
+
+				this.resizeWidgetDom();
+
+			} else if (evtSignal === 'show-body') {  // Show panel body
+
+				$(`#${id} .${evtData} .panel-body`).removeClass('hidden');
 				$(evt.currentTarget).find('span').removeClass('glyphicon-chevron-down').addClass('glyphicon-chevron-up');
 				$(evt.currentTarget).attr('evt-signal', 'hide-body');
 
@@ -148,7 +258,7 @@ define([ 'jquery' ], $ => ({
 
 			} else if (evtData === 'play') {  // Send gcode to be buffered to the SPJS
 
-				publish('/main/make-widget-visible', 'connection-widget');
+				publish('/main/make-widget-visible', 'connection-widget');  // Make the connection widget visible
 				this.probe.begin();
 
 			}
@@ -156,48 +266,118 @@ define([ 'jquery' ], $ => ({
 		});
 
 	},
+	keyboardShortcuts(keys) {
 
-	fileLoaded({ FileName, Lines, Data }) {  // Called when a file gets loaded from the Load Widget
+		if (!this.widgetVisible)  // If this widget is not visible
+			return false;
 
-		this.fileGcodeData = Lines;  // Store the data globally
+		if (typeof keys == 'undefined') {  // If the keys argument is invalid
 
+			debug.error('The keys argument is invalid.');
+			return false;
+
+		}
+
+		if (keys === 'ctrl+o')  // ctrl-o
+			this.fileOpenDialog();  // Launch the file explorer dialog
+
+	},
+
+	fileOpenDialog() {
+
+		if (this.lastOpenFileDialogTime && Date.now() - this.lastOpenFileDialogTime < 1000)
+			return;
+
+		this.lastOpenFileDialogTime = Date.now();
+
+		const openOptions = {
+			title: 'Open a File',
+			filters: [
+				{ name: 'GCode', extensions: [ 'nc' ] },
+				{ name: 'All', extensions: [ '' ] }
+			],
+			properties: [ 'openFile' ]
+		};
+
+		debug.log('open dialog');
+
+		ipc.send('open-dialog', openOptions);  // Launch the file explorer dialog
+
+		ipc.on('opened-file', (event, path) => {  // Callback for file explorer dialog
+
+			debug.log(`Open path selected: ${path}`);
+			// path && this.openFile(path);  // If a file was selected, parse the selected file
+			path && publish('run-widget/file-path', path);  // If a file was selected, parse the selected file
+
+		});
+
+	},
+	fileLoaded({ FileName, Gcode, GcodeData, ToolMeta, ToolChange }) {  // Called when a file gets loaded from the Load Widget
+
+		if (FileName === '')  // If the file data is invalid
+			return debug.error('The file data is invalid.');
+
+		this.FileName = FileName;
+		this.Gcode = Gcode;
+		this.GcodeData = GcodeData;
+		this.ToolMeta = ToolMeta;
+		this.ToolChange = ToolChange;
+		this.trackMode = 'on-complete';
+		const idMap = {};
+		const idToolChangeMap = {};
 		let gcodeHTML = '';
+		let tcSum = 0;
 
-		for (let i = 0; i < Lines.length; i++) {  // Build the gcode file text DOM
+		const { id, zeroIndexLineNumber, minLineNumberDigits } = this;
 
-			const prefixZeros = ((i + 1).toString().length > this.minLineNumberDigits) ? 0 : this.minLineNumberDigits - (i + 1).toString().length;
-			const domLineNumber = '0'.repeat(prefixZeros) + (i + 1);
-			const line = Lines[i];
+		for (let i = 0; i < Gcode.length; i++) {  // Build the gcode DOM
 
-			if (/^N[0-9]+/i.test(line)) {  // If the line is numbered gcode
+			const lineNumber = zeroIndexLineNumber ? i : i + 1;
+			const prefixZeros = ((lineNumber).toString().length > minLineNumberDigits) ? 0 : minLineNumberDigits - (lineNumber).toString().length;
+			const domLineNumber = `${'0'.repeat(prefixZeros)}${lineNumber}`;
 
-				const divClass = `gc${line.match(/N[0-9]+/i)[0]}`;
-				gcodeHTML += `<div class="${divClass}">`;
+			const line = GcodeData.Gcode[i];
+			const id = GcodeData.Id[i];
+			const desc = GcodeData.Desc[i];
 
-			} else {
+			idMap[id] = i;
 
-				gcodeHTML += `<div class="gc${i}">`;
+			if (desc.includes('tool-change'))  // If the line is a tool change command
+				idToolChangeMap[GcodeData.Id[i - 1]] = tcSum++;
 
-			}
+			gcodeHTML += `<div  id="run-widget/${id}" class="${id}" gcode-index="${i}">`;
+			gcodeHTML += `<span class="line-number text-muted">${domLineNumber}</span>`;
 
-			gcodeHTML += `<span class="text-muted" style="font-size: 8px; margin-right: 19px; margin-left: 0px;">${domLineNumber}</span>`;
+			if (desc.includes('comment'))  // If the line is a comment
+				gcodeHTML += `<samp class="gcode text-nowrap text-muted">${line}</samp>`;  // Mute text
 
-			if (/\(|\)/i.test(line))  // If the line is a comment
-				gcodeHTML += `<samp class="text-nowrap text-muted">${line}</samp>`;
-			else
-				gcodeHTML += `<samp class="text-nowrap ${(/T[0-9]+/i.test(line)) ? 'text-info' : 'text-default'}">${line}</samp>`;  // Hilite text if it is a tool change command
+			else if (desc.includes('tool-change'))  // If the line is not a comment
+				gcodeHTML += `<samp class="gcode text-nowrap text-info">${line}</samp>`;  // Hilite text
+
+			else  // If the line is not a comment or a tool change command
+				gcodeHTML += `<samp class="gcode text-nowrap text-default">${line}</samp>`;
 
 			gcodeHTML += '</div>';
 
 		}
 
+		this.updateToolChange();
+		this.activeId = GcodeData.Id[0];
+		this.idMap = idMap;
+		this.idToolChangeMap = idToolChangeMap;
+
 		const [ globalPath, localFileName ] = FileName.match(/([^\\]+)\.[a-zA-Z0-9]+$/i);
 
-		$(`#${this.id} .gcode-view-panel .gcode-file-name`).text(localFileName);
-		$(`#${this.id} .gcode-view-panel .gcode-file-text`).html(gcodeHTML);  // Add the gcode file to the file text panel
+		$(`#${id} .gcode-view-panel .gcode-file-name`).text(localFileName);
+		$(`#${id} .gcode-view-panel .gcode-file-text`).html(gcodeHTML);  // Add the gcode file to the file text panel
 
-		this.plotData(Data);
-		this.resizeWidgetDom();
+		const [ gcodeLineId ] = GcodeData.Id;
+		const element = document.getElementById(`run-widget/${gcodeLineId}`);
+		element && element.scrollIntoView();
+		// $('#run-widget .gcode-file-panel .gcode-file-text').scrollTop(0);
+
+		// this.plotData(Data);
+		// this.resizeWidgetDom();
 
 	},
 	plotData(data) {
@@ -242,81 +422,46 @@ define([ 'jquery' ], $ => ({
 		Plotly.newPlot('run-widget-gcode-plot', plotData, layout);
 
 	},
+	reloadFile() {
 
-	onPortList(data) {
+		const { FileName, Gcode, GcodeData, ToolMeta, ToolChange } = this;
 
-		const { PortList, PortMeta, Diffs, OpenPorts, OpenLogs } = data;
+		if (!FileName)  // If no file is loaded
+			return false;
 
-		console.log(`got port list data:\n${JSON.stringify(data)}`);
-
-		if (OpenPorts && OpenPorts.length)  // If there are any open ports
-			[ this.mainDevicePort ] = OpenPorts;  // Use the alphanumerically first port that is open as the main port
-
-		else  // If there are no open ports
-			this.mainDevicePort = '';
-
-		this.probe.port = this.mainDevicePort;
+		this.fileLoaded({ FileName, Gcode, GcodeData, ToolMeta, ToolChange });
 
 	},
-	onPortData(port, { Msg, Data }) {  // The recvPortData method receives port data from devices on the SPJS
 
-		debug.log(`Got data from '${port}':\nLine: ${Msg}\nData: ${Data}\nData:`, Data);
+	bufferGcode({ StartIndex = 0 }) {
 
-		if (Data && Data.r && Data.r.prb)  // If a probe finished message (eg. '{"r":{"prb":{"e":1,"x":0.000,"y":0.000,"z":-0.511,"a":0.000,"b":0.000,"c":0.000}},"f":[1,0,0,4931]}')
-			this.probe.onReply(Data);
+		const { mainDevicePort: port, Gcode, GcodeData, pauseOnToolChange, maxGcodeBufferLength, gcodeBufferInterval } = this;
+		let bufferData = [];
 
-		if (Data && Data.sr && typeof Data.sr.unit !== 'undefined') {  // Got units information
+		if (!port || !Gcode.length)  // If no port or gcode file is open
+			return false;
 
-			const { unit: unitData } = Data.sr;
-			const unit = unitData ? 'mm' : 'inch';
+		for (let i = StartIndex; i < Gcode.length; i++) {
 
-			this.machine.updateUnit(unit);  // Update the unit
+			const line = GcodeData.Gcode[i];
+			const id = GcodeData.Id[i];
+			const desc = GcodeData.Desc[i];
 
-		} else if (Data && Data.r && Data.r.sr && typeof Data.r.sr.unit !== 'undefined') {  // Got units information from a status report
+			if (bufferData.length && pauseOnToolChange && desc.includes('tool-change'))  // If the line is a tool change command
+				break;
 
-			const { unit: unitData } = Data.r.sr;
-			const unit = unitData ? 'mm' : 'inch';
-
-			this.machine.updateUnit(unit);  // Update the unit
+			const dataItem = {
+				Msg: line,
+				Id: id
+			};
+			bufferData = [ ...bufferData, dataItem ];
 
 		}
 
-		if (Data && Data.sr && typeof Data.sr.posx !== 'undefined')  // X axis position
-			this.machine.updatePosition({ x: Data.sr.posx });
+		const lastId = bufferData[bufferData.length - 1].Id;
+		this.lastBufferedId = lastId;
 
-		else if (Data && Data.r && Data.r.sr && typeof Data.r.sr.posz !== 'undefined')  // X axis position
-			this.machine.updatePosition({ x: Data.r.sr.posx });
-
-		if (Data && Data.sr && typeof Data.sr.posy !== 'undefined')  // Y axis position
-			this.machine.updatePosition({ y: Data.sr.posy });
-
-		else if (Data && Data.r && Data.r.sr && typeof Data.r.sr.posy !== 'undefined')  // Y axis position
-			this.machine.updatePosition({ y: Data.r.sr.posy });
-
-		if (Data && Data.sr && typeof Data.sr.posz !== 'undefined')  // Z axis position
-			this.machine.updatePosition({ z: Data.sr.posz });
-
-		else if (Data && Data.r && Data.r.sr && typeof Data.r.sr.posz !== 'undefined')  // Z axis position
-			this.machine.updatePosition({ z: Data.r.sr.posz });
-
-	},
-	onQueueCount(QCnt) {
-
-		this.queueCount = QCnt;
-		debug.log(`got queue count ${this.queueCount}`);
-
-	},
-
-	bufferGcode() {
-
-		const { mainDevicePort: port, fileGcodeData, mainDevicePort } = this;
-
-		if (!port || !fileGcodeData)
-			return false;
-
-		// Only buffer up to the first tool change command
-
-		publish('connection-widget/port-sendbuffered', mainDevicePort, { Msg: fileGcodeData });  // Send gcode data to be buffered to the SPJS
+		publish('connection-widget/port-sendbuffered', port, { Data: bufferData });  // Send gcode data to be buffered to the SPJS
 
 	},
 	gcodeBufferControl(data) {
@@ -344,6 +489,318 @@ define([ 'jquery' ], $ => ({
 			$(`#${this.id} .gcode-view-panel .gcode-pause-btn`).removeClass('text-muted');
 
 		}
+
+	},
+
+	onPortList(data) {
+
+		const { mainDevicePort, probe, machine } = this;
+		const { PortList, PortMeta, Diffs, OpenPorts, OpenLogs } = data;
+
+		console.log(`got port list data:\n${JSON.stringify(data)}`);
+
+		if (OpenPorts && !OpenPorts.length && mainDevicePort) {  // If all connected ports have disconnected
+
+			machine.velocity = undefined;
+			$('#run-widget .status-panel .status-value').text('--');
+			$('#run-widget .feedrate-panel .feedrate-units').text('--');
+			$('#run-widget .feedrate-progress-bar').css('width', '0%');
+
+			machine.updateUnit('--');
+			machine.updatePosition({ x: 0, y: 0, z: 0 });
+			machine.updateSpindle({ rpm: '--' });
+
+		} else if (OpenPorts && OpenPorts.length && !mainDevicePort) {
+
+			machine.updateSpindle({ rpm: 0 });
+
+		}
+
+		if (OpenPorts && OpenPorts.length)  // If there are any open ports
+			[ this.mainDevicePort ] = OpenPorts;  // Use the alphanumerically first port that is open as the main port
+
+		else  // If there are no open ports
+			this.mainDevicePort = '';
+
+		probe.port = this.mainDevicePort;
+
+	},
+	onPortData(port, { Msg, Data }) {  // The recvPortData method receives port data from devices on the SPJS
+
+		debug.log(`Got data from '${port}':\nLine: ${Msg}\nData: ${Data}\nData:`, Data);
+
+		if (typeof Data == 'undefined' || !Data)  // If the data argument is invalid
+			return debug.error('The data argument is invalid.');
+
+		if (Data.sr)  // If a status report was received
+			this.onStatusReport(Data.sr);
+
+		if (Data.r && Data.r.sr)  // If a status report was received
+			this.onStatusReport(Data.r.sr);
+
+		// if (Data.r && Data.r.n)  // If a line number was received
+		// 	this.onStatusReport({ line: Data.r.n });
+
+		if (Data.r && Data.r.prb)  // If a probe finished message (eg. '{"r":{"prb":{"e":1,"x":0.000,"y":0.000,"z":-0.511,"a":0.000,"b":0.000,"c":0.000}},"f":[1,0,0,4931]}')
+			this.probe.onReply(Data);
+
+	},
+	onQueueCount(QCnt) {
+
+		this.queueCount = QCnt;
+
+	},
+	onMessageStatus(data) {
+
+		const { Cmd, Id, P } = data;
+		const { trackMode, Gcode, GcodeData, ToolChange, idMap } = this;
+
+		if (!Gcode.length)  // If no file is loaded
+			return false;
+
+		const index = idMap[Id];
+		const desc = GcodeData.Desc[index];
+
+		if (typeof index != 'undefined' && (trackMode === 'on-complete' || desc.includes('spindle')))
+			this.updateGcodeTracker(Id);
+
+		if (trackMode === 'on-complete' && typeof index != 'undefined' && index < Gcode.length - 1 && GcodeData.Desc[index + 1].includes('tool-change'))  // If the next line is a tool change
+			this.toolChangeActive(Id);
+
+	},
+	onStatusReport(sr) {
+
+		const { trackMode, machine, idMap, Gcode, GcodeData } = this;
+		const { line, posx, posy, posz, vel, unit, stat, feed, coor, momo, plan, path, dist, mpox, mpoy, mpoz } = sr;
+
+		if (typeof line != 'undefined' && (typeof stat == 'undefined' || stat !== 5)) {  // If received a line number and status is not error
+
+			const id = `gcN${line}`;
+			const index = idMap[id];
+
+			if (typeof index != 'undefined') {  // If the id is in the gcode file
+
+				const desc = GcodeData.Desc[index];
+
+				if (trackMode === 'on-complete')
+					this.trackMode = 'status-report';
+
+				this.updateGcodeTracker(id);  // Update the active line in the gcode viewer panel
+
+				if (index < Gcode.length - 1 && GcodeData.Desc[index + 1].includes('tool-change'))  // If the next line is a tool change
+					this.toolChangeActive(id);
+
+			}
+
+		}
+
+		if (typeof feed != 'undefined')  // Feedrate
+			machine.feedrate = feed;
+
+		if (typeof vel != 'undefined')  // Machine velocity
+			machine.updateVelocity(vel);
+
+		if (typeof posx != 'undefined')  // X axis position
+			machine.updatePosition({ x: posx });
+
+		if (typeof posy != 'undefined')  // Y axis position
+			machine.updatePosition({ y: posy });
+
+		if (typeof posz != 'undefined')  // Z axis position
+			machine.updatePosition({ z: posz });
+
+		if (typeof unit != 'undefined')  // Got units information
+			machine.updateUnit(unit ? 'mm' : 'inch');  // Update the unit
+
+	},
+
+	// updateGcodeTracker(id) {
+	//
+	// 	const { Gcode, GcodeData, idMap, idToolChangeMap } = this;
+	// 	const $activeLine = $(`#run-widget .gcode-view-panel .${id}`);
+	//
+	// 	if ()
+	//
+	// 	this.gcodeTrackerActive(id);
+	//
+	// },
+
+	updateGcodeTracker(id, scroll = true) {
+
+		const { Gcode, GcodeData, idMap } = this;
+		const { activeId, activeIndex, fileGcodeData, $gcodeLog, gcodeLineScrollOffset, lastBufferedId, activeLineClearDelay } = this;
+		const $activeElement = $(`#run-widget .gcode-view-panel .${id}`);
+		let activeIdNext = '';
+
+		if (typeof id == 'undefined' || (typeof lastBufferedId == 'undefined' && Number(lastBufferedId.match(/[0-9]+/)[0]) - Number(id.match(/[0-9]+/)[0]) < 0))
+			return false;
+
+		if (id === activeId)
+			return false;
+
+		const lineIndex = idMap[id];
+		const gcodeLine = GcodeData.Gcode[lineIndex];
+
+		if (scroll) {
+
+			let scrollId = GcodeData.Id[0];
+
+			if (lineIndex > gcodeLineScrollOffset)
+			scrollId = GcodeData.Id[lineIndex - gcodeLineScrollOffset];
+
+			const element = document.getElementById(`run-widget/${scrollId}`);
+			element && element.scrollIntoView({ block: "start", behavior: "smooth" });  // Scroll the active gcode line into view
+
+		}
+
+		if (activeId && idMap[activeId] < lineIndex - 1)
+			this.updateGcodeTracker(GcodeData.Id[lineIndex - 1], false);
+			// this.fillTrackerUpdateGap({ Id: GcodeData.Id[idMap[activeId] + 1], LastId: id });
+
+		if (/S[0-9]+/i.test(gcodeLine))  // Spindle rpm
+			publish('run-widget/update-spindle', { rpm: Number(gcodeLine.match(/S([0-9]+)/i)[1]) });
+
+		if (/M3/i.test(gcodeLine) && !/M[0-9]{2,}/i.test(gcodeLine))  // Spindle on clockwise rotation
+			publish('run-widget/update-spindle', { dir: 'cw' });
+
+		if (/M4/i.test(gcodeLine) && !/M[0-9]{2,}/i.test(gcodeLine))  // Spindle on counter-clockwise rotation
+			publish('run-widget/update-spindle', { dir: 'ccw' });
+
+		if ((/(M0|M1|M2|M5)/i.test(gcodeLine) && !/M[0-9]{2,}/i.test(gcodeLine)) || /M30/i.test(gcodeLine))  // Spindle off or program end
+			publish('run-widget/update-spindle', { dir: 'off' });
+
+		this.gcodeTrackerActive({ ActiveId: id, SuccessId: this.activeId });
+
+		this.activeId = id;
+		this.activeIndex = idMap[id];
+
+		if (id === GcodeData.Id[Gcode.length - 1] && activeLineClearDelay) {  // If this is the last line in the gcode file
+
+			setTimeout(() => {
+
+				this.updateGcodeTracker();
+
+			}, activeLineClearDelay);
+
+		} else if (id === GcodeData.Id[Gcode.length - 1]) {
+
+			setTimeout(() => {
+
+				this.reloadFile();
+
+			}, 3500);
+
+		}
+
+	},
+	gcodeTrackerActive({ ActiveId, SuccessId }) {
+
+		const { GcodeData, idMap } = this;
+
+		if (typeof ActiveId != 'undefined' && typeof idMap[ActiveId] != 'undefined') {
+
+			const $line = $(`#run-widget .gcode-view-panel .${ActiveId}`);
+			$line.addClass('bg-primary');  // Hilite the active gcode line
+			$line.removeClass('bg-default bg-success');
+
+		}
+
+		if (typeof SuccessId != 'undefined' && typeof idMap[SuccessId] != 'undefined') {
+
+			const gcodeLine = GcodeData.Gcode[idMap[SuccessId]];
+			const $line = $(`#run-widget .gcode-view-panel .${SuccessId}`);
+
+			$line.addClass('bg-success');
+			$line.removeClass('bg-default bg-primary');
+
+		}
+
+	},
+	fillTrackerUpdateGap({ Id, LastId, recursionDepth = 0 }) {
+
+		const { GcodeData, idMap } = this;
+
+		if (typeof Id == 'undefined')  // If the Id argument is invalid
+			return false;
+
+		if (typeof LastId == 'undefined')  // If the LastId argument is invalid
+			return debug.error('The LastId argument is invalid.');
+
+		if (recursionDepth > this.maxUpdateGapFill)  // If recurion is getting out of control
+			return debug.error('Hit recursion depth limit.');
+
+		const index = idMap[Id];
+		const lastIndex = idMap[LastId];
+
+		if (typeof index == 'undefined' || typeof lastIndex == 'undefined')
+			return false;
+
+		this.gcodeTrackerActive({ SuccessId: Id });
+
+		if (index < lastIndex - 1)
+			this.fillTrackerUpdateGap({ Id: GcodeData.Id[index + 1], LastId: LastId, recursionDepth: recursionDepth + 1 });
+
+	},
+
+	updateToolChange() {
+
+		const { ToolChange, zeroIndexLineNumber } = this;
+		let toolHTML = '';
+
+		for (let i = 0; i < ToolChange.length; i++) {
+
+			const { Tool, Desc, GcodeComment, Gcode, Index, Id } = ToolChange[i];
+			const lineNumber = zeroIndexLineNumber ? Index : Index + 1;
+
+			toolHTML += `<div class="tool-item item-${i}">`;
+			toolHTML += '<div class="tool-right-info">';
+			toolHTML += `<div class="tool-line">Line ${lineNumber}</div>`;
+			toolHTML += `<div class="tool-gcode">${Gcode}</div>`;
+			toolHTML += '</div>';
+			toolHTML += `<div class="tool-name">${GcodeComment}</div>`;
+			toolHTML += `<div class="tool-desc">${Tool} <span>${Desc.replace(/T[0-9]+ /i, '')}</span></div>`;
+			toolHTML += '</div>';
+
+		}
+
+		$('#run-widget .tool-panel .panel-body').html(toolHTML);
+
+	},
+	toolChangeActive(id) {
+
+		const { ToolChange, idToolChangeMap, pauseOnToolChange } = this;
+		const tcIndex = idToolChangeMap[id];
+
+		if (typeof tcIndex == 'undefined' || typeof ToolChange[tcIndex] == 'undefined')  // If the tcIndex argument is invalid
+			return false;
+
+		this.activeToolIndex = tcIndex;
+		// this.ToolChange[tcIndex].Status = 'active';
+		$(`#run-widget .tool-panel .panel-body .item-${tcIndex}`).addClass('bg-primary');  // Hilite the tool as active
+
+		if (pauseOnToolChange)
+			$('#run-widget .tool-panel .panel-heading .complete-btn').removeClass('hidden');  // Show the complete button
+
+		else
+			this.toolChangeComplete(tcIndex);
+
+	},
+	toolChangeComplete(id) {
+
+		const { ToolChange, idToolChangeMap } = this;
+		const tcIndex = idToolChangeMap[id];
+
+		if (typeof tcIndex == 'undefined' || typeof ToolChange[tcIndex] == 'undefined')  // If the tcIndex argument is invalid
+			return false;
+
+		// this.ToolChange[tcIndex].Status = 'complete';
+		$(`#run-widget .tool-panel .panel-body .item-${tcIndex}`).addClass('bg-success');  // Hilite the tool as complete
+		$(`#run-widget .tool-panel .panel-body .item-${tcIndex}`).removeClass('bg-primary');
+
+		$('#run-widget .tool-panel .panel-heading .complete-btn').addClass('hidden');  // Hide the complete button
+
+		const StartIndex = ToolChange[tcIndex].Index;
+		this.bufferGcode({ StartIndex });
 
 	},
 
@@ -638,11 +1095,37 @@ define([ 'jquery' ], $ => ({
 		unit: undefined,
 		intomm: 25.4,
 		mmtoin: 0.0393700787401575,
+		velocity: undefined,
+		feedrate: 400,
+		feedrateBarMax: 2,
+		spindleRPM: 0,
+		/**
+		 *  Direction and state of spindle.
+		 *  '': Spindle off.
+		 *  'cw': Spindle on clockwise rotation.
+		 *  'ccw': Spindle on counter-clockwise rotation.
+		 *  @type {String}
+		 */
+		spindleDir: 'off',
+		/**
+		 *  Minimum spindle speed [rpm].
+		 *  @type {Number}
+		 */
+		spindleMin: 6000,
+		/**
+		 *  Maximum spindle speed [rpm].
+		 *  @type {Number}
+		 */
+		spindleMax: 24000,
 		/**
 		 *  How many digits should be shown before the decimal place by default.
 		 *  @type {Number}
 		 */
 		intGrayDigits: 3,
+		/**
+		 *  the minimum number of decimal places to show in the DRO.
+		 *  @type {Number}
+		 */
 		minDecimals: 3,
 		/**
 		 *  The maximum number of decimal places to show in the DRO.
@@ -685,6 +1168,10 @@ define([ 'jquery' ], $ => ({
 			return valueHTML;
 
 		},
+		/**
+		 *  Updates the position in the DRO
+		 *  @param  {Object} newPos Ex. { x: 3.292, y: 98.238, z:16.828 }
+		 */
 		updatePosition(newPos) {
 
 			const { position, $axisValue } = this;
@@ -716,7 +1203,112 @@ define([ 'jquery' ], $ => ({
 				return false;
 
 			this.unit = newUnit;
-			$('#run-widget .dro-panel .dro-units').text(this.unit);  // Update the unit in the DRO
+			$('#run-widget .dro-panel .dro-units').text(newUnit);  // Update the units in the DRO panel
+			$('#run-widget .feedrate-panel .feedrate-units').text(`${newUnit}/min`);
+
+		},
+		updateVelocity(vel) {
+
+			const { velocity, feedrate, feedrateBarMax } = this;
+
+			if (typeof vel == 'undefined') // The vel argument is invalid
+				return debug.error('The vel argument is invalid.');
+
+			if (vel === velocity)
+				return false;
+
+			// if ((typeof velocity == 'undefined' || velocity === 0) && vel > 0) {  // If moving
+			//
+			// 	$('#run-widget .feedrate-progress-bar').addClass('progress-bar-success');
+			// 	$('#run-widget .feedrate-progress-bar').removeClass('progress-bar-danger progress-bar-warning');
+			//
+			// }
+
+			if (vel > feedrate) {  // If doing a rapid movement
+
+				$('#run-widget .feedrate-progress-bar').addClass('progress-bar-warning');
+				$('#run-widget .feedrate-progress-bar').removeClass('progress-bar-success progress-bar-danger');
+
+			} else if (vel === 0) {  // If not moving
+
+				$('#run-widget .feedrate-progress-bar').addClass('progress-bar-danger');
+				$('#run-widget .feedrate-progress-bar').removeClass('progress-bar-success progress-bar-warning');
+				$('#run-widget .feedrate-progress-bar').css('width', '0%');
+
+			} else {  // If doing a feed movement
+
+				$('#run-widget .feedrate-progress-bar').addClass('progress-bar-success');
+				$('#run-widget .feedrate-progress-bar').removeClass('progress-bar-warning progress-bar-danger');
+
+			}
+
+			this.velocity = vel;
+			$('#run-widget .feedrate-panel .feedrate-value').text(`${Math.roundTo(vel, 0)}`);  // Update the velocity in the feedrate panel
+
+			const bar = Math.min(Math.max(Math.roundTo(vel * 100 / (feedrate * feedrateBarMax), 0), 0), 100);
+			$('#run-widget .feedrate-progress-bar').css('width', `${bar}%`);
+
+		},
+		updateSpindle({ rpm, dir }) {
+
+			const { spindleRPM, spindleDir, spindleMin, spindleMax } = this;
+
+			if (rpm === '--') {  // If the device has disconnected
+
+				this.spindleRPM = 0;
+				this.spindleDir = 'off';
+				$('#run-widget .spindle-panel .spindle-dir').addClass('hidden');
+				$('#run-widget .spindle-panel .spindle-value').text('--');
+				$('#run-widget .spindle-panel .spindle-progress-bar').addClass('progress-bar-danger');
+				$('#run-widget .spindle-panel .spindle-progress-bar').removeClass('progress-bar-success');
+				$('#run-widget .spindle-panel .spindle-progress-bar').css('width', '0%');
+
+			} else if (typeof dir != 'undefined' && (dir === 'cw' || dir === 'ccw')) {  // If the spindle is turned on
+
+				this.spindleRPM = typeof rpm == 'undefined' ? spindleRPM : rpm;
+
+				if (typeof this.spindleRPM == 'undefined')
+					this.spindleRPM = 0;
+
+				this.spindleDir = dir;
+				$(`#run-widget .spindle-panel .spindle-${dir === 'cw' ? 'ccw' : 'cw'}`).addClass('hidden');
+				$(`#run-widget .spindle-panel .spindle-${dir}`).removeClass('hidden');
+				$('#run-widget .spindle-panel .spindle-value').text(`${this.spindleRPM}`);
+				$('#run-widget .spindle-panel .spindle-progress-bar').addClass('progress-bar-success');
+				$('#run-widget .spindle-panel .spindle-progress-bar').removeClass('progress-bar-danger');
+
+				const bar = Math.min(Math.max(Math.roundTo((this.spindleRPM - spindleMin) * 100 / (spindleMax - spindleMin), 0), 0), 100);
+				$('#run-widget .spindle-panel .spindle-progress-bar').css('width', `${bar}%`);
+
+			} else if ((typeof dir != 'undefined' && dir === 'off') || (typeof rpm == 'undefined' && typeof dir == 'undefined')) {  // If the spindle is turned off
+
+				this.spindleDir = dir;
+				$('#run-widget .spindle-panel .spindle-dir').addClass('hidden');
+				$('#run-widget .spindle-panel .spindle-value').text('0');
+				$('#run-widget .spindle-panel .spindle-progress-bar').addClass('progress-bar-danger');
+				$('#run-widget .spindle-panel .spindle-progress-bar').removeClass('progress-bar-success');
+				$('#run-widget .spindle-panel .spindle-progress-bar').css('width', '0%');
+
+			}
+
+			if (typeof rpm != 'undefined' && rpm !== '--') {
+
+				this.spindleRPM = Number(rpm);
+
+				if (this.spindleDir != 'off') {  // If the spindle is on
+
+					$('#run-widget .spindle-panel .spindle-value').text(`${this.spindleRPM}`);
+					const bar = Math.min(Math.max(Math.roundTo((this.spindleRPM - spindleMin) * 100 / (spindleMax - spindleMin), 0), 0), 100);
+					const $stuff = $('#run-widget .spindle-panel .spindle-progress-bar');
+					$stuff.css('width', `${bar}%`);
+
+				} else if (this.spindleRPM === 0) {
+
+					$('#run-widget .spindle-panel .spindle-value').text('0');
+
+				}
+
+			}
 
 		}
 
@@ -825,6 +1417,7 @@ define([ 'jquery' ], $ => ({
 			return false;
 
 		const that = this;
+		const { GcodeData, idMap, gcodeLineScrollOffset, activeId } = this;
 
 		// TODO: Do the resize stuff like this: $(selector).attr(attribute,function(index,currentvalue))
 		// index - Receives the index position of the element in the set.
@@ -850,19 +1443,29 @@ define([ 'jquery' ], $ => ({
 
 				}
 
-				let elementItem = containerElement + panelItem;
-				marginSpacing += Number($(elementItem).css('margin-top').replace(/px/g, ''));
+				const $element = $(`${containerElement}${panelItem}`);
+				marginSpacing += Number($element.css('margin-top').replace(/px/g, ''));
 
 				if (panelIndex === setItem.length - 1) {  // Last element in array
 
-					marginSpacing += Number($(elementItem).css('margin-bottom').replace(/px/g, ''));
-					let panelHeight = containerHeight - (marginSpacing + panelSpacing);
+					marginSpacing += Number($element.css('margin-bottom').replace(/px/g, ''));
+					const panelHeight = `${containerHeight - (marginSpacing + panelSpacing)}px`;
+					const elementHeight = $element.css('height');
 
-					$(elementItem).css({ height: `${panelHeight}px` });
+					if (elementHeight !== panelHeight)
+						$element.css({ height: panelHeight });
+
+					if (elementHeight !== panelHeight && panelItem === ' .gcode-view-panel') {
+
+						const { scrollOffsetFactor } = that1;
+						const lineHeight = $element.find('div') ? $element.find('div').height() : 18.5;
+						that1.gcodeLineScrollOffset = Math.roundTo(Number(panelHeight.replace(/px/, '')) * scrollOffsetFactor / lineHeight, 0);
+
+					}
 
 				} else {  // If this is not the last element in the array, read the element's height.
 
-					panelSpacing += Number($(elementItem).css('height').replace(/px/g, ''));
+					panelSpacing += Number($element.css('height').replace(/px/, ''));
 
 				}
 
@@ -870,7 +1473,35 @@ define([ 'jquery' ], $ => ({
 
 		});
 
-		$(`#${this.id} div.gcode-view-panel div.panel-body div`).width($(`#${this.id} div.gcode-view-panel div.panel-body`).width() - 10);  // Set the width of the gcode file panel
+		const $panelBody = $(`#${this.id} div.gcode-view-panel div.panel-body`);
+		const divWidth = $panelBody.find('div').width();
+		const panelWidth = $panelBody.width();
+
+		if (activeId) {
+
+			const lineIndex = idMap[activeId];
+
+			if (typeof lineIndex != 'undefined') {
+
+				let gcodeId = '';
+
+				if (lineIndex > gcodeLineScrollOffset)
+					gcodeId = GcodeData.Id[lineIndex - gcodeLineScrollOffset];
+
+				else
+					gcodeId = GcodeData.Id[0];
+
+				const element = document.getElementById(`run-widget/${gcodeId}`);
+					element && element.scrollIntoView({ block: "start", behavior: "smooth" });  // Scroll the active gcode line into view
+
+			}
+
+		}
+
+
+		if (divWidth !== panelWidth)
+			$panelBody.find('div').width(panelWidth);  // Set the width of the gcode file panel
+
 		return true;
 
 	},

@@ -42,6 +42,7 @@ define([ 'jquery' ], $ => ({
 
 		subscribe('/main/window-resize', this, this.resizeWidgetDom.bind(this));
 		subscribe('/main/widget-visible', this, this.visibleWidget.bind(this));
+		subscribe('run-widget/file-path', this, this.openFile.bind(this));
 
 		// subscribe('/connection-widget/recvPortList', this, this.recvPortList.bind(this));
 
@@ -190,162 +191,159 @@ define([ 'jquery' ], $ => ({
 			debug.log(lineData);
 			debug.groupEnd();
 
-			return this.parseFile(fileName, lineData);
+			return this.parseFile({ FileName: fileName, Gcode: lineData });
 
 		});
 
 	},
 
-	parseFile(fileName, gcodeLines) {
+	parseFile({ FileName, Gcode }) {
 
 		let gcodeLineNum = 0;
-		let lineData = gcodeLines;
+		let gcode = Gcode;
 		let momo = '';  // Motion mode
 		let momoNonModal = '';
-		const { fro } = this;
+		let prevComment = '';
+		let tool = 'T0';
+		let motionSinceToolChange = false;
+		const { fro, addLineNumbers } = this;
 		const gcodeData = {
 			x: [],
 			y: [],
 			z: [],
-			lineIndex: [],
-			tc: []
+			Id: [],  // Id
+			Line: [],
+			Gcode: [],
+			Desc: []  // Eg. 'comment', 'M6', 'M8', 'motion', 'coord'
 		};
+		/**
+		 *  Tool meta data.
+		 *  Ex. toolMeta: { T2: { Desc: 'D=3.175 CR=0 TAPER=30deg - ZMIN=-0.3 - chamfer mill' }, T3: { ... }, ... }.
+		 *  @type {Object}
+		 */
+		toolMeta = {};
+		/**
+		 *  List of tool changes that take place throughout the gcode file.
+		 *  Ex. toolChange: [ { Tool: 'T2', Desc: 'D=3.175 CR=0 TAPER=30deg - ZMIN=-0.3 - chamfer mill', GcodeComment: 'Engrave Text', Gcode: 'N6 T2 M6', Id: 'gcN6', Line: 10 }, { Tool: 'T3', ... }, ... ].
+		 *  @type {Array}
+		 */
+		toolChange = [];
 
-		for (let i = 0; i < lineData.length; i++) {  // Remove all carriage-return characters
+		gcode = gcode.filter((value, index, arr) => {  // Remove empty lines and % commands
 
-			let line = lineData[i];
+			if (/^%/.test(value))  // If a clear buffer command
+				return false;
 
-			if (line.includes('\r'))
-				lineData[i] = line.replace('\r', '');
-
-			if (/\(|\)/.test(line))  // If the line is a comment
-				continue;
-
-			if (/T[0-9]+/i.test(line))  // If there is a tool change command
-				gcodeData.tc = [ ...gcodeData.tc, line.match(/T[0-9]+/i)[0] ];
-
-			if (/G0?[0-3][^0-9]{1}/i.test(line))  // If there is a motion mode command
-				momo = `G${line.match(/[0-3]{1}/i)[0]}`;
-
-			if (/G28/i.test(line))  // If there is a non modal motion mode command
-				[ momoNonModal ] = line.match(/G28/i);
-			else
-				momoNonModal = '';
-
-			if (/F[0-9]+/i.test(line) && inDebugMode) {
-
-				const [ , matchNum ] = line.match(/F([0-9]+)/i);
-
-				if (fro > 1)
-					alert(`Feed rate override: ${fro}x`);  // eslint-disable-line no-alert
-
-				lineData[i] = line.replace(/F[0-9]+/i, `F${Math.roundTo(Number(matchNum) * fro, 3)}`);  // Apply feedrate override
-				line = lineData[i];
-
-			}
-
-			if (/[xyz][-0-9.]+/i.test(line) && (momo === 'G0' || momo === 'G1' || momo === 'G2' || momo === 'G3') && momoNonModal === '') {  // If there is an x, y, or z axis movement in this line
-
-				gcodeData.x.push(0);
-				gcodeData.y.push(0);
-				gcodeData.z.push(0);
-				gcodeData.lineIndex.push(i);
-
-				if (gcodeData.x.length >= 2) {
-
-					Object.keys(gcodeData).forEach((key) => {  // Set x, y, and z values to values from prev line by default
-
-						if (key !== 'lineIndex') {
-
-							const a = gcodeData[key].length - 1;
-							const b = gcodeData[key].length - 2;
-
-							gcodeData[key][a] = gcodeData[key][b];
-
-						}
-
-					});
-
-				}
-
-				const matchData = line.match(/[xyz][-0-9.]+/gi);
-
-				for (let j = 0; j < matchData.length; j++) {  // For each x, y, and z position command in this line
-
-					const axis = matchData[j].substr(0, 1).toLowerCase();
-					const value = Number(matchData[j].substr(1));
-
-					if (axis === 'z' && value > 0 && gcodeData.z.length > 1 && !gcodeData.z[0]) {  // If there is a xy movement before a z movement
-
-						for (let a = 0; a < gcodeData.z.length && !gcodeData.z[a]; a++)
-							gcodeData.z[a] = value;
-
-						const prevLine = lineData[i - 1];
-						lineData[i - 1] = `${momo} ${line}`;
-						lineData[i] = prevLine.replace(/G[0-9]{1,2} /i, '');
-
-						return this.parseFile(fileName, lineData);  // Restart parsing of gcode
-
-					}
-
-					gcodeData[axis][gcodeData[axis].length - 1] = value;
-
-				}
-
-			}
-
-		}
-
-		lineData = lineData.filter((value) => {  // Remove empty lines and % commands
-
-			if (/^%|^\n/i.test(value) || value === '' || value === '\n')
+			else if (index + 1 === arr.length && (value === '' || value === '\n'))  // If the last line is empty
 				return false;
 
 			return true;
 
 		});
 
-		for (let i = 0; i < lineData.length; i++) {  // Add line numbers
+		for (let i = 0; i < gcode.length; i++) {
 
-			let line = lineData[i];
+			let line = gcode[i];
 
-			if (this.addLineNumbers && line && line !== '' && line !== '\n' && line !== '\r' && line !== '\r\n' && line[0] !== '%' && line[0] !== '(' && line[0] !== 'N') {  // If a valid line of gcode and line number is not already added
+			gcodeData.x.push(0);
+			gcodeData.y.push(0);
+			gcodeData.z.push(0);
+			gcodeData.Line.push(i + 1);
+			gcodeData.Gcode.push(line);
+			gcodeData.Id.push('');
+			gcodeData.Desc.push([]);
 
-				gcodeLineNum += 1;
-				lineData[i] = `N${gcodeLineNum} ${line}`;  // Add line number to gcode line
-				line = lineData[i];
+			if (line.includes('\r'))
+				line = gcode[i] = line.replace('\r', '');  // Remove carriage-return characters
+
+			if (/^\(|^;/.test(line)) {  // If the line is a comment
+
+				gcodeData.Desc[i].push('comment');
+				prevComment = line.replace(/\(|\)/g, '');
+
+			} else if (/\(|;/.test(line)) {  // If the line has an inline comment
+
+				gcodeData.Desc[i].push('inline-comment');
 
 			}
+
+			if (!motionSinceToolChange && /G0/i.test(line) && !/Z[-.0-9]+/i.test(line) && i < gcode.length - 1) {
+
+				motionSinceToolChange = true;
+				const nextLine = gcode[i + 1];
+
+				gcode[i + 1] = line.replace(/G0 /i, '');
+				line = gcode[i] = `${line.match(/G0+/i)[0]} ${nextLine}`;
+
+			} else if (!motionSinceToolChange && /G0/i.test(line)) {
+
+				motionSinceToolChange = true;
+
+			}
+
+			if (addLineNumbers && line && line !== '\n' && line !== '\r' && line !== '\r\n' && !gcodeData.Desc[i].includes('comment') && !/^N[0-9]+/i.test(line)) {  // Add line number
+
+				gcode[i] = `N${i} ${line}`;
+				gcodeData.Gcode[i] = gcode[i];
+				line = gcode[i];
+
+			}
+
+			if (/N[0-9]+/i.test(line))  // If numbered gcode
+				gcodeData.Id[i] = `gcN${i}`;
+
+			else  // If not numbered gcode
+				gcodeData.Id[i] = `gc${i}`;
+
+			if (/T[0-9]+/i.test(line) && gcodeData.Desc[i].includes('comment'))  // If a tool meta comment
+				toolMeta[line.match(/T[0-9]+/)] = { Desc: line.replace(/\(T[0-9]+ |\)/g, '') };
+
+			else if (/T[0-9]+/i.test(line))  // If a tooling command
+				tool = line.match(/T[0-9]+/);
+
+			if (/M6/i.test(line)) {  // If a tool change command
+
+				const toolItem = {
+					Tool: tool,
+					Desc: toolMeta[tool].Desc,
+					GcodeComment: prevComment,
+					Gcode: line,
+					Index: i,
+					Id: gcodeData.Id[i]
+				};
+				toolChange = [ ...toolChange, toolItem ];
+				gcodeData.Desc[i].push('tool-change');
+				motionSinceToolChange = false;
+
+			}
+
+			if (/S[0-9]+/i.test(line) || (/M3|M4/i.test(line) && !/M[0-9]{2,}/i.test(line)))  // If there is a spindle command
+				gcodeData.Desc[i].push('spindle');
+
+			if (/M[7-9]/i.test(line) && !/M[0-9]{2,}/i.test(line))  // If there is a coolant command
+				gcodeData.Desc[i].push('coolant');
+
+			if (/M30|M60/i.test(line) || (/M[0-2]/i.test(line) && !/M[0-9]{2,}/.test(line)))  // If there is a program end command
+				gcodeData.Desc[i].push('program-end');
+
+			if (/G0?[0-3][^0-9]{1}/i.test(line))  // If there is a motion mode command
+				momo = `G${line.match(/[0-3]{1}/i)[0]}`;
+
+			if (/G28|G30/i.test(line))  // If there is a non modal motion mode command
+				[ momoNonModal ] = line.match(/G28|G30/i);
+
+			else
+				momoNonModal = '';
 
 		}
 
 		debug.log(gcodeData);
-		this.plotData(gcodeData);
+		// this.plotData(gcodeData);
 
-		// for (const [ i, value ] of gcodeData.entries()) {
-		// for (let i = 0; i < gcodeData.z.length; i++) {
-		//
-		// 	const xVal = gcodeData.x[i];
-		// 	const yVal = gcodeData.y[i];
-		// 	const zVal = gcodeData.z[i];
-		// 	const lineIndex = gcodeData.lineIndex[i];
-		// 	const line = lineData[lineIndex];
-		//
-		// 	// if (/x[-0-9.]+/i.test(line))  // If an x position is in the line
-		// 	// 	lineData[lineIndex] = line.replace(/x[-0-9.]+/i, `X${xVal}`);
-		// 	//
-		// 	// if (/y[-0-9.]+/i.test(line))  // If a y position is in the line
-		// 	// 	lineData[lineIndex] = line.replace(/y[-0-9.]+/i, `Y${yVal}`);
-		// 	//
-		// 	// if (/z[-0-9.]+/i.test(line))  // If a z position is in the line
-		// 	// 	lineData[lineIndex] = line.replace(/z[-0-9.]+/i, `Z${zVal}`);
-		//
-		// }
+		debug.log('Gcode file parsed.');
+		// debug.log(gcode);
 
-		debug.log('gcode lines');
-		debug.log(lineData);
-
-		publish('gcode-data/file-loaded', { FileName: fileName, Lines: lineData, Data: gcodeData });  // Publish the parsed gcode lines so that other widgets can use it
+		publish('gcode-data/file-loaded', { FileName, Gcode: gcode, GcodeData: gcodeData, ToolMeta: toolMeta, ToolChange: toolChange });  // Publish the parsed gcode lines so that other widgets can use it
 
 	},
 

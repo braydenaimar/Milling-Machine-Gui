@@ -40,14 +40,23 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 			const key = keys[i];
 
-			if (key === 'memory')
-			debug[key] = console[key];
+			if (key === 'memory') {
 
-			else if (key === 'error')
-			debug[key] = ((...args) => { throw new Error(...args); });  // eslint-disable-line padded-blocks
+				debug[key] = console[key];
 
-			else
-			debug[key] = console[key].bind(console);
+			} else if (key === 'error') {
+
+				debug[key] = ((...args) => {
+
+					throw new Error(...args);
+
+				});  // eslint-disable-line padded-blocks
+
+			} else {
+
+				debug[key] = console[key].bind(console);
+
+			}
 
 		}
 
@@ -65,14 +74,25 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 			const key = keys[i];
 
-			if (banned.includes(key))  // If not allowed
+			if (banned.includes(key)) {  // If not allowed
+
 				debug[key] = () => undefined;
 
-			else if (key === 'memory')
+			} else if (key === 'memory') {
+
 				debug[key] = console[key];
 
-			else
+			} else if (key === 'error') {
+
+				debug[key] = ((...args) => {
+					throw new Error(...args);
+				});  // eslint-disable-line padded-blocks
+
+			} else {
+
 				debug[key] = console[key].bind(console);
+
+			}
 
 		}
 

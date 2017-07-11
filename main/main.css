@@ -52,10 +52,17 @@ code.text-default {
 	font-size: 12px;
 }
 
+.navbar-header {
+	margin-right: 0 !important;
+	margin-left: 0 !important;
+	float: left;
+}
 .nav {
 	padding-left: 0;
 	margin-bottom: 0;
 	list-style: none;
+	float: right !important;
+	margin-right: -5px;
 	/*float: right;*/
 }
 .nav-tabs {
@@ -118,6 +125,7 @@ h1, h2, h3, h4, h4, h5, h6 {
 /* -- Workspace Header -- */
 .navbar-fixed-top {
 	border: 0;
+	margin: 0;
 }
 /* Widget Label */
 #header-widget-label {
@@ -139,7 +147,7 @@ h1, h2, h3, h4, h4, h5, h6 {
 /* -- Side Navigation Bar -- */
 #sidebar {
 	position: fixed;
-    top: 35px;
+    top: 32px;
     bottom: 0;
     right: 0;
 	width: 90px;
@@ -191,4 +199,9 @@ h1, h2, h3, h4, h4, h5, h6 {
 	right: 90px;
 	bottom: 0;
 	padding: 0;
+	/*will-change: opacity;*/
 }
+/*.widget-container.hidden {
+	display: inherit !important;
+	opacity: 0;
+}*/
