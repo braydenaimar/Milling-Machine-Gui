@@ -76,6 +76,9 @@
 	overflow: auto;
 	padding: 2px 5px;
 }
+#connection-widget .console-log-output .gcode-line {
+	white-space: nowrap;
+}
 #connection-widget .console-log-output samp,
 #connection-widget .console-log-output code {
 	/*margin: 2px;*/

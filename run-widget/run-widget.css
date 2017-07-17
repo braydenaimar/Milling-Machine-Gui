@@ -16,6 +16,13 @@
     margin-left: 2px;
 }
 
+#run-widget .panel-label {
+    float: left;
+    font-size: 24px;
+    /*width: 97px;*/
+    margin-bottom: 6px;
+}
+
 /* -- File Panel -- */
 .gcode-view-panel .panel-heading .btn-group {
     float: right;
@@ -97,11 +104,6 @@
 }*/
 
 /* -- Feedrate & Spindle Status -- */
-.status-panel .status-label {
-    float: left;
-    font-size: 24px;
-    width: 97px;
-}
 .status-panel .status-btns {
     float: left;
     /*width: 100px;*/
@@ -204,6 +206,81 @@
     color: #e9e9e9;
 }
 
+/* -- Jog Panel -- */
+.jog-panel .mode-select-inputs {
+    margin-bottom: 8px;
+    display: inline-block;
+    position: relative;
+    top: 47px;
+    right: 40px;
+}
+.jog-panel .mode-select-inputs .input-group-btn {
+    display: inline-block;
+    float: left;
+}
+.jog-panel .step-distance-input {
+    padding-left: 8px;
+    padding-right: 8px;
+    width: 100px;
+    float: right;
+    /*text-align: center;*/
+}
+.jog-panel .x-jog-btns {
+    float: right;
+    margin-top: 19px;
+    /*margin-right: 8px;*/
+}
+.jog-panel .y-jog-btns {
+    float: right;
+    /*margin-right: 8px;*/
+    margin: 0 4px;
+}
+.jog-panel .z-jog-btns {
+    float: right;
+    margin-left: 8px;
+}
+
+/* -- Auto Level Widget -- */
+.auto-level-panel .control-btns {
+    float: right;
+}
+.auto-level-panel .auto-level-setting {
+    width: 100%;
+}
+.auto-level-panel .auto-level-setting .setting-label {
+    width: 130px;
+    padding: 0;
+}
+.auto-level-panel .input-axis-label {
+    color: #bbbbbb;
+    padding: 12px 0;
+    float: left;
+    display: table-cell;
+    font-size: 13px;
+    margin-left: 10px
+}
+.auto-level-panel .auto-level-setting .form-control {
+    /*text-align: center;*/
+    width: 42%;
+    margin-left: -13px;
+    /*margin-right: 6px;*/
+    padding-right: 28px;
+    text-align: right;
+}
+.auto-level-panel .input-axis-units {
+    color: #bbbbbb;
+    float: left;
+    display: table-cell;
+    font-size: 11px;
+    margin-left: -25px;
+    padding-top: 16px;
+    margin-right: 14px;
+}
+.auto-level-panel .repeat-probe-input input {
+    margin: 12px 5px 9px 5px;
+}
+
+/* -- Tool Panel -- */
 .tool-panel .panel-heading .btn-group {
     float: right;
     margin-left: 6px;
@@ -233,8 +310,18 @@
 .tool-panel .tool-item {
     /*margin: 0 4px;*/
     /*padding: 6px 4px 6px 4px;*/
+    display: block;
+    text-align: left;
+    font-size: 13px;
+    border-radius: 0px;
     padding: 8px;
     border-bottom: 1px solid gray;
+    -webkit-box-shadow: none;
+    box-shadow: none;
+}
+.tool-panel .tool-item.btn-success {
+    background-color: #dff0d8;
+    color: #444444;
 }
 .tool-panel .tool-item:last-child {
     /*padding-bottom: 8px;*/

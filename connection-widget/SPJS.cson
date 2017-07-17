@@ -42,7 +42,7 @@ minWaitBetweenBufferSend: 300
 sendFeedholdOnBufferStop: true
 # The time [ms] that is waited before sending a queue flush command to a device after the feedstop command.
 # @type {number}
-waitQueueFlushOnFeedstop: 0
+waitQueueFlushOnFeedstop: 300
 # The time [ms] that is waited before sending a cycle resume command to a device after the queue flush command.
 # @type {number}
 waitCycleResumeOnFeedstop: 500

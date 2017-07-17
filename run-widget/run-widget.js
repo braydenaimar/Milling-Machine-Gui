@@ -26,8 +26,8 @@ define([ 'jquery' ], $ => ({
 	},
 
 	widgetDom: [
-		[ '.widget-container', ' .gcode-view-panel' ],
-		[ '.widget-container', ' .dro-panel', ' .feedrate-panel', ' .spindle-panel', ' .tool-panel', ' .jog-panel' ],
+		[ '.widget-container', ' .tool-panel', ' .gcode-view-panel' ],
+		[ '.widget-container', ' .dro-panel', ' .feedrate-panel', ' .spindle-panel', ' .jog-panel', ' .auto-level-panel' ],
 		[ ' .gcode-view-panel', ' .panel-heading', ' .panel-body' ],
 		[ ' .gcode-view-panel .panel-body', ' .gcode-file-text' ]
 	],
@@ -184,12 +184,19 @@ define([ 'jquery' ], $ => ({
 				// publish('/main/make-widget-visible', 'connection-widget');
 				this.bufferGcode({ StartIndex: this.startFromIndex });
 
-			} else if (evtSignal === 'gcode-buffer/control' && (evtData === 'pause' || evtData === 'resume' || evtData === 'stop')) {
+			} else if (evtSignal === 'gcode-buffer/control' && (evtData === 'pause' || evtData === 'resume')) {
 
-				// inDebugMode && enableConsole();  // Re-enable the console log for debugging
-
-				console.log(`pressed ${evtData}`);
 				publish(evtSignal, evtData);
+
+			} else if (evtSignal === 'gcode-buffer/control' && evtData === 'stop') {
+
+				publish(evtSignal, evtData);
+
+				setTimeout(() => {
+
+					this.reloadFile();
+
+				}, 3500);
 
 			} else if (evtData === 'reload-gcode') {
 
@@ -206,7 +213,7 @@ define([ 'jquery' ], $ => ({
 
 		$(`#${this.id} .tool-panel .btn-group`).on('click', 'span.btn', (evt) => {  // Tool Change panel buttons
 
-			const { id, GcodeData, activeIndex } = this;
+			const { id, GcodeData, activeIndex, ToolChange, idToolChangeMap } = this;
 			const evtSignal = $(evt.currentTarget).attr('evt-signal');
 			const evtData = $(evt.currentTarget).attr('evt-data');
 
@@ -228,13 +235,31 @@ define([ 'jquery' ], $ => ({
 
 			} else if (evtData === 'complete') {  // Tool change complete
 
-				this.toolChangeComplete(GcodeData.Id[activeIndex]);
+				// this.toolChangeComplete(GcodeData.Id[activeIndex]);
+				const tcIndex = idToolChangeMap[GcodeData.Id[activeIndex]];
+
+				if (typeof tcIndex == 'undefined' || typeof ToolChange[tcIndex] == 'undefined')  // If the tcIndex argument is invalid
+					return false;
+
+				const StartIndex = ToolChange[tcIndex].Index;
+				this.bufferGcode({ StartIndex });
 
 			}
 
 		});
 
-		$(`#${id} .vertical-probe-panel .btn-group`).on('click', 'span.btn', (evt) => {  // Vertical probe panel buttons
+		$(`#${id} .tool-panel .panel-body`).on('click', 'div.tool-item', (evt) => {  // Tool item select
+
+			const gcodeLineId = `gc${evt.currentTarget.firstChild.innerText.match(/N[0-9]+/i)[0]}`;
+
+			const gcodeLine = document.getElementById(`run-widget/${gcodeLineId}`);
+			gcodeLine && gcodeLine.scrollIntoView();
+
+			return false;
+
+		});
+
+		$(`#${id} .jog-panel`).on('click', 'span.btn', (evt) => {  // Jog panel
 
 			const { id } = this;
 			const evtSignal = $(evt.currentTarget).attr('evt-signal');
@@ -256,10 +281,34 @@ define([ 'jquery' ], $ => ({
 
 				this.resizeWidgetDom();
 
-			} else if (evtData === 'play') {  // Send gcode to be buffered to the SPJS
+			} else if (evtSignal === 'probe') {  // Send gcode to be buffered to the SPJS
 
-				publish('/main/make-widget-visible', 'connection-widget');  // Make the connection widget visible
 				this.probe.begin();
+
+			} else if (evtSignal === 'jog') {
+
+				this.jogMachine(evtData);
+
+			}
+
+		});
+
+		$(`#${id} .auto-level-panel`).on('click', 'span.btn', (evt) => {
+
+			const { id } = this;
+			const { evtSignal, evtData } = this.getBtnEvtData(evt);
+
+			if (evtData === 'start') {
+
+				this.probe.begin();
+
+			} else if (evtData === 'pause') {
+
+
+
+			} else if (evtData === 'stop') {
+
+
 
 			}
 
@@ -280,6 +329,14 @@ define([ 'jquery' ], $ => ({
 
 		if (keys === 'ctrl+o')  // ctrl-o
 			this.fileOpenDialog();  // Launch the file explorer dialog
+
+	},
+	getBtnEvtData(evt) {
+
+		const evtSignal = $(evt.currentTarget).attr('evt-signal');
+		const evtData = $(evt.currentTarget).attr('evt-data');
+
+		return { evtSignal, evtData }
 
 	},
 
@@ -323,6 +380,7 @@ define([ 'jquery' ], $ => ({
 		this.ToolMeta = ToolMeta;
 		this.ToolChange = ToolChange;
 		this.trackMode = 'on-complete';
+
 		const idMap = {};
 		const idToolChangeMap = {};
 		let gcodeHTML = '';
@@ -374,10 +432,11 @@ define([ 'jquery' ], $ => ({
 		const [ gcodeLineId ] = GcodeData.Id;
 		const element = document.getElementById(`run-widget/${gcodeLineId}`);
 		element && element.scrollIntoView();
+
 		// $('#run-widget .gcode-file-panel .gcode-file-text').scrollTop(0);
 
 		// this.plotData(Data);
-		// this.resizeWidgetDom();
+		this.resizeWidgetDom();
 
 	},
 	plotData(data) {
@@ -614,17 +673,6 @@ define([ 'jquery' ], $ => ({
 
 	},
 
-	// updateGcodeTracker(id) {
-	//
-	// 	const { Gcode, GcodeData, idMap, idToolChangeMap } = this;
-	// 	const $activeLine = $(`#run-widget .gcode-view-panel .${id}`);
-	//
-	// 	if ()
-	//
-	// 	this.gcodeTrackerActive(id);
-	//
-	// },
-
 	updateGcodeTracker(id, scroll = true) {
 
 		const { Gcode, GcodeData, idMap } = this;
@@ -640,13 +688,14 @@ define([ 'jquery' ], $ => ({
 
 		const lineIndex = idMap[id];
 		const gcodeLine = GcodeData.Gcode[lineIndex];
+		const gcodeDesc = GcodeData.Desc[lineIndex];
 
 		if (scroll) {
 
 			let scrollId = GcodeData.Id[0];
 
 			if (lineIndex > gcodeLineScrollOffset)
-			scrollId = GcodeData.Id[lineIndex - gcodeLineScrollOffset];
+				scrollId = GcodeData.Id[lineIndex - gcodeLineScrollOffset];
 
 			const element = document.getElementById(`run-widget/${scrollId}`);
 			element && element.scrollIntoView({ block: "start", behavior: "smooth" });  // Scroll the active gcode line into view
@@ -668,6 +717,9 @@ define([ 'jquery' ], $ => ({
 
 		if ((/(M0|M1|M2|M5)/i.test(gcodeLine) && !/M[0-9]{2,}/i.test(gcodeLine)) || /M30/i.test(gcodeLine))  // Spindle off or program end
 			publish('run-widget/update-spindle', { dir: 'off' });
+
+		if (gcodeDesc.includes('tool-change') && lineIndex)
+			this.toolChangeComplete(GcodeData.Id[lineIndex - 1]);
 
 		this.gcodeTrackerActive({ ActiveId: id, SuccessId: this.activeId });
 
@@ -716,32 +768,6 @@ define([ 'jquery' ], $ => ({
 		}
 
 	},
-	fillTrackerUpdateGap({ Id, LastId, recursionDepth = 0 }) {
-
-		const { GcodeData, idMap } = this;
-
-		if (typeof Id == 'undefined')  // If the Id argument is invalid
-			return false;
-
-		if (typeof LastId == 'undefined')  // If the LastId argument is invalid
-			return debug.error('The LastId argument is invalid.');
-
-		if (recursionDepth > this.maxUpdateGapFill)  // If recurion is getting out of control
-			return debug.error('Hit recursion depth limit.');
-
-		const index = idMap[Id];
-		const lastIndex = idMap[LastId];
-
-		if (typeof index == 'undefined' || typeof lastIndex == 'undefined')
-			return false;
-
-		this.gcodeTrackerActive({ SuccessId: Id });
-
-		if (index < lastIndex - 1)
-			this.fillTrackerUpdateGap({ Id: GcodeData.Id[index + 1], LastId: LastId, recursionDepth: recursionDepth + 1 });
-
-	},
-
 	updateToolChange() {
 
 		const { ToolChange, zeroIndexLineNumber } = this;
@@ -752,7 +778,7 @@ define([ 'jquery' ], $ => ({
 			const { Tool, Desc, GcodeComment, Gcode, Index, Id } = ToolChange[i];
 			const lineNumber = zeroIndexLineNumber ? Index : Index + 1;
 
-			toolHTML += `<div class="tool-item item-${i}">`;
+			toolHTML += `<div class="tool-item btn btn-default item-${i}">`;
 			toolHTML += '<div class="tool-right-info">';
 			toolHTML += `<div class="tool-line">Line ${lineNumber}</div>`;
 			toolHTML += `<div class="tool-gcode">${Gcode}</div>`;
@@ -776,7 +802,7 @@ define([ 'jquery' ], $ => ({
 
 		this.activeToolIndex = tcIndex;
 		// this.ToolChange[tcIndex].Status = 'active';
-		$(`#run-widget .tool-panel .panel-body .item-${tcIndex}`).addClass('bg-primary');  // Hilite the tool as active
+		$(`#run-widget .tool-panel .panel-body .item-${tcIndex}`).addClass('btn-primary');  // Hilite the tool as active
 
 		if (pauseOnToolChange)
 			$('#run-widget .tool-panel .panel-heading .complete-btn').removeClass('hidden');  // Show the complete button
@@ -794,13 +820,38 @@ define([ 'jquery' ], $ => ({
 			return false;
 
 		// this.ToolChange[tcIndex].Status = 'complete';
-		$(`#run-widget .tool-panel .panel-body .item-${tcIndex}`).addClass('bg-success');  // Hilite the tool as complete
-		$(`#run-widget .tool-panel .panel-body .item-${tcIndex}`).removeClass('bg-primary');
+		$(`#run-widget .tool-panel .panel-body .item-${tcIndex}`).addClass('btn-success');  // Hilite the tool as complete
+		$(`#run-widget .tool-panel .panel-body .item-${tcIndex}`).removeClass('btn-primary');
 
 		$('#run-widget .tool-panel .panel-heading .complete-btn').addClass('hidden');  // Hide the complete button
 
-		const StartIndex = ToolChange[tcIndex].Index;
-		this.bufferGcode({ StartIndex });
+	},
+
+	jogStep: 1,
+	jogMode: 'step',
+
+	jogMachine(dir) {
+
+		const { mainDevicePort: port, jogStep, jogMode } = this;
+
+		if (jogMode === 'step') {
+
+			const axis = dir.match(/x|y|z/i)[0];
+			const neg = /neg/.test(dir) ? '-' : '';
+
+			const msg = [
+				'G91',  // Set incremental motion mode
+				`G0 ${axis.toUpperCase()}${neg}${Math.roundTo(jogStep, 4)}`,  // Move by set amount
+				'G90'  // Set absolute motion mode
+			];
+
+			publish('/connection-widget/port-sendjson', port, { Msg: msg, IdPrefix: 'jog' });
+
+		} else if (jogMode === 'continuous' && dir === 'stop') {
+
+			publish('/connection-widget/port-feedstop', port);
+
+		}
 
 	},
 
@@ -824,10 +875,15 @@ define([ 'jquery' ], $ => ({
 				maxNegative: -20
 			},
 			{
-				probeHeight: 0.5,
-				feedrate: 10,
-				maxNegative: -2
+				probeHeight: 1,
+				feedrate: 20,
+				maxNegative: -10
 			}
+			// {
+			// 	probeHeight: 0.5,
+			// 	feedrate: 20,
+			// 	maxNegative: -2
+			// }
 		],
 		zOffset: 0,
 		scanWithXAxis: true,
@@ -1052,6 +1108,9 @@ define([ 'jquery' ], $ => ({
 
 				if (item.x === arr[i + 1].x && item.y === arr[i + 1].y)  // If this item has the same position as the following element in the array
 					return false;  // Remove the item from the array
+
+				else
+					return true;
 
 			});
 			this.probeData = probeData;
@@ -1315,11 +1374,7 @@ define([ 'jquery' ], $ => ({
 	},
 	interpolateProbeValue(probeData, pos) {
 
-		const { xPos, yPos } = pos;
-		probeData = [
-			{ x: 0, y: 0, z: 0 },
-			{ x: 15, y: 0, z: 0.046 }
-		]
+		const { x: xPos, y: yPos } = pos;
 		const closest = {  // Stores the probe data index of the four closest probe points around the given position
 			x: {
 				min: -Infinity,
@@ -1335,79 +1390,191 @@ define([ 'jquery' ], $ => ({
 			}
 		};
 
-		for (let i = 0; i < probeData.length; i++) {  // Find the four closest probe points around the given position
+		const xSortedProbeData = probeData;
+		const ySortedProbeData = probeData;
+		const xVal = [];
+		const yVal = [];
+		const xMap = [];
+		const yMap = [];
 
-			const { x, y, z } = probeData[i];
+		for (let i = 0; i < ySortedProbeData.length; i++) {  // Build xMap
 
-			if (x <= xPos && x > closest.x.min)
-				[ closest.x.min, closest.x.minIndex ] = [ x, i ];
+			const { x, y, z } = ySortedProbeData[i];
 
-			else if (x > xPos && x < closest.x.max)
-				[ closest.x.max, closest.x.maxIndex ] = [ x, i ];
+			if (xVal.includes(x)) {
 
-			if (y <= yPos && y > closest.y.min)
-				[ closest.y.min, closest.y.minIndex ] = [ y, i ];
+				xMap[xVal.indexOf(x)].probeIndex.push(i);
 
-			else if (y > yPos && y < closest.y.max)
-				[ closest.y.max, closest.y.maxIndex ] = [ y, i ];
+			} else {
+
+				xVal.push(x);
+				xMap.push({ val: x, probeIndex: [ i ] });
+
+			}
 
 		}
 
-		if (closest.x.min === -Infinity || closest.x.max === Infinity || closest.y.min === -Infinity || closest.y.max === Infinity)  // If the position is outside of the probed area
-			return;
+		for (let i = 0; i < xSortedProbeData.length; i++) {  // Build yMap
 
+			const { x, y, z } = xSortedProbeData[i];
 
+			if (yVal.includes(y)) {
+
+				yMap[yVal.indexOf(y)].probeIndex.push(i);
+
+			} else {
+
+				yVal.push(y);
+				yMap.push({ val: y, probeIndex: [ i ] });
+
+			}
+
+		}
+
+		// const xMap = [
+		// 	{ val: 0, probeIndex: [ 0, 1, 2, 3 ] },  // use y sorted data for index list
+		// 	{ val: 5, probeIndex: [ 4, 5, 6, 7 ] },
+		// 	{ val: 10, probeIndex: [ 8, 9, 10, 11 ] },
+		// 	{ val: 15, probeIndex: [ 12, 13, 14, 15 ] }
+		// ];
+		let xMapLowIndex = 0;
+		let xMapHighIndex = 0;
+		let yMapLowIndex = 0;
+		let yMapHighIndex = 0;
+
+		for (let i = 0; i < xMap.length; i++) {
+
+			const { val } = xMap[i];
+
+			if (val > xPos && i) {
+
+				xMapLowIndex = i - 1;
+				xMapHighIndex = i;
+				break;
+
+			} else if (val > xPos) {
+
+				return false;
+
+			}
+
+		}
+
+		for (let i = 0; i < yMap.length; i++) {
+
+			const { val } = yMap[i];
+
+			if (val > yPos && i) {
+
+				yMapLowIndex = i - 1;
+				yMapHighIndex = i;
+				break;
+
+			} else if (val > yPos) {
+
+				return false;
+
+			}
+
+		}
+
+		const botLeft = {
+			x: 0,
+			y: 0,
+			z: 0,
+			probeIndex: xMap[xMapLowIndex].probeIndex[yMapLowIndex]
+		};
+		const botRight = {
+			x: 0,
+			y: 0,
+			z: 0,
+			probeIndex: xMap[xMapHighIndex].probeIndex[yMapLowIndex]
+		};
+		const topLeft = {
+			x: 0,
+			y: 0,
+			z: 0,
+			probeIndex: xMap[xMapLowIndex].probeIndex[yMapHighIndex]
+		};
+		const topRight = {
+			x: 0,
+			y: 0,
+			z: 0,
+			probeIndex: xMap[xMapHighIndex].probeIndex[yMapHighIndex]
+		};
+
+		({ x: botLeft.x, y: botLeft.y, z: botLeft.z } = probeData[botLeft.probeIndex]);
+		({ x: botRight.x, y: botRight.y, z: botRight.z } = probeData[botRight.probeIndex]);
+		({ x: topLeft.x, y: topLeft.y, z: topLeft.z } = probeData[topLeft.probeIndex]);
+		({ x: topRight.x, y: topRight.y, z: topRight.z } = probeData[topRight.probeIndex]);
+
+		if (botRight.x - botLeft.x === 0)
+			return false;
+
+		if (topRight.x - topLeft.x === 0)
+			return false;
+
+		if (topLeft.y - botLeft.y === 0)
+			return false;
+
+		const botAvg = (botLeft.z * (botRight.x - xPos) / (botRight.x - botLeft.x)) + (botRight.z * (xPos - botLeft.x) / (botRight.x - botLeft.x));
+		const topAvg = (topLeft.z * (topRight.x - xPos) / (topRight.x - topLeft.x)) + (topRight.z * (xPos - topLeft.x) / (topRight.x - topLeft.x));
+		const avg = (botAvg * (topLeft.y - yPos) / (topLeft.y - botLeft.y)) + (topAvg * (yPos - botLeft.y) / (topLeft.y - botLeft.y));
+
+		return avg;
 
 	},
 	onAutoLevel(probeData) {
 
-		const { fileLoaded } = this;
+		const { FileName, Gcode: lines, GcodeData: data, ToolMeta, ToolChange } = this;
 
-		if (!fileLoaded.length)  // If no gcode file has been loaded
+		if (typeof lines == 'undefined' || !lines.length)  // If no gcode file has been loaded
 			return false;
+
+		// probeData = this.probe.probeData;
 
 		this.autolevelData = probeData;
 		this.probe.appliedAutoLevelData = probeData;
 
-		const pos = {
-			x: 0,
-			y: 0
-		}
+		for (let i = 0; i < lines.length; i++) {  // Apply auto level data to gcode file
 
-		for (let i = 0; i < fileLoaded.length; i++) {  // Apply auto level data to gcode file
+			const line = lines[i];
+			// let xyFlag = false;
 
-			const line = fileLoaded[i];
-			let xyzFlag = false;
+			const [ x, y, z ] = [ data.x[i], data.y[i], data.z[i] ];
 
-			if (/x[-.0-9]+/i.test(line)) {
+			if (/G28/i.test(line))
+				continue;
 
-				const [ , val ] = line.match(/x([-.0-9]+)'/i);
-				pos.x = Number(val);
-				xyFlag = true;
+			if (/z[-.0-9]+/i.test(line)) {  // Replace z commands
 
-			}
+				const adjustVal = this.interpolateProbeValue(probeData, { x, y, z });
 
-			if (/y[-.0-9]+/i.test(line)) {
+				if (adjustVal) {
 
-				const [ , val ] = line.match(/y([-.0-9]+)'/i);
-				pos.y = Number(val);
-				xyFlag = true;
+					lines[i] = line.replace(/z[-.0-9]+/i, `Z${Math.roundTo(z + adjustVal, 4)}`);
+					data.Gcode[i] = lines[i];
+					data.z[i] = z + adjustVal;
 
-			}
+				}
 
-			if (xyzFlag || /z[-.0-9]+/i.test(line)) {
+			} else if (/x[-.0-9]+/i.test(line) || /y[-.0-9]+/i.test(line)) {  // Add new z value
 
-				const newVal = this.interpolateProbeValue(probeData, pos);
+				const adjustVal = this.interpolateProbeValue(probeData, { x, y, z });
 
-				if (/z[-.0-9]+/i.test(line)) {
+				if (adjustVal) {
 
-				} else {
+					lines[i] = `${line} Z${Math.roundTo(z + adjustVal, 4)}`;
+					data.Gcode[i] = lines[i];
+					data.z[i] = z + adjustVal;
 
 				}
 
 			}
 
 		}
+
+		this.fileLoaded({ FileName, Gcode: lines, GcodeData: data, ToolMeta, ToolChange });
 
 	},
 

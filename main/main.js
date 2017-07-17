@@ -481,7 +481,7 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 		}
 
-		if (!wgtMap.includes(wgt))
+		if (!wgtMap.includes(wgt) || !widget[wgt].sidebarBtn)
 			return false;
 
 		$(`#btn-${wgt}`).removeClass('btn-default');

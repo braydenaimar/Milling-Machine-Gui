@@ -48,6 +48,64 @@
 
 	</div>
 
+	<div class="panel panel-default tool-panel">
+
+		<div class="panel-heading">
+
+			<h3>Tool Change</h3>
+
+			<div class="btn-group">
+				<span evt-signal="" evt-data="complete" class="btn btn-xs btn-success complete-btn hidden">Complete</span>
+			</div>
+
+		</div>
+
+		<div class="panel-body">
+
+			<!-- <div class="tool-item item-1 bg-success">
+
+				<div class="tool-right-info">
+
+					<div class="tool-line">Line 10</div>
+					<div class="tool-gcode">N7 T2 M6</div>
+
+				</div>
+
+				<div class="tool-name">Engrave</div>
+				<div class="tool-desc">T2 <span>D=3.175 CR=0 TAPER=30deg - ZMIN=-0.3 - chamfer mill</span></div>
+
+			</div>
+			<div class="tool-item item-2">
+
+				<div class="tool-right-info">
+
+					<div class="tool-line">Line 2163</div>
+					<div class="tool-gcode">N2106 T1 M6</div>
+
+				</div>
+
+				<div class="tool-name">Contour</div>
+				<div class="tool-desc">T1 <span>D=6.35 CR=0 TAPER=30deg - ZMIN=-0.4 - chamfer mill</span></div>
+
+			</div>
+			<div class="tool-item item-3">
+
+				<div class="tool-right-info">
+
+					<div class="tool-line">Line 32781</div>
+					<div class="tool-gcode">N32694 T3 M6</div>
+
+				</div>
+
+				<div class="tool-name">Bore</div>
+				<div class="tool-desc">T3 <span>D=3.175 CR=0 - ZMIN=-1.851 - flat end mill</span></div>
+
+			</div> -->
+
+		</div>
+
+	</div>
+
 	<!-- <div class="panel panel-default path-view-panel">
 
 		<div class="panel-body">
@@ -64,13 +122,13 @@
 
 		<div class="panel-body">
 
-			<div class="status-label feedrate-label">Feedrate</div>
+			<div class="panel-label feedrate-label">Feedrate</div>
 			<div class="status-units feedrate-units">--</div>
 			<div class="status-value feedrate-value">--</div>
 
-			<div class="btn-group status-btns">
+			<!-- <div class="btn-group status-btns">
 				<span evt-signal="" evt-data="feedhold" class="btn btn-xs btn-default feedhold-btn">Hold</span>
-			</div>
+			</div> -->
 
 			<div class="progress">
 				<div class="progress-bar progress-bar-danger feedrate-progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
@@ -84,16 +142,16 @@
 
 		<div class="panel-body">
 
-			<div class="status-label spindle-label">Spindle</div>
+			<div class="panel-label spindle-label">Spindle</div>
 			<div class="status-units spindle-units">rpm</div>
 			<div class="status-value spindle-value">--</div>
 			<span class="material-icons spindle-dir spindle-cw hidden">rotate_right</span>
 			<span class="material-icons spindle-dir spindle-ccw hidden">rotate_left</span>
 
-			<div class="btn-group status-btns">
+			<!-- <div class="btn-group status-btns">
 				<span evt-signal="" evt-data="on" class="btn btn-xs btn-default on-btn">On</span>
 				<span evt-signal="" evt-data="off" class="btn btn-xs btn-default off-btn">Off</span>
-			</div>
+			</div> -->
 
 			<div class="progress">
 				<div class="progress-bar progress-bar-danger spindle-progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
@@ -168,59 +226,134 @@
 
 	</div>
 
-	<div class="panel panel-default tool-panel">
-
-		<div class="panel-heading">
-
-			<h3>Tool Change</h3>
-
-			<div class="btn-group">
-				<span evt-signal="" evt-data="complete" class="btn btn-xs btn-success complete-btn hidden">Complete</span>
-			</div>
-
-		</div>
+	<div class="panel panel-default jog-panel">
 
 		<div class="panel-body">
 
-			<!-- <div class="tool-item item-1 bg-success">
+			<div class="panel-label">Jog</div>
 
-				<div class="tool-right-info">
+			<div class="input-group input-group-sm mode-select-inputs">
 
-					<div class="tool-line">Line 10</div>
-					<div class="tool-gcode">N7 T2 M6</div>
+				<span class="input-group-btn">
+					<span evt-signal="jog-control" evt-data="step/continuous" class="btn btn-md btn-default mode-btn">Step</span>
+				</span>
 
-				</div>
-
-				<div class="tool-name">Engrave</div>
-				<div class="tool-desc">T2 <span>D=3.175 CR=0 TAPER=30deg - ZMIN=-0.3 - chamfer mill</span></div>
+				<input class="form-control step-distance-input" value="1" min="0" step="0.1" type="number">
 
 			</div>
-			<div class="tool-item item-2">
 
-				<div class="tool-right-info">
+			<div class="btn-group-vertical z-jog-btns">
 
-					<div class="tool-line">Line 2163</div>
-					<div class="tool-gcode">N2106 T1 M6</div>
-
-				</div>
-
-				<div class="tool-name">Contour</div>
-				<div class="tool-desc">T1 <span>D=6.35 CR=0 TAPER=30deg - ZMIN=-0.4 - chamfer mill</span></div>
+				<span evt-signal="jog" evt-data="z-pos" class="btn btn-md btn-default jog-zpos-btn">Z+</span>
+				<span evt-signal="jog" evt-data="z-neg" class="btn btn-md btn-default jog-zneg-btn">Z-</span>
 
 			</div>
-			<div class="tool-item item-3">
 
-				<div class="tool-right-info">
+			<span evt-signal="jog" evt-data="x-pos" class="btn btn-md btn-default x-jog-btns jog-xpos-btn">X+</span>
 
-					<div class="tool-line">Line 32781</div>
-					<div class="tool-gcode">N32694 T3 M6</div>
+			<div class="btn-group-vertical y-jog-btns">
 
-				</div>
+				<span evt-signal="jog" evt-data="y-pos" class="btn btn-md btn-default jog-ypos-btn">Y+</span>
+				<span evt-signal="jog" evt-data="y-neg" class="btn btn-md btn-default jog-yneg-btn">Y-</span>
 
-				<div class="tool-name">Bore</div>
-				<div class="tool-desc">T3 <span>D=3.175 CR=0 - ZMIN=-1.851 - flat end mill</span></div>
+			</div>
 
-			</div> -->
+			<span evt-signal="jog" evt-data="x-neg" class="btn btn-md btn-default x-jog-btns jog-xneg-btn">X-</span>
+
+		</div>
+
+	</div>
+
+	<div class="panel panel-default auto-level-panel">
+
+		<div class="panel-body">
+
+			<div class="panel-label">Auto Level</div>
+
+			<div class="btn-group control-btns">
+
+				<span evt-signal="auto-level" evt-data="start" class="btn btn-sm btn-default start-btn">Start</span>
+				<span evt-signal="auto-level" evt-data="resume" class="btn btn-sm btn-default pause-btn hidden">Resume</span>
+				<span evt-signal="auto-level" evt-data="pause" class="btn btn-sm btn-default pause-btn hidden">Pause</span>
+				<span evt-signal="auto-level" evt-data="stop" class="btn btn-sm btn-default stop-btn hidden">Stop</span>
+
+			</div>
+
+			<div class="input-group auto-level-setting probe-count-input">
+
+				<span class="input-group-addon setting-label">Probe Count</span>
+
+				<span class="input-axis-label">X</span>
+				<input class="form-control mousetrap" value="4" min="2" step="1" type="number">
+				<span class="input-axis-units">mm</span>
+
+				<span class="input-axis-label">Y</span>
+				<input class="form-control mousetrap" value="4" min="2" step="1" type="number">
+				<span class="input-axis-units">mm</span>
+			</div>
+
+			<div class="input-group auto-level-setting start-point-input">
+
+				<span class="input-group-addon setting-label">Start Point</span>
+
+				<span class="input-axis-label">X</span>
+				<input class="form-control mousetrap" value="0" step="0.1" type="number">
+				<span class="input-axis-units">mm</span>
+
+				<span class="input-axis-label">Y</span>
+				<input class="form-control mousetrap" value="0" step="0.1" type="number">
+				<span class="input-axis-units">mm</span>
+
+			</div>
+
+			<div class="input-group auto-level-setting end-point-input">
+
+				<span class="input-group-addon setting-label">End Point</span>
+
+				<span class="input-axis-label">X</span>
+				<input class="form-control mousetrap" value="0" step="0.1" type="number">
+				<span class="input-axis-units">mm</span>
+
+				<span class="input-axis-label">Y</span>
+				<input class="form-control mousetrap" value="0" step="0.1" type="number">
+				<span class="input-axis-units">mm</span>
+
+			</div>
+
+			<div class="input-group auto-level-setting clearance-height-input">
+
+				<span class="input-group-addon setting-label">Clearanze Height</span>
+				<span class="input-axis-label">Z</span>
+				<input class="form-control mousetrap" value="2" step="0.1" type="number">
+				<span class="input-axis-units">mm</span>
+
+			</div>
+
+			<div class="input-group auto-level-setting max-neg-input">
+
+				<span class="input-group-addon setting-label">Low Probe Limit</span>
+				<span class="input-axis-label">Z</span>
+				<input class="form-control mousetrap" value="-5" step="0.1" type="number">
+				<span class="input-axis-units">mm</span>
+
+			</div>
+
+			<div class="input-group auto-level-setting feedrate-input">
+
+				<span class="input-group-addon setting-label">Feedrate</span>
+				<span class="input-axis-label">Z</span>
+				<input class="form-control mousetrap" value="20" step="1" type="number">
+				<span class="input-axis-units">mm/min</span>
+
+			</div>
+
+			<div class="input-group auto-level-setting repeat-probe-input">
+
+				<span class="input-group-addon setting-label">Repeat Probe</span>
+				<!-- <span class="input-axis-label">Z</span> -->
+				<input class="mousetrap" type="checkbox">
+
+			</div>
 
 		</div>
 
@@ -289,24 +422,5 @@
 		</div>
 
 	</div> -->
-
-	<div class="panel panel-default jog-panel">
-
-		<div class="panel-body">
-
-			<div class="btn-group">
-				<span evt-signal="jog" evt-data="x-pos" class="btn btn-md btn-default jog-xp-btn">x+</span>
-				<span evt-signal="jog" evt-data="x-neg" class="btn btn-md btn-default jog-xn-btn">x-</span>
-				<span evt-signal="jog" evt-data="y-pos" class="btn btn-md btn-default jog-yp-btn">y+</span>
-				<span evt-signal="jog" evt-data="y-neg" class="btn btn-md btn-default jog-yn-btn">y-</span>
-			</div>
-
-			<div class="btn-group">
-				<span evt-signal="probe" evt-data="z" class="btn btn-md btn-default probe-z-btn">probe z</span>
-			</div>
-
-		</div>
-
-	</div>
 
 </div>

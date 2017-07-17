@@ -5,7 +5,7 @@ wgtVisible: "run-widget"
 
 widget: {
   "statusbar-widget": {
-    loadHtml: true
+    loadHtml: false
     sidebarBtn: false
   }
   "load-widget": {

@@ -810,7 +810,8 @@ define([ 'jquery' ], $ => ({
 			const domMsg = Msg.replace(/\n/g, '').replace(/\r/g, '').replace(/\\"/g, '\"');
 
 			// Build DOM element for the line number and left margin.
-			let msgHTML = `<span class="text-muted" style="font-size: 8px; margin-right: ${(Type === 'Command' || Type === 'MdiCommand') ? '3px' : '19px'}; margin-left: 0px;">${domLineNumber}</span>`;
+			let msgHTML = '<div class="gcode-line">';
+			msgHTML += `<span class="text-muted" style="font-size: 8px; margin-right: ${(Type === 'Command' || Type === 'MdiCommand') ? '3px' : '19px'}; margin-left: 0px;">${domLineNumber}</span>`;
 
 			if (Type === 'Command' || Type === 'MdiCommand') {  // If this is a command, build DOM elements for command
 
@@ -820,13 +821,15 @@ define([ 'jquery' ], $ => ({
 
 				msgHTML += `<span class="fa fa-check fa-fw verify-mark ${Id} ${this.verifyStyle[Status]}" style="font-size: 10px; margin-right: 3px;"></span>`;
 				msgHTML += `<${domTag} class="cmd ${domClass}">${domMsg}</${domTag}>`;
-				msgHTML += `<${domCommentTag} class="cmd-comment ${Id} ${domCommentClass}" style="margin-left: 6px;">${domComment}</${domCommentTag}><br />`;
+				msgHTML += `<${domCommentTag} class="cmd-comment ${Id} ${domCommentClass}" style="margin-left: 6px;">${domComment}</${domCommentTag}>`;
 
 			} else {  // If this is a message and not a command
 
-				msgHTML += `<${domTag} class="${domClass}">${domMsg}</${domTag}><br />`;  // Build DOM elements for message
+				msgHTML += `<${domTag} class="${domClass}">${domMsg}</${domTag}>`;  // Build DOM elements for message
 
 			}
+
+			msgHTML += '</div>'
 
 			return msgHTML;
 
@@ -1417,12 +1420,13 @@ define([ 'jquery' ], $ => ({
 		subscribe(`/${this.id}/port-sendjson`, this, this.newportSendJson.bind(this));      // Send message directly to SPJS as 'sendjson { P: [port], Data: [{ D: [cmd], Id: [id] }] }' and add it to the respective port's log.
 		subscribe(`${this.id}/port-sendbuffered`, this, this.portSendBuffered.bind(this));
 		subscribe(`/${this.id}/port-feedstop`, this, this.portFeedstop.bind(this));         // Sends message to the given port to stop all motion on that device.
-
+		subscribe(`/${this.id}/port-feedresume`, this, this.portFeedresume.bind(this));  // Sends a feed resume '~' command to a specified port.
+		subscribe(`/${this.id}/port-queueflush`, this, this.portQueueFlush.bind(this));  // Sends a queue flush '%' command to a specified port.
 		subscribe('gcode-buffer/control', this, this.gcodeBufferControl.bind(this));  // Control information about the buffering of gcode to the SPJS.
 
 		Mousetrap.bind('ctrl+pageup', this.keyboardShortcuts.bind(this, 'ctrl+pageup'));      // Show device log to the left
 		Mousetrap.bind('ctrl+pagedown', this.keyboardShortcuts.bind(this, 'ctrl+pagedown'));  // Show device log to the right
-		Mousetrap.bind('escape', this.portFeedstop.bind(this, []));
+		Mousetrap.bind('ctrl+shift+1', this.portFeedstop.bind(this, []));  // Send feedstop to all open ports
 
 		this.initSettings();      // Load settings from cson files
 		this.initClickEvents();   // Initialize click events on buttons
@@ -3914,6 +3918,9 @@ define([ 'jquery' ], $ => ({
 
 	gcodeBufferControl(data) {
 
+
+		const { dataSendBuffer } = this;
+		const { openPorts, sendFeedholdOnBufferStop, waitQueueFlushOnFeedstop, waitCycleResumeOnFeedstop } = this.SPJS;
 		debug.log(`got control data: '${data}'`);
 
 		if (data === 'pause') {  // User pressed pause button
@@ -3921,15 +3928,30 @@ define([ 'jquery' ], $ => ({
 			this.SPJS.userPauseBufferedSend = true;  // Pause buffering data to the SPJS
 			publish('gcode-buffer/control', 'user-paused');
 
+			for (i = 0; i < openPorts.length; i++) {
+
+				const port = openPorts[i];
+
+				if (port !== 'SPJS')
+					this.portFeedhold(openPorts[i]);
+
+			}
+
 		} else if (data === 'resume') {  // User pressed resume button
 
 			this.SPJS.userPauseBufferedSend = false;  // Resume buffering data to the SPJS
 			publish('gcode-buffer/control', 'user-resumed');
 
-		} else if (data === 'stop') {  // User pressed stop button
+			for (i = 0; i < openPorts.length; i++) {
 
-			const { dataSendBuffer } = this;
-			const { openPorts, sendFeedholdOnBufferStop, waitQueueFlushOnFeedstop, waitCycleResumeOnFeedstop } = this.SPJS;
+				const port = openPorts[i];
+
+				if (port !== 'SPJS')
+					this.portFeedresume(port);
+
+			}
+
+		} else if (data === 'stop') {  // User pressed stop button
 
 			this.SPJS.userPauseBufferedSend = false;
 			Object.keys(dataSendBuffer).forEach(key => (this.dataSendBuffer[key] = []));  // Clear all buffered data for each port
@@ -3937,15 +3959,16 @@ define([ 'jquery' ], $ => ({
 
 			if (sendFeedholdOnBufferStop) {
 
-				for (let i = 0; i < openPorts; i++) {  // For each open port
+				for (let i = 0; i < openPorts.length; i++) {  // For each open port
 
-					this.portFeedstop(openPorts[i]);  // Send feedstop to all ports
+					const port = openPorts[i];
+					this.portFeedstop(port);  // Send feedstop to all ports
 
-					setTimeout(() => {
-
-						this.newportSendJson(openPorts[i], { Msg: '~' });  // Send resume cycle command
-
-					}, waitQueueFlushOnFeedstop + waitCycleResumeOnFeedstop);
+					// setTimeout(() => {
+					//
+					// 	this.newportSendJson(openPorts[i], { Msg: '~' });  // Send resume cycle command
+					//
+					// }, waitQueueFlushOnFeedstop + waitCycleResumeOnFeedstop);
 
 				}
 
@@ -4204,6 +4227,48 @@ define([ 'jquery' ], $ => ({
 		// 	this.newportSendJson(port, { Msg: '~' });
 		//
 		// }, waitQueueFlushOnFeedstop + waitCycleResumeOnFeedstop);
+
+	},
+	portFeedhold(port) {
+
+		const { openPorts } = this.SPJS;
+
+		if (port === '') {
+
+			for (let i = 0; i < openPorts.length; i++)  // Send feedhold to all open ports just to be safe
+				this.portFeedhold(openPorts);
+
+			return debug.error('Port is an empty string.');
+
+		}
+
+		if (port === 'SPJS')  // If the port is the SPJS
+			return false;
+
+		this.newportSendNoBuf(port, { Msg: '!' });  // Send feedhold command
+
+	},
+	portFeedresume(port) {
+
+		if (port === '')
+			return debug.error('Port is an empty string.');
+
+
+		if (port === 'SPJS')  // If the port is the SPJS
+			return false;
+
+		this.newportSendNoBuf(port, { Msg: '~' });  // Send feedhold command
+
+	},
+	portQueueFlush(port) {
+
+		if (port === '')
+			return debug.error('Port is an empty string.');
+
+		if (port === 'SPJS')  // If the port is the SPJS
+			return false;
+
+		this.newportSendNoBuf(port, { Msg: '%' });  // Send feedhold command
 
 	},
 

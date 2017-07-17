@@ -221,13 +221,13 @@ define([ 'jquery' ], $ => ({
 		 *  Ex. toolMeta: { T2: { Desc: 'D=3.175 CR=0 TAPER=30deg - ZMIN=-0.3 - chamfer mill' }, T3: { ... }, ... }.
 		 *  @type {Object}
 		 */
-		toolMeta = {};
+		const toolMeta = {};
 		/**
 		 *  List of tool changes that take place throughout the gcode file.
 		 *  Ex. toolChange: [ { Tool: 'T2', Desc: 'D=3.175 CR=0 TAPER=30deg - ZMIN=-0.3 - chamfer mill', GcodeComment: 'Engrave Text', Gcode: 'N6 T2 M6', Id: 'gcN6', Line: 10 }, { Tool: 'T3', ... }, ... ].
 		 *  @type {Array}
 		 */
-		toolChange = [];
+		let toolChange = [];
 
 		gcode = gcode.filter((value, index, arr) => {  // Remove empty lines and % commands
 
@@ -288,6 +288,24 @@ define([ 'jquery' ], $ => ({
 				line = gcode[i];
 
 			}
+
+			if (/x[-.0-9]+/i.test(line))  // If there is x axis data
+				gcodeData.x[i] = Number(line.match(/x([-.0-9]+)/i)[1]);
+
+			else if (i)
+				gcodeData.x[i] = Number(gcodeData.x[i - 1]);
+
+			if (/y[-.0-9]+/i.test(line))  // If there is y axis data
+				gcodeData.y[i] = Number(line.match(/y([-.0-9]+)/i)[1]);
+
+			else if (i)
+				gcodeData.y[i] = Number(gcodeData.y[i - 1]);
+
+			if (/z[-.0-9]+/i.test(line))  // If there is z axis data
+				gcodeData.z[i] = Number(line.match(/z([-.0-9]+)/i)[1]);
+
+			else if (i)
+				gcodeData.z[i] = Number(gcodeData.z[i - 1]);
 
 			if (/N[0-9]+/i.test(line))  // If numbered gcode
 				gcodeData.Id[i] = `gcN${i}`;
