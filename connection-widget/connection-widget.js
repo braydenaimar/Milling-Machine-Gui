@@ -1837,14 +1837,14 @@ define([ 'jquery' ], $ => ({
 		const { platform, architecture, os } = hostMeta;
 		const { launchGpioServerOnLinux } = this.SPJS;
 
-		if (platform === 'linux' && architecture === 'arm') {  // If on a Raspberry Pi
+		if (platform === 'linux') {  // If on a Linux Platform
 
 			// Launch the SPJS in max garbage collection mode
 			this.SPJS.go = spawn('lxterminal --command "sudo json_server/linux_arm/serial-port-json-server -gc max -allowexec"', [], { shell: true });
 			// this.SPJS.go = spawn('lxterminal --command "sudo json_server/linux_arm/serial-port-json-server -gc max -allowexec"', [], { shell: true });
 			// this.SPJS.go = spawn(`lxterminal --command "sudo serial-port-json-server-1.92_linux_arm/serial-port-json-server -gc max -allowexec"`, [], { shell: true });
 
-			if (launchGpioServerOnLinux) {
+			if (launchGpioServerOnLinux && architecture === 'arm') {  // If on a Raspberry Pi
 
 				// Launch the GPIO JSON server.
 				this.SPJS.gpio = spawn('lxterminal --command "sudo json_server/linux_arm/gpio-json-server"', [], { shell: true });
