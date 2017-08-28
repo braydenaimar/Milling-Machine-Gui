@@ -6,38 +6,39 @@
 
 		<div class="panel-heading">
 
-			<h3 class="gcode-file-name">GCode File</h3>
-
-			<div class="btn-group">
-
-				<span evt-signal="" evt-data="play" class="btn btn-xs btn-default gcode-play-btn">
-					<span class="material-icons">play_arrow</span>
-				</span>
-
-				<span evt-signal="gcode-buffer/control" evt-data="pause" class="btn btn-xs btn-default gcode-pause-btn">
-					<span class="material-icons">pause</span>
-				</span>
-
-				<span evt-signal="gcode-buffer/control" evt-data="stop" class="btn btn-xs btn-default gcode-stop-btn">
-					<span class="material-icons">stop</span>
-				</span>
-
-			</div>
-
-			<div class="btn-group">
-
-				<span evt-signal="" evt-data="reload-gcode" class="btn btn-xs btn-default reload-gcode-btn">
-					<span class="material-icons">cached</span>
-				</span>
-
+			<div class="file-name-container">
+				<h3 class="gcode-file-name">GCode File</h3>
 			</div>
 
 			<div class="btn-group">
 
 				<span evt-signal="" evt-data="open-file" class="btn btn-xs btn-default open-file-btn">
-					<span class="fa fa-envelope-open-o"></span>
+					<span class="fa fa-folder-open-o"></span>
 				</span>
 
+			</div>
+
+			<div class="btn-group buffer-control-btns">
+
+				<span evt-signal="gcode-control" evt-data="pause" class="btn btn-xs btn-default pause-btn hidden">Pause</span>
+				<span evt-signal="gcode-control" evt-data="resume" class="btn btn-xs btn-default resume-btn hidden">Resume</span>
+				<span evt-signal="gcode-control" evt-data="stop" class="btn btn-xs btn-default stop-btn hidden">Stop</span>
+
+			</div>
+
+			<div class="input-group input-group-sm start-btn hidden">
+
+				<span class="input-label">Line</span>
+				<input class="form-control start-line-input" value="0" min="0" step="1" type="number">
+
+				<div class="input-group-btn buffer-control-btns">
+					<span evt-signal="gcode-control" evt-data="start" class="btn btn-xs btn-default start-btn">Start</span>
+				</div>
+
+			</div>
+
+			<div class="btn-group buffer-control-btns">
+				<span evt-signal="tool-change" evt-data="complete" class="btn btn-xs btn-default complete-btn hidden">Tool Change Complete</span>
 			</div>
 
 		</div>
@@ -55,52 +56,12 @@
 			<h3>Tool Change</h3>
 
 			<div class="btn-group">
-				<span evt-signal="" evt-data="complete" class="btn btn-xs btn-success complete-btn hidden">Complete</span>
+				<span evt-signal="" evt-data="complete" class="btn btn-xs btn-default complete-btn hidden">Complete</span>
 			</div>
 
 		</div>
 
 		<div class="panel-body">
-
-			<!-- <div class="tool-item item-1 bg-success">
-
-				<div class="tool-right-info">
-
-					<div class="tool-line">Line 10</div>
-					<div class="tool-gcode">N7 T2 M6</div>
-
-				</div>
-
-				<div class="tool-name">Engrave</div>
-				<div class="tool-desc">T2 <span>D=3.175 CR=0 TAPER=30deg - ZMIN=-0.3 - chamfer mill</span></div>
-
-			</div>
-			<div class="tool-item item-2">
-
-				<div class="tool-right-info">
-
-					<div class="tool-line">Line 2163</div>
-					<div class="tool-gcode">N2106 T1 M6</div>
-
-				</div>
-
-				<div class="tool-name">Contour</div>
-				<div class="tool-desc">T1 <span>D=6.35 CR=0 TAPER=30deg - ZMIN=-0.4 - chamfer mill</span></div>
-
-			</div>
-			<div class="tool-item item-3">
-
-				<div class="tool-right-info">
-
-					<div class="tool-line">Line 32781</div>
-					<div class="tool-gcode">N32694 T3 M6</div>
-
-				</div>
-
-				<div class="tool-name">Bore</div>
-				<div class="tool-desc">T3 <span>D=3.175 CR=0 - ZMIN=-1.851 - flat end mill</span></div>
-
-			</div> -->
 
 		</div>
 
@@ -125,10 +86,6 @@
 			<div class="panel-label feedrate-label">Feedrate</div>
 			<div class="status-units feedrate-units">--</div>
 			<div class="status-value feedrate-value">--</div>
-
-			<!-- <div class="btn-group status-btns">
-				<span evt-signal="" evt-data="feedhold" class="btn btn-xs btn-default feedhold-btn">Hold</span>
-			</div> -->
 
 			<div class="progress">
 				<div class="progress-bar progress-bar-danger feedrate-progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
@@ -176,8 +133,23 @@
 				<!-- DRO Label -->
 				<div class="dro-label">X</div>
 
+				<div class="input-group axis-value-input hidden">
+
+					<div class="btns">
+						<div class="btn-group">
+							<span evt-signal="goto-value" evt-data="x" class="btn btn-sm btn-default goto-value-btn">Go</span>
+							<span evt-signal="set-value" evt-data="x" class="btn btn-sm btn-default set-value-btn">Set</span>
+							<span evt-signal="esc" evt-data="x" class="btn btn-sm btn-default esc-btn">Esc</span>
+						</div>
+					</div>
+
+					<input class="form-control" value="0" step="1" type="number">
+					<span class="dro-units">mm</span>
+
+				</div>
+
 				<!-- DRO Value -->
-				<div class="dro-value">
+				<div class="dro-value" evt-data="x-axis">
 					<span class="negpos digits-dimmed">-</span><span class="intgray digits-dimmed">00</span><span class="intblack">0</span>.<span class="decblack">0</span><span class="decgray digits-dimmed"></span>
 					<span class="dro-units">mm</span>
 				</div>
@@ -195,8 +167,23 @@
 				<!-- DRO Label -->
 				<div class="dro-label">Y</div>
 
+				<div class="input-group axis-value-input hidden">
+
+					<div class="btns">
+						<div class="btn-group">
+							<span evt-signal="goto-value" evt-data="y" class="btn btn-sm btn-default goto-value-btn">Go</span>
+							<span evt-signal="set-value" evt-data="y" class="btn btn-sm btn-default set-value-btn">Set</span>
+							<span evt-signal="esc" evt-data="y" class="btn btn-sm btn-default esc-btn">Esc</span>
+						</div>
+					</div>
+
+					<input class="form-control" value="0" step="1" type="number">
+					<span class="dro-units">mm</span>
+
+				</div>
+
 				<!-- DRO Value -->
-				<div class="dro-value">
+				<div class="dro-value" evt-data="y-axis">
 					<span class="negpos digits-dimmed">-</span><span class="intgray digits-dimmed">00</span><span class="intblack">0</span>.<span class="decblack">0</span><span class="decgray digits-dimmed"></span>
 					<span class="dro-units">mm</span>
 				</div>
@@ -214,8 +201,23 @@
 				<!-- DRO Label -->
 				<div class="dro-label">Z</div>
 
+				<div class="input-group axis-value-input hidden">
+
+					<div class="btns">
+						<div class="btn-group">
+							<span evt-signal="goto-value" evt-data="z" class="btn btn-sm btn-default goto-value-btn">Go</span>
+							<span evt-signal="set-value" evt-data="z" class="btn btn-sm btn-default set-value-btn">Set</span>
+							<span evt-signal="esc" evt-data="z" class="btn btn-sm btn-default esc-btn">Esc</span>
+						</div>
+					</div>
+
+					<input class="form-control" value="0" step="1" type="number">
+					<span class="dro-units">mm</span>
+
+				</div>
+
 				<!-- DRO Value -->
-				<div class="dro-value">
+				<div class="dro-value" evt-data="z-axis">
 					<span class="negpos digits-dimmed">-</span><span class="intgray digits-dimmed">00</span><span class="intblack">0</span>.<span class="decblack">0</span><span class="decgray digits-dimmed"></span>
 					<span class="dro-units">mm</span>
 				</div>
@@ -234,31 +236,33 @@
 
 			<div class="input-group input-group-sm mode-select-inputs">
 
-				<span class="input-group-btn">
-					<span evt-signal="jog-control" evt-data="step/continuous" class="btn btn-md btn-default mode-btn">Step</span>
-				</span>
+				<input class="form-control step-distance-input" value="1" min="0" step="1" type="number">
+				<input class="form-control step-distance-input disabled-input hidden" value="1" min="0" step="1" type="number" disabled>
+				<span class="input-axis-units">mm</span>
 
-				<input class="form-control step-distance-input" value="1" min="0" step="0.1" type="number">
+				<span class="input-group-btn">
+					<span evt-signal="jog-control" evt-data="step" class="btn btn-md btn-default mode-btn">Step</span>
+				</span>
 
 			</div>
 
 			<div class="btn-group-vertical z-jog-btns">
 
-				<span evt-signal="jog" evt-data="z-pos" class="btn btn-md btn-default jog-zpos-btn">Z+</span>
-				<span evt-signal="jog" evt-data="z-neg" class="btn btn-md btn-default jog-zneg-btn">Z-</span>
+				<span evt-signal="jog" evt-data="z-pos" class="btn btn-md btn-default jog-btn z-pos-btn">Z+</span>
+				<span evt-signal="jog" evt-data="z-neg" class="btn btn-md btn-default jog-btn z-neg-btn">Z-</span>
 
 			</div>
 
-			<span evt-signal="jog" evt-data="x-pos" class="btn btn-md btn-default x-jog-btns jog-xpos-btn">X+</span>
+			<span evt-signal="jog" evt-data="x-pos" class="btn btn-md btn-default jog-btn x-jog-btns x-pos-btn">X+</span>
 
 			<div class="btn-group-vertical y-jog-btns">
 
-				<span evt-signal="jog" evt-data="y-pos" class="btn btn-md btn-default jog-ypos-btn">Y+</span>
-				<span evt-signal="jog" evt-data="y-neg" class="btn btn-md btn-default jog-yneg-btn">Y-</span>
+				<span evt-signal="jog" evt-data="y-pos" class="btn btn-md btn-default jog-btn y-pos-btn">Y+</span>
+				<span evt-signal="jog" evt-data="y-neg" class="btn btn-md btn-default jog-btn y-neg-btn">Y-</span>
 
 			</div>
 
-			<span evt-signal="jog" evt-data="x-neg" class="btn btn-md btn-default x-jog-btns jog-xneg-btn">X-</span>
+			<span evt-signal="jog" evt-data="x-neg" class="btn btn-md btn-default jog-btn x-jog-btns x-neg-btn">X-</span>
 
 		</div>
 
@@ -270,13 +274,44 @@
 
 			<div class="panel-label">Auto Level</div>
 
+			<div class="probe-failed-alert hidden">
+				<span class="btn btn-sm btn-danger">Probe Failed</span>
+			</div>
+
+			<div class="profile-selector">
+				<div class="dropdown">
+					<div class="selector-label">
+						<span>Profile</span>
+					</div>
+					<div class="btn-group">
+						<span evt-signal="dropdown-toggle" evt-data="hidden" class="btn btn-sm btn-default dropdown-toggle">
+							<span>Default</span>
+							<span class="caret"></span>
+						</span>
+						<!-- <span evt-signal="profile-control" evt-data="save" class="btn btn-sm btn-default save-btn">
+							<span class="fa fa-floppy-o"></span>
+						</span>
+						<span evt-signal="profile-control" evt-data="delete" class="btn btn-sm btn-default delete-btn">
+							<span class="fa fa-trash-o"></span>
+						</span> -->
+					</div>
+					<ul class="dropdown-menu hidden">
+						<li><span evt-signal="profile" evt-data="Default" class="btn profile-btn">Default</span></li>
+						<li><span evt-signal="profile" evt-data="new-profile" class="btn profile-btn new-profile-btn hidden">New Profile</span></li>
+					</ul>
+				</div>
+			</div>
+
 			<div class="btn-group control-btns">
 
-				<span evt-signal="auto-level" evt-data="start" class="btn btn-sm btn-default start-btn">Start</span>
-				<span evt-signal="auto-level" evt-data="resume" class="btn btn-sm btn-default pause-btn hidden">Resume</span>
 				<span evt-signal="auto-level" evt-data="pause" class="btn btn-sm btn-default pause-btn hidden">Pause</span>
+				<span evt-signal="auto-level" evt-data="resume" class="btn btn-sm btn-default resume-btn hidden">Resume</span>
 				<span evt-signal="auto-level" evt-data="stop" class="btn btn-sm btn-default stop-btn hidden">Stop</span>
 
+			</div>
+
+			<div class="btn-group control-btns">
+				<span evt-signal="auto-level" evt-data="start" class="btn btn-sm btn-default start-btn">Start</span>
 			</div>
 
 			<div class="input-group auto-level-setting probe-count-input">
@@ -284,12 +319,11 @@
 				<span class="input-group-addon setting-label">Probe Count</span>
 
 				<span class="input-axis-label">X</span>
-				<input class="form-control mousetrap" value="4" min="2" step="1" type="number">
-				<span class="input-axis-units">mm</span>
+				<input class="form-control mousetrap x-val" value="0" min="1" step="1" type="number">
 
 				<span class="input-axis-label">Y</span>
-				<input class="form-control mousetrap" value="4" min="2" step="1" type="number">
-				<span class="input-axis-units">mm</span>
+				<input class="form-control mousetrap y-val" value="0" min="1" step="1" type="number">
+
 			</div>
 
 			<div class="input-group auto-level-setting start-point-input">
@@ -297,11 +331,11 @@
 				<span class="input-group-addon setting-label">Start Point</span>
 
 				<span class="input-axis-label">X</span>
-				<input class="form-control mousetrap" value="0" step="0.1" type="number">
+				<input class="form-control mousetrap x-val" value="0" step="1" type="number">
 				<span class="input-axis-units">mm</span>
 
 				<span class="input-axis-label">Y</span>
-				<input class="form-control mousetrap" value="0" step="0.1" type="number">
+				<input class="form-control mousetrap y-val" value="0" step="1" type="number">
 				<span class="input-axis-units">mm</span>
 
 			</div>
@@ -311,11 +345,11 @@
 				<span class="input-group-addon setting-label">End Point</span>
 
 				<span class="input-axis-label">X</span>
-				<input class="form-control mousetrap" value="0" step="0.1" type="number">
+				<input class="form-control mousetrap x-val" value="75" step="1" type="number">
 				<span class="input-axis-units">mm</span>
 
 				<span class="input-axis-label">Y</span>
-				<input class="form-control mousetrap" value="0" step="0.1" type="number">
+				<input class="form-control mousetrap y-val" value="50" step="1" type="number">
 				<span class="input-axis-units">mm</span>
 
 			</div>
@@ -324,16 +358,25 @@
 
 				<span class="input-group-addon setting-label">Clearanze Height</span>
 				<span class="input-axis-label">Z</span>
-				<input class="form-control mousetrap" value="2" step="0.1" type="number">
+				<input class="form-control mousetrap" value="5" step="0.5" type="number">
 				<span class="input-axis-units">mm</span>
 
 			</div>
 
-			<div class="input-group auto-level-setting max-neg-input">
+			<div class="input-group auto-level-setting probe-height-input">
+
+				<span class="input-group-addon setting-label">Probe Height</span>
+				<span class="input-axis-label">Z</span>
+				<input class="form-control mousetrap" value="1" step="0.5" type="number">
+				<span class="input-axis-units">mm</span>
+
+			</div>
+
+			<div class="input-group auto-level-setting probe-limit-input">
 
 				<span class="input-group-addon setting-label">Low Probe Limit</span>
 				<span class="input-axis-label">Z</span>
-				<input class="form-control mousetrap" value="-5" step="0.1" type="number">
+				<input class="form-control mousetrap" value="-5" step="0.5" type="number">
 				<span class="input-axis-units">mm</span>
 
 			</div>
@@ -344,6 +387,15 @@
 				<span class="input-axis-label">Z</span>
 				<input class="form-control mousetrap" value="20" step="1" type="number">
 				<span class="input-axis-units">mm/min</span>
+
+			</div>
+
+			<div class="input-group auto-level-setting height-offset-input">
+
+				<span class="input-group-addon setting-label">Height Offset</span>
+				<span class="input-axis-label">Z</span>
+				<input class="form-control mousetrap" value="4.78" step="0.1" type="number">
+				<span class="input-axis-units">mm</span>
 
 			</div>
 
@@ -358,69 +410,5 @@
 		</div>
 
 	</div>
-
-	<!-- <div class="panel panel-default vertical-probe-panel">
-
-		<div class="panel-heading">
-			<h3>Vertical Probe</h3>
-		</div>
-
-		<div class="panel-body">
-
-			<div class="btn-group">
-
-				<span evt-signal="" evt-data="play" class="btn btn-xs btn-default gcode-play-btn">
-					<span class="material-icons">play_arrow</span>
-				</span>
-
-				<span evt-signal="" evt-data="pause" class="btn btn-xs btn-default gcode-pause-btn">
-					<span class="material-icons">pause</span>
-				</span>
-
-				<span evt-signal="" evt-data="stop" class="btn btn-xs btn-default gcode-stop-btn">
-					<span class="material-icons">stop</span>
-				</span>
-
-			</div>
-
-			<div class="input-group">
-				<span class="input-group-addon" id="basic-addon1"># X</span>
-				<input type="text" class="form-control mousetrap" placeholder="# X" aria-describedby="basic-addon1">
-			</div>
-			<div class="input-group">
-				<span class="input-group-addon" id="basic-addon1"># Y</span>
-				<input type="text" class="form-control mousetrap" placeholder="# Y" aria-describedby="basic-addon1">
-			</div>
-
-			<div class="input-group">
-				<span class="input-group-addon" id="basic-addon1">Start X</span>
-				<input type="text" class="form-control mousetrap" placeholder="Start X" aria-describedby="basic-addon1">
-			</div>
-			<div class="input-group">
-				<span class="input-group-addon" id="basic-addon1">Start Y</span>
-				<input type="text" class="form-control mousetrap" placeholder="Start Y" aria-describedby="basic-addon1">
-			</div>
-
-			<div class="input-group">
-				<span class="input-group-addon" id="basic-addon1">End X</span>
-				<input type="text" class="form-control mousetrap" placeholder="End X" aria-describedby="basic-addon1">
-			</div>
-			<div class="input-group">
-				<span class="input-group-addon" id="basic-addon1">End Y</span>
-				<input type="text" class="form-control mousetrap" placeholder="End Y" aria-describedby="basic-addon1">
-			</div>
-
-			<div class="input-group">
-				<span class="input-group-addon" id="basic-addon1">Clearanze Z</span>
-				<input type="text" class="form-control mousetrap" placeholder="Clearance Z" aria-describedby="basic-addon1">
-			</div>
-			<div class="input-group">
-				<span class="input-group-addon" id="basic-addon1">Max Neg Z</span>
-				<input type="text" class="form-control mousetrap" placeholder="Max Neg Z" aria-describedby="basic-addon1">
-			</div>
-
-		</div>
-
-	</div> -->
 
 </div>

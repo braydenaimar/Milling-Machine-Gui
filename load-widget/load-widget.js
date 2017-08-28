@@ -33,8 +33,7 @@ define([ 'jquery' ], $ => ({
 	widgetVisible: false,
 
 	addLineNumbers: true,
-
-	fro: 1,
+	backFillFirstAxisValues: true,
 
 	initBody() {
 
@@ -172,6 +171,9 @@ define([ 'jquery' ], $ => ({
 		if (!filePath)  // Check that a valid file path was passed
 			return debug.error('Invalid file path.');
 
+		if (typeof filePath == 'string')
+			filePath = [ filePath ];
+
 		const [ fileName ] = filePath;
 
 		$(`#${this.id} .file-data.file-name`).text(fileName);
@@ -206,7 +208,7 @@ define([ 'jquery' ], $ => ({
 		let prevComment = '';
 		let tool = 'T0';
 		let motionSinceToolChange = false;
-		const { fro, addLineNumbers } = this;
+		const { addLineNumbers, backFillFirstAxisValues } = this;
 		const gcodeData = {
 			x: [],
 			y: [],
@@ -224,7 +226,18 @@ define([ 'jquery' ], $ => ({
 		const toolMeta = {};
 		/**
 		 *  List of tool changes that take place throughout the gcode file.
-		 *  Ex. toolChange: [ { Tool: 'T2', Desc: 'D=3.175 CR=0 TAPER=30deg - ZMIN=-0.3 - chamfer mill', GcodeComment: 'Engrave Text', Gcode: 'N6 T2 M6', Id: 'gcN6', Line: 10 }, { Tool: 'T3', ... }, ... ].
+		 *  Ex. toolChange: [
+		 * 		{
+		 *			Tool: 'T2',
+		 *			Desc: 'D=3.175 CR=0 TAPER=30deg - ZMIN=-0.3 - chamfer mill',
+		 *			GcodeComment: 'Engrave Text',
+		 *			Gcode: 'N6 T2 M6',
+		 *			Id: 'gcN6',
+		 *			Line: 10
+		 *		},
+		 *		{ Tool: 'T3', ... },
+		 *		...
+		 *	]
 		 *  @type {Array}
 		 */
 		let toolChange = [];
@@ -292,19 +305,19 @@ define([ 'jquery' ], $ => ({
 			if (/x[-.0-9]+/i.test(line))  // If there is x axis data
 				gcodeData.x[i] = Number(line.match(/x([-.0-9]+)/i)[1]);
 
-			else if (i)
+			else if (i)  // If there is no axis x data
 				gcodeData.x[i] = Number(gcodeData.x[i - 1]);
 
 			if (/y[-.0-9]+/i.test(line))  // If there is y axis data
 				gcodeData.y[i] = Number(line.match(/y([-.0-9]+)/i)[1]);
 
-			else if (i)
+			else if (i)  // If there is no axis y data
 				gcodeData.y[i] = Number(gcodeData.y[i - 1]);
 
 			if (/z[-.0-9]+/i.test(line))  // If there is z axis data
 				gcodeData.z[i] = Number(line.match(/z([-.0-9]+)/i)[1]);
 
-			else if (i)
+			else if (i)  // If there is no axis z data
 				gcodeData.z[i] = Number(gcodeData.z[i - 1]);
 
 			if (/N[0-9]+/i.test(line))  // If numbered gcode
@@ -344,6 +357,12 @@ define([ 'jquery' ], $ => ({
 			if (/M30|M60/i.test(line) || (/M[0-2]/i.test(line) && !/M[0-9]{2,}/.test(line)))  // If there is a program end command
 				gcodeData.Desc[i].push('program-end');
 
+			if (/G20|G21/i.test(line))  // If there is a units command
+				gcodeData.Desc[i].push('units');
+
+			if (/G90|G91/i.test(line))  // If there is a motion mode command
+				gcodeData.Desc[i].push('motion-mode');
+
 			if (/G0?[0-3][^0-9]{1}/i.test(line))  // If there is a motion mode command
 				momo = `G${line.match(/[0-3]{1}/i)[0]}`;
 
@@ -355,58 +374,73 @@ define([ 'jquery' ], $ => ({
 
 		}
 
-		debug.log(gcodeData);
-		// this.plotData(gcodeData);
+		if (backFillFirstAxisValues) {
+
+			for (let i = 1; i < gcodeData.Id.length; i++) {
+
+				const z = gcodeData.z[i];
+
+				if (z === 0)
+					continue;
+
+				for (let j = i - 1; j >= 0; j--)
+					gcodeData.z[j] = z;
+
+				break;
+
+			}
+
+		}
 
 		debug.log('Gcode file parsed.');
-		// debug.log(gcode);
+		debug.log(gcodeData);
 
-		publish('gcode-data/file-loaded', { FileName, Gcode: gcode, GcodeData: gcodeData, ToolMeta: toolMeta, ToolChange: toolChange });  // Publish the parsed gcode lines so that other widgets can use it
+		publish('gcode-data/file-loaded', { FileName, Gcode: gcode, GcodeData: gcodeData, ToolMeta: toolMeta, ToolChange: toolChange, NewFile: true });  // Publish the parsed gcode lines so that other widgets can use it
 
 	},
 
-	plotData(data) {
-
-		const trace1 = {
-			x: data.x,
-			y: data.y,
-			z: data.z,
-			mode: 'lines',
-			marker: {
-				color: '#9467bd',
-				size: 12,
-				symbol: 'circle',
-				line: {
-					color: 'rgb(0,0,0)',
-					width: 0
-				}
-			},
-			line: {
-				color: 'rgb(44, 160, 44)',
-				width: 2
-			},
-			type: 'scatter3d'
-		};
-
-		const plotData = [ trace1 ];
-
-		const layout = {
-			// title: 'GCode Toolpath',
-			autosize: false,
-			showlegend: false,
-			width: 650,
-			height: 650,
-			margin: {
-				l: 20,
-				r: 20,
-				b: 10,
-				t: 5
-			}
-		};
-
-		Plotly.newPlot('load-widget-gcode-plot', plotData, layout);
-
-	}
+	// plotData(data) {
+	//
+	// 	const trace1 = {
+	// 		x: data.x,
+	// 		y: data.y,
+	// 		z: data.z,
+	// 		mode: 'lines',
+	// 		marker: {
+	// 			color: '#9467bd',
+	// 			size: 12,
+	// 			symbol: 'circle',
+	// 			line: {
+	// 				color: 'rgb(0,0,0)',
+	// 				width: 0
+	// 			}
+	// 		},
+	// 		line: {
+	// 			color: 'rgb(44, 160, 44)',
+	// 			width: 2
+	// 		},
+	// 		type: 'scatter3d'
+	// 	};
+	//
+	// 	const plotData = [ trace1 ];
+	//
+	// 	const layout = {
+	// 		// title: 'GCode Toolpath',
+	// 		autosize: false,
+	// 		showlegend: false,
+	// 		width: 650,
+	// 		height: 650,
+	// 		margin: {
+	// 			l: 20,
+	// 			r: 20,
+	// 			b: 10,
+	// 			t: 5
+	// 		}
+	// 	};
+	//
+	// 	Plotly.newPlot('load-widget-gcode-plot', plotData, layout);
+	//
+	// }
 
 })  /* arrow-function */
 );	/* define */

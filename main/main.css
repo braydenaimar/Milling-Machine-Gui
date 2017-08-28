@@ -13,6 +13,24 @@ body {
 /*.btn-default:hover {
 	background-color: #ffffff;
 }*/
+.dropdown-menu {
+	display: block;
+}
+.btn.disabled {
+	cursor: not-allowed !important;
+    opacity: 0.65 !important;
+    /*filter: alpha(opacity=65);*/
+    -webkit-box-shadow: none !important;
+    box-shadow: none !important;
+}
+.btn.disabled:active {
+	background-image: none !important;
+}
+
+.btn-group>.btn:first-child:not(:last-child) {  /* this is here because bootstrap excludes dropdown-toggle elements */
+	border-top-right-radius: 0;
+	border-bottom-right-radius: 0;
+}
 
 code.text-default {
 	color: #212121;
@@ -188,6 +206,16 @@ h1, h2, h3, h4, h4, h5, h6 {
 }
 #sidebar .fa-terminal, #sidebar .fa-wrench {
 	font-size: 24px;
+}
+#sidebar .feed-control-btns {
+	position: fixed;
+	bottom: 0;
+}
+#sidebar .feed-control-btns .btn {
+	width: 73px;
+}
+#sidebar .feed-control-btns .fa {
+	font-size: 22px;
 }
 
 /* -- Widget Container -- */

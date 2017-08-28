@@ -18,7 +18,7 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 	console.log('running main.js');
 	console.log('global:', global);
 
-	Plotly = require('./lib/js/plotly.min.js');  // eslint-disable-line import/no-unresolved
+	// Plotly = require('./lib/js/plotly.min.js');  // eslint-disable-line import/no-unresolved
 	THREE = require('./lib/js/three.min.js');    // eslint-disable-line import/no-unresolved
 	CSON = require('cson');
 	fsCSON = require('fs-cson');
@@ -29,10 +29,12 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 	electron = require('electron');
 	({ ipcRenderer: ipc } = electron);
-
 	({ publish, subscribe, unsubscribe } = amplify);
 
-	enableConsole = function enableConsole() {  // Enable the console log for debugging
+	/**
+	 *  Enable the console log for debugging.
+	 */
+	enableConsole = function enableConsole() {
 
 		const keys = Object.keys(console);
 
@@ -62,7 +64,10 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 
 	};
 
-	disableConsole = function disableConsole() {  // Disable the console for better performance when it is not needed
+	/**
+	 *  Disable the console for better performance when it is not needed.
+	 */
+	disableConsole = function disableConsole() {
 
 		for (let i = 0; i < 10; i++)  // Escape any active console groups
 			console.groupEnd();
@@ -215,11 +220,14 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 	 *  @type {Object}
 	 */
 	widget = {};
+	dropdown = {};
+	focusedElement = document;
 
 	debug.groupCollapsed(`${ws.name} Setup`);
 
 	initBody = function initBody() {
 
+		const that = this;
 		debug.group(`${ws.id}.initBody()`);
 
 		CSON.parseCSONFile('main/Settings.cson', (err, result) => {  // Import settings.
@@ -255,6 +263,18 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 			publish('/main/window-resize');
 
 		});
+
+	    $(document).on('focus', 'input', (evt) => {
+
+			const target = evt.currentTarget;
+
+	        if (that.focusedElement == target)  // If already focused
+				return;  // Return so user can place cursor at specific point in input
+
+	        that.focusedElement = target;
+	        setTimeout(() => { this.focusedElement.select(); }, 50);  // Select all text in any field on focus for easy re-entry. Delay sightly to allow focus to "stick" before selecting.
+
+	    });
 
 		widgetLoadCheck = setTimeout(() => {
 
@@ -339,7 +359,33 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 		$('#sidebar').on('click', 'span.btn', (evt) => {
 
 			const evtData = $(evt.currentTarget).attr('evt-data');
-			makeWidgetVisible(evtData);
+
+			if (evtData === 'feedhold') {
+
+				publish('/connection-widget/port-feedhold');
+
+				$('#sidebar .queueflush-btn').removeClass('hidden');
+				$('#sidebar .feedresume-btn').removeClass('hidden');
+
+			} else if (evtData === 'queueflush') {
+
+				publish('/connection-widget/port-queueflush');
+
+				$('#sidebar .queueflush-btn').addClass('hidden');
+				$('#sidebar .feedresume-btn').addClass('hidden');
+
+			} else if (evtData === 'feedresume') {
+
+				publish('/connection-widget/port-feedresume');
+
+				$('#sidebar .queueflush-btn').addClass('hidden');
+				$('#sidebar .feedresume-btn').addClass('hidden');
+
+			} else {
+
+				makeWidgetVisible(evtData);
+
+			}
 
 		});
 

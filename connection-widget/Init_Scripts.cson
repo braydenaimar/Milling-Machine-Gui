@@ -117,7 +117,8 @@ InitScripts: [
       { Msg: "{jv:5}", Pause: 200 }   # JSON Verbosity [ 0 = silent, 1 = footer, 2 = messages, 3 = configs, 4 = linenum, 5 = verbose ]
       { Msg: "{si:250}", Pause: 50 }  # Status Interval [ms]
       { Msg: "{sv:1}", Pause: 50 }    # Status Report Verbosity [ 0 = off, 1 = filtered, 2 = verbose ]
-      "{sr:n}"
+      { Msg: "{sr:{line:t,posx:t,posy:t,posz:t,vel:t,unit:t,feed:t}}", Pause: 50 }
+      "G90"
     ]
     "pause": 100
   }
@@ -146,6 +147,7 @@ ConnectScripts: [
     script: [
       "{hp:n}"
       "{fb:n}"
+      "{unit:n}"
       "{sr:n}"
       "{qr:n}"
     ]
@@ -154,7 +156,9 @@ ConnectScripts: [
   { # TinyG
     Buffer: "tinyg"
     script: [
-      "{sr:n}"
+      "{unit:n}"
+      "{sr:{line:t,posx:t,posy:t,posz:t,vel:t,unit:t,feed:t}}"
+    #   "{sr:n}"
     ]
     pause: 100
   }

@@ -1,0 +1,17 @@
+@font-face{
+    font-family: '24 Segment';
+	src: url('../fonts/24-segment/open_24_display_st-webfont.eot');
+    src: url('../fonts/24-segment/open_24_display_st-webfont.eot?#iefix') format('embedded-opentype'),
+         url('../fonts/24-segment/open_24_display_st-webfont.woff') format('woff'),
+         url('../fonts/24-segment/open_24_display_st-webfont.woff2') format('woff2'),
+         url('../fonts/24-segment/open_24_display_st-webfont.ttf') format('truetype');
+     font-weight: normal;
+     font-style: normal;
+}
+
+.segment-font {
+    font-family: '24 Segment';
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: 1px;
+}

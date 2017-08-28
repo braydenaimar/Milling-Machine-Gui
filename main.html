@@ -8,6 +8,7 @@
 		<link rel="stylesheet" type="text/css" href="lib/css/bootstrap-paper.min.css">
 		<link rel="stylesheet" type="text/css" href="lib/css/font-awesome.min.css">
 		<link rel="stylesheet" type="text/css" href="lib/css/material-icons.css">
+		<link rel="stylesheet" type="text/css" href="lib/css/24-segment.css">
 
 		<link rel="stylesheet" type="text/css" href="main/main.css">
 		<link rel="stylesheet" type="text/css" href="load-widget/load-widget.css">
@@ -47,7 +48,37 @@
 		    </div>
 	    </nav>
 
-		<div id="sidebar" class=""></div>
+		<div id="sidebar" class="">
+
+			<div class="feed-control-btns">
+
+				<span class="btn btn-success feedresume-btn hidden" evt-data="feedresume">
+					<div>
+						<span class="material-icons">keyboard_arrow_up</span>
+					</div>
+
+					<div>Resume</div>
+				</span>
+
+				<span class="btn btn-warning queueflush-btn hidden" evt-data="queueflush">
+					<div>
+						<span class="fa fa-percent"></span>
+					</div>
+
+					<div>Clear</div>
+				</span>
+
+				<span class="btn btn-danger feedhold-btn" evt-data="feedhold">
+					<div>
+						<span class="material-icons">priority_high</span>
+					</div>
+
+					<div>Stop</div>
+				</span>
+
+			</div>
+
+		</div>
 
 	</body>
 </html>

@@ -5,7 +5,7 @@
 maxLineLimit: 800
 # Specifies the minimum number of lines to be displayed in the console log.
 # @type {Number}
-minLineLimit: 300
+minLineLimit: 500
 # Sets the time limit (ms) that an active command in the console log can be verified.
 # To prevent messages from being marked as stale, set this to 0.
 # @type {number}
@@ -72,8 +72,23 @@ lineEndings:
 # @type {Boolean}
 enableRecursiveUpdate: false
 # Distance from the bottom of the panel that the panel will still automatically scroll down on.
-# @type {number}
+# @type {Number}
 autoScrollThreshold: 200
+# Delay between a port being opened and the watchdog checking to see that the port is responding.
+# Set a value of zero (0) to disable the watchdog on port open.
+# @default Overwritten by settings cson file.
+# @type {Number}
+watchdogOnPortConnectDelay: 2000
+# Delay between the watchdog checking that the port is responding and closing the port.
+# Set a value of zero (0) to disable the closing of the port.
+# @default Overwritten by settings cson file.
+# @type {Number}
+watchdogPortCloseDelay: 3000
+# Delay between closing the port and reopening the port in milliseconds [ms].
+# Set a value of zero (0) to disable the reopening of the port.
+# @default Overwritten by settings cson file.
+# @type {Number}
+watchdogPortReopenDelay: 3000
 SPJS:
   # placeholder [string] - Stores the text used as the placeholder for the <input> element.
   placeholder: "SPJS Command"

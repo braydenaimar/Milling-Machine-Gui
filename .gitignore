@@ -9,6 +9,8 @@ html/help-widget.html
 css/help-widget.css
 js/help-widget.js
 
+User_Settings.cson
+
 connection-widget_*.cson
 
 npm-debug.log

@@ -1,0 +1,20 @@
+# Probe Settings
+
+scanWithXAxis: true
+
+profile:
+  default:
+    probeCount:
+      x: 4
+      y: 3
+    startPoint:
+      x: 0
+      y: 0
+    endPoint:
+      x: 75
+      y: 50
+    clearanceHeight: 5
+    probeHeight: 1
+    feedrate: 25
+    maxNegative: -20
+    heightOffset: 0
