@@ -190,6 +190,8 @@ define([ 'jquery' ], $ => ({
 
 	initBody() {
 
+		const { id } = this;
+
 		console.group(`${this.name}.initBody()`);
 		disableConsole();  // Disable the console log to prevent program from crashing
 
@@ -212,7 +214,7 @@ define([ 'jquery' ], $ => ({
 		this.loadSettings();
 		this.initClickEvents();
 
-		publish('/main/widget-loaded', this.id);
+		publish('/main/widget-loaded', id);
 
 		return true;
 
@@ -334,7 +336,6 @@ define([ 'jquery' ], $ => ({
 			} else if (evtData === 'reload-gcode') {
 
 				this.reloadFile();
-				// this.fileLoaded({ FileName, Gcode, GcodeData, ToolMeta, ToolChange });
 
 			} else if (evtData === 'open-file') {
 
@@ -400,7 +401,7 @@ define([ 'jquery' ], $ => ({
 
 		});
 
-		$('#run-widget .dro-panel .panel-body').on('click', 'span.btn', (evt) => {  // DRO panel
+		$('#run-widget .dro-panel .panel-body').on('click', '.btn', (evt) => {  // DRO panel
 
 			const { evtSignal, evtData } = this.getBtnEvtData(evt);
 			const $target = $(evt.currentTarget);
@@ -441,8 +442,6 @@ define([ 'jquery' ], $ => ({
 
 		});
 
-		// $('#run-widget').mouseup(() => {  // End of continuous jog motion
-		// $(document).mouseup((evt) => {  // Jog panel end of continuous motion
 		$(document).on('mouseup', (evt) => {  // Jog panel end of continuous motion
 
 			this.jogMachine('stop');
@@ -611,29 +610,6 @@ define([ 'jquery' ], $ => ({
 				Gcode: [ ...GcodeData.Gcode ],
 				Desc: [ ...GcodeData.Desc ]
 			};
-			// this.OrigionalGcode = [];
-			// this.OrigionalGcodeData = {
-			// 	x: [],
-			// 	y: [],
-			// 	z: [],
-			// 	Id: [],
-			// 	Line: [],
-			// 	Gcode: [],
-			// 	Desc: []
-			// }
-			//
-			// for (let i = 0; i < Gcode.length; i++) {
-			//
-			// 	this.OrigionalGcode[i] = Gcode[i];
-			// 	this.OrigionalGcodeData.x[i] = GcodeData.x[i];
-			// 	this.OrigionalGcodeData.y[i] = GcodeData.y[i];
-			// 	this.OrigionalGcodeData.z[i] = GcodeData.z[i];
-			// 	this.OrigionalGcodeData.Id[i] = GcodeData.Id[i];
-			// 	this.OrigionalGcodeData.Line[i] = GcodeData.Line[i];
-			// 	this.OrigionalGcodeData.Gcode[i] = GcodeData.Gcode[i];
-			// 	this.OrigionalGcodeData.Desc[i] = GcodeData.Desc[i];
-			//
-			// }
 
 		}
 
@@ -717,48 +693,6 @@ define([ 'jquery' ], $ => ({
 		$('#run-widget .gcode-view-panel .reload-gcode-btn').removeClass('hidden');
 
 	},
-	// plotData(data) {
-	//
-	// 	const trace1 = {
-	// 		x: data.x,
-	// 		y: data.y,
-	// 		z: data.z,
-	// 		mode: 'lines',
-	// 		marker: {
-	// 			color: '#9467bd',
-	// 			size: 12,
-	// 			symbol: 'circle',
-	// 			line: {
-	// 				color: 'rgb(0,0,0)',
-	// 				width: 0
-	// 			}
-	// 		},
-	// 		line: {
-	// 			color: 'rgb(44, 160, 44)',
-	// 			width: 2
-	// 		},
-	// 		type: 'scatter3d'
-	// 	};
-	//
-	// 	const plotData = [ trace1 ];
-	//
-	// 	const layout = {
-	// 		// title: 'GCode Toolpath',
-	// 		autosize: false,
-	// 		showlegend: false,
-	// 		width: 400,
-	// 		height: 350,
-	// 		margin: {
-	// 			l: 20,
-	// 			r: 20,
-	// 			b: 10,
-	// 			t: 5
-	// 		}
-	// 	};
-	//
-	// 	Plotly.newPlot('run-widget-gcode-plot', plotData, layout);
-	//
-	// },
 	reloadFile() {
 
 		const { FileName, Gcode, GcodeData, ToolMeta, ToolChange } = this;
@@ -785,16 +719,6 @@ define([ 'jquery' ], $ => ({
 
 			this.startFromIndex = Number($('#run-widget .gcode-view-panel .start-line-input').val());
 			const { startFromIndex } = this;
-
-			// if (startFromIndex) {  // If not starting from the first line
-			//
-			// 	const Msg = [
-			// 		'G90'  // Absolute motion mode
-			// 	];
-			//
-			// 	publish('/connection-widget/port-sendjson', port, { Msg, IdPrefix: 'FileInits', Comment: 'File Inits' });  // Send gcode file inits
-			//
-			// }
 
 			this.fileStatus = 'active';
 			this.setButtonEnabledState('disable');  // Disable buttons while sending gcode from file
@@ -838,27 +762,27 @@ define([ 'jquery' ], $ => ({
 		if (StartIndex) {  // If not starting from the begining of the file
 
 			const i = StartIndex - 1;
-			const [ x, y, z ] = [ GcodeData.x[i], GcodeData.y[i], GcodeData.z[i] ];
+			const [ x, y, z, feed, dist, plane, momo ] = [ GcodeData.x[i], GcodeData.y[i], GcodeData.z[i], GcodeData.Feed[i], GcodeData.Dist[i], GcodeData.Plane[i], GcodeData.Momo[i] ];
+			let Msg = [];
 
-			if (fileUnits) {  // If file units are known
+			if (fileUnits)  // If file units are known
+				Msg = [ ...Msg, `${fileUnits === 'mm' ? 'G21' : 'G20'}` ];
 
-				let msg = [
-					`${fileUnits === 'mm' ? 'G21' : 'G20'}`  // File units
-				];
-
-				publish('/connection-widget/port-sendjson', port, { Msg: msg, IdPrefix: 'FileInits', Comment: 'File Inits' });  // Send gcode file inits
-
-			}
-
-			let msg = [
+			Msg = [
+				...Msg,
 				'G91',
 				'G0 Z5',
 				'G90',
 				`G0 X${x} Y${y}`,
-				`G0 Z${z}`
+				`G0 Z${z}`,
+				`${plane} F${feed}`,  // G17 or G18 or G19 and feedrate
+				`${momo}`  // G0 or G1 or G2 or G3
 			];
 
-			publish('/connection-widget/port-sendjson', port, { Msg: msg, IdPrefix: 'AutoMove', Comment: 'Auto Move' });
+			if (dist !== 'G90')
+				Msg = [ ...Msg, `${dist}` ];
+
+			publish('/connection-widget/port-sendjson', port, { Msg, IdPrefix: 'FileInits', Comment: 'File Inits' });  // Send gcode file inits
 
 		}
 
@@ -1267,6 +1191,25 @@ define([ 'jquery' ], $ => ({
 
 		$('#run-widget .tool-panel .panel-body').html(toolHTML);
 
+		const $toolPanel = $('#run-widget .tool-panel');
+		const $gcodePanel = $('#run-widget .gcode-view-panel');
+		const hiddenFlag = $toolPanel.hasClass('hidden');
+
+		if (ToolChange.length && hiddenFlag) {  // If there are tool changes
+
+			$toolPanel.removeClass('hidden');
+			const margin = $gcodePanel.css('margin-top');
+			$gcodePanel.css('margin-bottom', margin);
+			this.resizeWidgetDom();
+
+		} else if (!ToolChange.length && !hiddenFlag) {  // If there are no tool changes
+
+			$toolPanel.addClass('hidden');
+			$gcodePanel.css('margin-bottom', 0);
+			this.resizeWidgetDom();
+
+		}
+
 	},
 	toolChangeActive(id) {
 
@@ -1445,7 +1388,7 @@ define([ 'jquery' ], $ => ({
 
 		const $gcodeStartBtn = $('#run-widget .gcode-view-panel .start-btn');
 		const $openFileBtn = $('#run-widget .open-file-btn');
-		const $droHomeBtns = $('#run-widget .dro-panel .btn-home');
+		const $droZeroBtns = $('#run-widget .dro-panel .btn-zero');
 		const $droGoBtn = $('#run-widget .dro-panel .goto-value-btn');
 		const $droSetBtn = $('#run-widget .dro-panel .set-value-btn');
 		const $jogBtns = $('#run-widget .jog-panel .jog-btn');
@@ -1453,7 +1396,7 @@ define([ 'jquery' ], $ => ({
 
 		$gcodeStartBtn.addClass(addingClass).removeClass(removingClass);
 		$openFileBtn.addClass(addingClass).removeClass(removingClass);
-		$droHomeBtns.addClass(addingClass).removeClass(removingClass);
+		$droZeroBtns.addClass(addingClass).removeClass(removingClass);
 		$droGoBtn.addClass(addingClass).removeClass(removingClass);
 		$droSetBtn.addClass(addingClass).removeClass(removingClass);
 		$jogBtns.addClass(addingClass).removeClass(removingClass);
@@ -2387,24 +2330,30 @@ define([ 'jquery' ], $ => ({
 			return false;
 
 		const inputValue = $droInput[0].value;
-		let msg = [];
+		let Msg = [];
 
-		if (task === 'goto-value') {  // If the 'Go' button was pressed
+		if (task === 'zero-axis') {  // If the 'Zero' button was pressed
 
-			msg = [
+			Msg = [
+				`G28.3 ${axis.toUpperCase()}0`
+			];
+
+		} else if (task === 'goto-value') {  // If the 'Go' button was pressed
+
+			Msg = [
 				'G90',
 				`G0 ${axis.toUpperCase()}${Math.roundTo(Number(inputValue), 4)}`
 			];
 
 		} else if (task === 'set-value') {  // If the 'Set' button was pressed
 
-			msg = [
+			Msg = [
 				`G28.3 ${axis.toUpperCase()}${Math.roundTo(Number(inputValue), 4)}`
 			];
 
 		}
 
-		publish('/connection-widget/port-sendjson', port, { Msg: msg, IdPrefix: 'DRO-MDI' });  // Send the commands to the controller
+		publish('/connection-widget/port-sendjson', port, { Msg, IdPrefix: 'dro', Comment: 'DRO-MDI' });  // Send the commands to the controller
 
 	},
 	interpolateProbeValue(pos, probeData, xMap, yMap) {

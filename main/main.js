@@ -228,6 +228,7 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 	initBody = function initBody() {
 
 		const that = this;
+
 		debug.group(`${ws.id}.initBody()`);
 
 		CSON.parseCSONFile('main/Settings.cson', (err, result) => {  // Import settings.

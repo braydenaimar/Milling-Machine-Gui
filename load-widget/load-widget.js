@@ -33,7 +33,11 @@ define([ 'jquery' ], $ => ({
 	widgetVisible: false,
 
 	addLineNumbers: true,
-	backFillFirstAxisValues: true,
+	replaceExistingLineNumbers: true,
+	matchLineNumberToLineIndex: true,
+	lineNumberStartValue: 2,
+	lineNumberValueIncrement: 2,
+	backFillFirstZAxisValues: true,
 
 	initBody() {
 
@@ -142,7 +146,7 @@ define([ 'jquery' ], $ => ({
 		const openOptions = {
 			title: 'Open a File',
 			filters: [
-				{ name: 'GCode', extensions: [ 'nc' ] },
+				{ name: 'GCode', extensions: [ 'nc', 'TAP' ] },
 				{ name: 'All', extensions: [ '' ] }
 			],
 			properties: [ 'openFile' ]
@@ -160,7 +164,6 @@ define([ 'jquery' ], $ => ({
 		});
 
 	},
-
 	openFile(filePath) {
 
 		if (this.lastParseFileTime && Date.now() - this.lastParseFileTime < 1000)
@@ -201,14 +204,7 @@ define([ 'jquery' ], $ => ({
 
 	parseFile({ FileName, Gcode }) {
 
-		let gcodeLineNum = 0;
-		let gcode = Gcode;
-		let momo = '';  // Motion mode
-		let momoNonModal = '';
-		let prevComment = '';
-		let tool = 'T0';
-		let motionSinceToolChange = false;
-		const { addLineNumbers, backFillFirstAxisValues } = this;
+		const { addLineNumbers, replaceExistingLineNumbers, matchLineNumberToLineIndex, lineNumberStartValue, lineNumberValueIncrement, backFillFirstZAxisValues } = this;
 		const gcodeData = {
 			x: [],
 			y: [],
@@ -216,31 +212,64 @@ define([ 'jquery' ], $ => ({
 			Id: [],  // Id
 			Line: [],
 			Gcode: [],
-			Desc: []  // Eg. 'comment', 'M6', 'M8', 'motion', 'coord'
+			Desc: [],  // Eg. 'comment', 'M6', 'M8', 'motion', 'coord'
+			Dist: [],
+			Plane: [],
+			Momo: [],
+			Feed: []
 		};
 		/**
-		 *  Tool meta data.
-		 *  Ex. toolMeta: { T2: { Desc: 'D=3.175 CR=0 TAPER=30deg - ZMIN=-0.3 - chamfer mill' }, T3: { ... }, ... }.
-		 *  @type {Object}
-		 */
+		*  Tool meta data.
+		*  Ex. toolMeta: { T2: { Desc: 'D=3.175 CR=0 TAPER=30deg - ZMIN=-0.3 - chamfer mill' }, T3: { ... }, ... }.
+		*  @type {Object}
+		*/
 		const toolMeta = {};
 		/**
-		 *  List of tool changes that take place throughout the gcode file.
-		 *  Ex. toolChange: [
-		 * 		{
-		 *			Tool: 'T2',
-		 *			Desc: 'D=3.175 CR=0 TAPER=30deg - ZMIN=-0.3 - chamfer mill',
-		 *			GcodeComment: 'Engrave Text',
-		 *			Gcode: 'N6 T2 M6',
-		 *			Id: 'gcN6',
-		 *			Line: 10
-		 *		},
-		 *		{ Tool: 'T3', ... },
-		 *		...
-		 *	]
-		 *  @type {Array}
-		 */
+		*  List of tool changes that take place throughout the gcode file.
+		*  Ex. toolChange: [
+		* 		{
+		*			Tool: 'T2',
+		*			Desc: 'D=3.175 CR=0 TAPER=30deg - ZMIN=-0.3 - chamfer mill',
+		*			GcodeComment: 'Engrave Text',
+		*			Gcode: 'N6 T2 M6',
+		*			Id: 'gcN6',
+		*			Line: 10
+		*		},
+		*		{ Tool: 'T3', ... },
+		*		...
+		*	]
+		*  @type {Array}
+		*/
 		let toolChange = [];
+		let gcodeLineNum = 0;
+		let gcode = Gcode;
+		let [ x, y, z ] = [ 0, 0, 0 ];
+		/**
+		 *  Motion mode (rapid or linear or arc)
+		 *  Eg. 'G0', 'G1', 'G2', or 'G3'
+		 *  @type {String}
+		 */
+		let momo = 'G0';
+		/**
+		 *  Arc motion plane
+		 *  G17: Z-Axis or XY-Plane
+		 *  G18: Y-Axis or XZ-Plane
+		 *  G19: X-Axis or YZ-Plane
+		 *  Eg. 'G17' or 'G18' or 'G19'
+		 *  @type {String}
+		 */
+		let plane = 'G17';
+		/**
+		 *  Distance Mode (absolute or relative)
+		 *  Eg. 'G90' or 'G91'
+		 *  @type {String}
+		 */
+		let dist = 'G90';
+		let feed = 0;
+		let prevComment = '';
+		let tool = 'T0';
+		let motionSinceToolChange = false;
+		let lineNumberCount = lineNumberStartValue;
 
 		gcode = gcode.filter((value, index, arr) => {  // Remove empty lines and % commands
 
@@ -257,82 +286,32 @@ define([ 'jquery' ], $ => ({
 		for (let i = 0; i < gcode.length; i++) {
 
 			let line = gcode[i];
+			let id = `gc${i}`;
+			let desc = [];
+			let momoNonModal = '';
+			const emptyLineFlag = !line || line === '\n' || line === '\r' || line === '\r\n';
 
-			gcodeData.x.push(0);
-			gcodeData.y.push(0);
-			gcodeData.z.push(0);
-			gcodeData.Line.push(i + 1);
-			gcodeData.Gcode.push(line);
-			gcodeData.Id.push('');
-			gcodeData.Desc.push([]);
-
-			if (line.includes('\r'))
-				line = gcode[i] = line.replace('\r', '');  // Remove carriage-return characters
+			if (line.includes('\r'))  // If the line has a carriage-return character
+				line = line.replace('\r', '');  // Remove carriage-return characters
 
 			if (/^\(|^;/.test(line)) {  // If the line is a comment
 
-				gcodeData.Desc[i].push('comment');
+				desc.push('comment');
 				prevComment = line.replace(/\(|\)/g, '');
 
 			} else if (/\(|;/.test(line)) {  // If the line has an inline comment
 
-				gcodeData.Desc[i].push('inline-comment');
+				desc.push('inline-comment');
 
 			}
 
-			if (!motionSinceToolChange && /G0/i.test(line) && !/Z[-.0-9]+/i.test(line) && i < gcode.length - 1) {
-
-				motionSinceToolChange = true;
-				const nextLine = gcode[i + 1];
-
-				gcode[i + 1] = line.replace(/G0 /i, '');
-				line = gcode[i] = `${line.match(/G0+/i)[0]} ${nextLine}`;
-
-			} else if (!motionSinceToolChange && /G0/i.test(line)) {
-
-				motionSinceToolChange = true;
-
-			}
-
-			if (addLineNumbers && line && line !== '\n' && line !== '\r' && line !== '\r\n' && !gcodeData.Desc[i].includes('comment') && !/^N[0-9]+/i.test(line)) {  // Add line number
-
-				gcode[i] = `N${i} ${line}`;
-				gcodeData.Gcode[i] = gcode[i];
-				line = gcode[i];
-
-			}
-
-			if (/x[-.0-9]+/i.test(line))  // If there is x axis data
-				gcodeData.x[i] = Number(line.match(/x([-.0-9]+)/i)[1]);
-
-			else if (i)  // If there is no axis x data
-				gcodeData.x[i] = Number(gcodeData.x[i - 1]);
-
-			if (/y[-.0-9]+/i.test(line))  // If there is y axis data
-				gcodeData.y[i] = Number(line.match(/y([-.0-9]+)/i)[1]);
-
-			else if (i)  // If there is no axis y data
-				gcodeData.y[i] = Number(gcodeData.y[i - 1]);
-
-			if (/z[-.0-9]+/i.test(line))  // If there is z axis data
-				gcodeData.z[i] = Number(line.match(/z([-.0-9]+)/i)[1]);
-
-			else if (i)  // If there is no axis z data
-				gcodeData.z[i] = Number(gcodeData.z[i - 1]);
-
-			if (/N[0-9]+/i.test(line))  // If numbered gcode
-				gcodeData.Id[i] = `gcN${i}`;
-
-			else  // If not numbered gcode
-				gcodeData.Id[i] = `gc${i}`;
-
-			if (/T[0-9]+/i.test(line) && gcodeData.Desc[i].includes('comment'))  // If a tool meta comment
+			if (/T[0-9]+/i.test(line) && desc.includes('comment'))  // If a tool meta comment
 				toolMeta[line.match(/T[0-9]+/)] = { Desc: line.replace(/\(T[0-9]+ |\)/g, '') };
 
 			else if (/T[0-9]+/i.test(line))  // If a tooling command
 				tool = line.match(/T[0-9]+/);
 
-			if (/M6/i.test(line)) {  // If a tool change command
+			if (/M6/i.test(line)) {  // If a tool change command is on the next line
 
 				const toolItem = {
 					Tool: tool,
@@ -340,41 +319,98 @@ define([ 'jquery' ], $ => ({
 					GcodeComment: prevComment,
 					Gcode: line,
 					Index: i,
-					Id: gcodeData.Id[i]
+					Id: id
 				};
+
 				toolChange = [ ...toolChange, toolItem ];
-				gcodeData.Desc[i].push('tool-change');
+				desc.push('tool-change');
 				motionSinceToolChange = false;
 
 			}
 
-			if (/S[0-9]+/i.test(line) || (/M3|M4/i.test(line) && !/M[0-9]{2,}/i.test(line)))  // If there is a spindle command
-				gcodeData.Desc[i].push('spindle');
+			if (!desc.includes('comment') && !emptyLineFlag) {  // If the line is not a comment
 
-			if (/M[7-9]/i.test(line) && !/M[0-9]{2,}/i.test(line))  // If there is a coolant command
-				gcodeData.Desc[i].push('coolant');
+				if (!motionSinceToolChange && /G0/i.test(line) && !/Z[-.0-9]+/i.test(line) && i < gcode.length - 1 && /Z[-.0-9]+/i.test(gcode[i + 1])) {  // If x and y motion is sent before z value
 
-			if (/M30|M60/i.test(line) || (/M[0-2]/i.test(line) && !/M[0-9]{2,}/.test(line)))  // If there is a program end command
-				gcodeData.Desc[i].push('program-end');
+					motionSinceToolChange = true;  // Swap this line with the next line
+					const nextLine = gcode[i + 1];
 
-			if (/G20|G21/i.test(line))  // If there is a units command
-				gcodeData.Desc[i].push('units');
+					gcode[i + 1] = line.replace(/G0 /i, '');
+					line = `${line.match(/G0+/i)[0]} ${nextLine}`;
 
-			if (/G90|G91/i.test(line))  // If there is a motion mode command
-				gcodeData.Desc[i].push('motion-mode');
+				} else if (!motionSinceToolChange && /G0/i.test(line)) {
 
-			if (/G0?[0-3][^0-9]{1}/i.test(line))  // If there is a motion mode command
-				momo = `G${line.match(/[0-3]{1}/i)[0]}`;
+					motionSinceToolChange = true;
 
-			if (/G28|G30/i.test(line))  // If there is a non modal motion mode command
-				[ momoNonModal ] = line.match(/G28|G30/i);
+				}
 
-			else
-				momoNonModal = '';
+				const existingLineNumberFlag = /^N[0-9]+/i.test(line);
+				const newLineNumber = matchLineNumberToLineIndex ? `N${i}` : `N${lineNumberCount}`;
+				lineNumberCount += lineNumberValueIncrement;
+
+				if (addLineNumbers && !existingLineNumberFlag)  // Add line number
+					line = `${newLineNumber} ${line}`;
+
+				else if (addLineNumbers && replaceExistingLineNumbers && existingLineNumberFlag)  // Replace existing line number
+					line = line.replace(/^N[0-9]+/i, newLineNumber);
+
+				if (/N[0-9]+/i.test(line))  // If numbered gcode
+					id = `gcN${i}`;
+
+				if (/S[0-9]+/i.test(line) || (/M3|M4/i.test(line) && !/M[0-9]{2,}/i.test(line)))  // If there is a spindle command
+					desc.push('spindle');
+
+				if (/M[7-9]/i.test(line) && !/M[0-9]{2,}/i.test(line))  // If there is a coolant command
+					desc.push('coolant');
+
+				if (/M30|M60/i.test(line) || (/M[0-2]/i.test(line) && !/M[0-9]{2,}/.test(line)))  // If there is a program end command
+					desc.push('program-end');
+
+				if (/G20|G21/i.test(line))  // If there is a units command
+					desc.push('units');
+
+				if (/G90|G91/i.test(line))  // If there is a distance mode command
+					dist = line.match(/G90|G91/i)[0];
+
+				if (/G1[7-9]{1}/i.test(line))  // If there is an arc plane command
+					plane = line.match(/G1[7-9]{1}/i)[0];
+
+				if (/G0?[0-3][^0-9]{1}/i.test(line))  // If there is a motion mode command
+					momo = `G${line.match(/G0?([0-3]{1})[^0-9]/i)[1]}`;
+
+				if (/G28|G30/i.test(line))  // If there is a non modal motion mode command
+					[ momoNonModal ] = line.match(/G28|G30/i);
+
+				if (/f[.0-9]+/i.test(line)) // If there is feedrate data
+					feed = Number(line.match(/f([.0-9]+)/i)[1]);
+
+				if (/x[-.0-9]+/i.test(line))  // If there is x-axis data
+					x = Number(line.match(/x([-.0-9]+)/i)[1]);
+
+				if (/y[-.0-9]+/i.test(line))  // If there is y-axis data
+					y = Number(line.match(/y([-.0-9]+)/i)[1]);
+
+				if (/z[-.0-9]+/i.test(line))  // If there is z-axis data
+					z = Number(line.match(/z([-.0-9]+)/i)[1]);
+
+			}
+
+			gcode[i] = line;
+			gcodeData.x.push(x);
+			gcodeData.y.push(y);
+			gcodeData.z.push(z);
+			gcodeData.Line.push(i + 1);
+			gcodeData.Gcode.push(line);
+			gcodeData.Id.push(id);
+			gcodeData.Desc.push(desc);
+			gcodeData.Dist.push(dist);  // Absolute or relative distance mode (G90 or G91)
+			gcodeData.Plane.push(plane);  //  Arc Plane (G17 - G19)
+			gcodeData.Momo.push(momoNonModal || momo);  // Motion Mode (G0 - G3)
+			gcodeData.Feed.push(feed);  // Feedrate
 
 		}
 
-		if (backFillFirstAxisValues) {
+		if (backFillFirstZAxisValues) {
 
 			for (let i = 1; i < gcodeData.Id.length; i++) {
 
@@ -398,49 +434,6 @@ define([ 'jquery' ], $ => ({
 		publish('gcode-data/file-loaded', { FileName, Gcode: gcode, GcodeData: gcodeData, ToolMeta: toolMeta, ToolChange: toolChange, NewFile: true });  // Publish the parsed gcode lines so that other widgets can use it
 
 	},
-
-	// plotData(data) {
-	//
-	// 	const trace1 = {
-	// 		x: data.x,
-	// 		y: data.y,
-	// 		z: data.z,
-	// 		mode: 'lines',
-	// 		marker: {
-	// 			color: '#9467bd',
-	// 			size: 12,
-	// 			symbol: 'circle',
-	// 			line: {
-	// 				color: 'rgb(0,0,0)',
-	// 				width: 0
-	// 			}
-	// 		},
-	// 		line: {
-	// 			color: 'rgb(44, 160, 44)',
-	// 			width: 2
-	// 		},
-	// 		type: 'scatter3d'
-	// 	};
-	//
-	// 	const plotData = [ trace1 ];
-	//
-	// 	const layout = {
-	// 		// title: 'GCode Toolpath',
-	// 		autosize: false,
-	// 		showlegend: false,
-	// 		width: 650,
-	// 		height: 650,
-	// 		margin: {
-	// 			l: 20,
-	// 			r: 20,
-	// 			b: 10,
-	// 			t: 5
-	// 		}
-	// 	};
-	//
-	// 	Plotly.newPlot('load-widget-gcode-plot', plotData, layout);
-	//
-	// }
 
 })  /* arrow-function */
 );	/* define */

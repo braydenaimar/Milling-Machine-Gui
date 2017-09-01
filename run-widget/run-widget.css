@@ -23,6 +23,9 @@
 }
 
 /* -- File Panel -- */
+.gcode-view-panel {
+    margin-bottom: 0;
+}
 .gcode-view-panel .panel-heading .file-name-container {
     display: inline-block;
     width: 0;
@@ -253,6 +256,7 @@
     height: 35px;
 }
 .dro-panel .btn-home,
+.dro-panel .btn-zero,
 .dro-panel .dro-label,
 .dro-panel .dro-value,
 .dro-panel .axis-value-input{
@@ -274,6 +278,14 @@
     font-size: 17px;
     text-align: center;
     padding: 5px 0 0 0;
+    display: none;
+}
+.dro-panel .btn-zero {
+    width: 10%;
+    float: left;
+    font-size: 12px;
+    text-align: center;
+    padding: 9px;
 }
 .dro-panel .dro-label {
     width: 10%;
