@@ -28,6 +28,9 @@ gcodeControlBtnVisibility: {
 		'stop-btn': false
 	}
 }
+# File types that will be shown in the file explorer when opening a Gcode file.
+# @type {Array}
+fileOpenGcodeExtensions: [ 'nc' ],
 pauseOnFirstToolChange: true
 pauseOnToolChange: true
 # The maximum number of gcode lines to be sent to the connection-widget per packet.

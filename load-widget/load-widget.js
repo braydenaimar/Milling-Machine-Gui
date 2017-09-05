@@ -47,8 +47,6 @@ define([ 'jquery' ], $ => ({
 		subscribe('/main/widget-visible', this, this.visibleWidget.bind(this));
 		subscribe('run-widget/file-path', this, this.openFile.bind(this));
 
-		// subscribe('/connection-widget/recvPortList', this, this.recvPortList.bind(this));
-
 		publish('/main/widget-loaded', this.id);
 
 		$(`#${this.id} .load-panel .panel-body`).on('click', 'span.btn', (evt) => {  // Open File Button.
@@ -151,9 +149,6 @@ define([ 'jquery' ], $ => ({
 			],
 			properties: [ 'openFile' ]
 		};
-
-		debug.log('open dialog');
-
 		ipc.send('open-dialog', openOptions);  // Launch the file explorer dialog
 
 		ipc.on('opened-file', (event, path) => {  // Callback for file explorer dialog
@@ -179,8 +174,7 @@ define([ 'jquery' ], $ => ({
 
 		const [ fileName ] = filePath;
 
-		$(`#${this.id} .file-data.file-name`).text(fileName);
-
+		// $(`#${this.id} .file-data.file-name`).text(fileName);
 		// const data = fs.readFileSync(filePath[0]).toString().split('\n');  // Read the gcode file
 
 		fs.readFile(fileName, (err, data) => {  // Asynchronous file read
@@ -308,29 +302,14 @@ define([ 'jquery' ], $ => ({
 			if (/T[0-9]+/i.test(line) && desc.includes('comment'))  // If a tool meta comment
 				toolMeta[line.match(/T[0-9]+/)] = { Desc: line.replace(/\(T[0-9]+ |\)/g, '') };
 
-			else if (/T[0-9]+/i.test(line))  // If a tooling command
-				tool = line.match(/T[0-9]+/);
+			if (desc.includes('comment')) {  // If the line is a comment
 
-			if (/M6/i.test(line)) {  // If a tool change command is on the next line
+				if (/(^|[^a-z])T[0-9]+/i.test(line))  // If a tool description comment
+					toolMeta[line.match(/(^|[^a-z])(T[0-9]+)/i)[2]] = { Desc: line.replace(/\(T[0-9]+ ?|\)/g, '') };
 
-				const toolItem = {
-					Tool: tool,
-					Desc: toolMeta[tool].Desc,
-					GcodeComment: prevComment,
-					Gcode: line,
-					Index: i,
-					Id: id
-				};
+			} else if (!emptyLineFlag) {  // If the line is gcode data
 
-				toolChange = [ ...toolChange, toolItem ];
-				desc.push('tool-change');
-				motionSinceToolChange = false;
-
-			}
-
-			if (!desc.includes('comment') && !emptyLineFlag) {  // If the line is not a comment
-
-				if (!motionSinceToolChange && /G0/i.test(line) && !/Z[-.0-9]+/i.test(line) && i < gcode.length - 1 && /Z[-.0-9]+/i.test(gcode[i + 1])) {  // If x and y motion is sent before z value
+				if (!motionSinceToolChange && (/X[-.0-9]+/i.test(line) || /Y[-.0-9]+/i.test(line)) && !/Z[-.0-9]+/i.test(line) && i < gcode.length - 1 && /Z[-.0-9]+/i.test(gcode[i + 1])) {  // If x and y motion is sent before z value
 
 					motionSinceToolChange = true;  // Swap this line with the next line
 					const nextLine = gcode[i + 1];
@@ -338,7 +317,7 @@ define([ 'jquery' ], $ => ({
 					gcode[i + 1] = line.replace(/G0 /i, '');
 					line = `${line.match(/G0+/i)[0]} ${nextLine}`;
 
-				} else if (!motionSinceToolChange && /G0/i.test(line)) {
+				} else if (!motionSinceToolChange && (/X[-.0-9]+/i.test(line) || /Y[-.0-9]+/i.test(line) || /Z[-.0-9]+/i.test)) {
 
 					motionSinceToolChange = true;
 
@@ -356,6 +335,24 @@ define([ 'jquery' ], $ => ({
 
 				if (/N[0-9]+/i.test(line))  // If numbered gcode
 					id = `gcN${i}`;
+
+				if (/T[0-9]+/i.test(line)) {  // If a tool change command
+
+					tool = line.match(/T[0-9]+/)[0];
+					const toolItem = {
+						Tool: tool,
+						Desc: toolMeta[tool] ? toolMeta[tool].Desc : '',
+						GcodeComment: prevComment,
+						Gcode: line,
+						Index: i,
+						Id: id
+					};
+
+					toolChange = [ ...toolChange, toolItem ];
+					desc.push('tool-change');
+					motionSinceToolChange = false;
+
+				}
 
 				if (/S[0-9]+/i.test(line) || (/M3|M4/i.test(line) && !/M[0-9]{2,}/i.test(line)))  // If there is a spindle command
 					desc.push('spindle');
