@@ -1,0 +1,518 @@
+/* Run Widget CSS */
+
+#run-widget .left-panel-column,
+#run-widget .right-panel-column {
+    float: left;
+}
+
+#run-widget .left-panel-column {
+    width: 50%;
+}
+#run-widget .right-panel-column {
+    width: 50%;
+}
+
+#run-widget .right-panel-column .panel {
+    margin-left: 2px;
+}
+
+#run-widget .panel-label {
+    float: left;
+    font-size: 24px;
+    margin-bottom: 6px;
+}
+
+/* -- File Panel -- */
+.gcode-view-panel {
+    margin-bottom: 0;
+}
+.gcode-view-panel .panel-heading .file-name-container {
+    display: inline-block;
+    width: 0;
+    white-space: nowrap;
+}
+.gcode-view-panel .panel-heading .btn-group {
+    float: right;
+    margin-left: 6px;
+}
+.gcode-view-panel .panel-heading .btn {
+    height: 20px;
+    width: 21px;
+    padding: 1px 2px;
+}
+.gcode-view-panel .panel-heading > .btn-group > span.btn.complete-btn,
+.gcode-view-panel .panel-heading > .btn-group > span.btn.pause-btn,
+.gcode-view-panel .panel-heading > .btn-group > span.btn.resume-btn {
+    border-top-left-radius: 3px;
+    border-bottom-left-radius: 3px;
+}
+.gcode-view-panel .panel-heading .btn-group .btn.open-file-btn {
+    padding: 0;
+}
+.gcode-view-panel .panel-heading .btn-group .btn .fa {
+    font-size: 12px;
+}
+.gcode-view-panel .panel-heading .btn-group .btn .material-icons {
+    font-size: 17px;
+}
+.gcode-view-panel .panel-heading .buffer-control-btns .btn {
+    width: auto;
+    padding: 1px 5px;
+}
+.gcode-view-panel .panel-heading .input-group {
+    float: right;
+}
+.gcode-view-panel .panel-heading .input-label {
+    float: left;
+    font-size: 12px;
+    color: #777;
+    padding: 3px 0;
+    margin-left: 11px;
+}
+.gcode-view-panel .panel-heading .start-line-input {
+    float: left;
+    width: 87px;
+    top: 1px;
+    padding: 0;
+    text-align: right;
+    height: 20px;
+    margin-left: -26px;
+}
+.gcode-view-panel .panel-heading .input-group-btn {
+    width: inherit;
+}
+.gcode-view-panel .panel-body {
+    padding: 0;
+}
+.gcode-file-text {
+    overflow: auto;
+    padding: 0px;
+}
+.gcode-file-text samp,
+.gcode-file-text code {
+    font-size: 12px;
+    line-height: 13px;
+}
+.gcode-file-text .line-number {
+    font-size: 8px;
+    margin-right: 19px;
+    /*margin-right: 4px;*/
+    margin-left: 0px;
+    padding-left: 4px;
+}
+.gcode-file-text .start-from-label {
+    float: right;
+    margin: 1px 4px;
+}
+.start-from-label .material-icons {
+    position: relative;
+    top: 2px;
+}
+/*.gcode-file-text .next-line-arrow {
+    width: 0px;
+    margin-right: 14px;
+    display: inline;
+}
+.gcode-file-text .material-icons {
+    display: inline;
+    font-size: 10px;
+}*/
+
+/* -- 3d View Panel */
+.gcode-file-panel .panel-body {
+    min-height: 100px;
+}
+.gcode-file-panel .gcode-plot {
+    float: right;
+}
+.gcode-file-panel .left-column {
+    float: left;
+}
+.gcode-file-panel .file-stats {
+    position: relative;
+    top: auto;
+    max-width: 160px;
+}
+.gcode-file-panel .stat-pair {
+    display: inline-flex;
+}
+.gcode-file-panel .stat-label {
+    float: left;
+    width: 105px;
+}
+.gcode-file-panel .stat-value {
+    float: right;
+}
+
+/* -- Tool Panel -- */
+.tool-panel .panel-heading .btn-group {
+    float: right;
+    margin-left: 6px;
+}
+.tool-panel .panel-heading .btn-group .btn {
+    height: 20px;
+    padding: 1px 4px;
+}
+.tool-panel .panel-heading .btn-group .btn .fa {
+    font-size: 12px;
+}
+.tool-panel .panel-heading .btn-group .btn .material-icons {
+    font-size: 17px;
+}
+.tool-panel .panel-body {
+    padding: 0;
+    font-size: 13px;
+    min-height: 16px;
+}
+.tool-panel .tool-item:first-child {
+}
+.tool-panel .tool-item {
+    display: block;
+    text-align: left;
+    font-size: 13px;
+    border-radius: 0px;
+    padding: 8px;
+    border-bottom: 1px solid gray;
+    -webkit-box-shadow: none;
+    box-shadow: none;
+}
+.tool-panel .tool-active {
+    color: #4caf50;
+}
+.tool-panel .tool-item.btn-success {
+    background-color: #dff0d8;
+    color: #444444;
+}
+.tool-panel .tool-item:last-child {
+    border-bottom: none;
+}
+.tool-panel .tool-name {
+}
+.tool-panel .tool-desc {
+}
+.tool-panel  .tool-desc span {
+    font-weight: lighter;
+}
+.tool-panel .tool-right-info {
+    float: right;
+}
+.tool-panel .tool-right-info div {
+    text-align: right;
+}
+.tool-panel .tool-gcode {
+    font-weight: lighter;
+}
+
+/* -- Feedrate & Spindle Status -- */
+.status-panel .status-btns {
+    float: left;
+    margin: 2px 0 0 10px;
+}
+.status-panel .status-btns .btn {
+    font-size: 14px;
+    padding: 2px 5px;
+}
+.status-panel .status-value {
+    float: right;
+    font-size: 24px;
+    /*font-family: '24 Segment';
+    font-size: 28px;
+    line-height: 1;
+    letter-spacing: 2px;*/
+    padding-right: 22px;
+}
+.status-panel .status-units {
+    position: relative;
+    right: 6px;
+    font-size: 13px;
+    float: right;
+    width: 48px;
+}
+.status-panel .progress {
+    margin-top: 38px;
+    margin-bottom: 6px;
+    height: 10px;
+}
+.status-panel .progress-bar {
+    min-width: 0.5em;
+    width: 0%;
+}
+
+/* -- Feedrate Status -- */
+
+/* -- Spindle Status -- */
+.spindle-panel .spindle-ccw,
+.spindle-panel .spindle-cw {
+    float: right;
+    margin-top: 6px;
+    margin-right: 4px;
+    margin: 6px 4px 0px 20px;
+    font-size: 18px;
+}
+
+/* -- Machine Status -- */
+.dro-panel .panel-body {
+    padding: 0 8px;
+}
+.dro-panel .panel-body > div {
+    height: 35px;
+}
+.dro-panel .btn-home,
+.dro-panel .btn-zero,
+.dro-panel .dro-label,
+.dro-panel .dro-value,
+.dro-panel .axis-value-input{
+    height: 100%;
+    border: 1px;
+    border-color: #ddd;
+    border-radius: 0;
+    border-style: none;
+    box-shadow: none;
+    -webkit-box-shadow: none;
+}
+.dro-panel .y-axis-dro > div,
+.dro-panel .z-axis-dro > div {
+    border-top-style: solid;
+}
+.dro-panel .btn-home {
+    width: 10%;
+    float: left;
+    font-size: 17px;
+    text-align: center;
+    padding: 5px 0 0 0;
+    display: none;
+}
+.dro-panel .btn-zero {
+    width: 10%;
+    float: left;
+    font-size: 12px;
+    text-align: center;
+    padding: 9px;
+}
+.dro-panel .dro-label {
+    width: 10%;
+    float: left;
+    padding-top: 2px;
+    font-size: 24px;
+    text-align: center;
+}
+.dro-panel .dro-value {
+    width: 80%;
+    float: right;
+    font-size: 28px;
+    /*font-family: '24 Segment';
+    line-height: 1;
+    letter-spacing: 2px;
+    font-size: 30px;*/
+    text-align: right;
+    padding-right: 40px;
+}
+.dro-panel .dro-units {
+    position: relative;
+    left: 11px;
+    width: 25px;
+    font-size: 13px;
+    text-align: left;
+    float: right;
+    /*letter-spacing: 1px;*/
+}
+.digits-dimmed {
+    color: #e9e9e9;
+}
+.dro-panel .axis-value-input {
+    float: right;
+    width: 80%;
+    height: 100%;
+    top: 1px;
+}
+.dro-panel .axis-value-input .btns {
+    width: 0;
+    float: left;
+}
+.dro-panel .axis-value-input .btn-group {
+    width: 117px;
+    top: 1.5px;
+    left: 10px;
+    z-index: 4;
+}
+.dro-panel .axis-value-input .form-control {
+    float: left;
+    height: 100%;
+    width: 100%;
+    text-align: right;
+    padding-right: 50px;
+    font-size: 28px;
+}
+.dro-panel .axis-value-input .dro-units {
+    width: 0;
+    float: left;
+    left: inherit;
+    right: 54px;
+}
+
+/* -- Jog Panel -- */
+.jog-panel .mode-select-inputs {
+    float: right;
+    margin-left: 15px;
+}
+.jog-panel .mode-select-inputs .input-group-btn {
+    display: inline-block;
+    float: left;
+    font-size: 14px;
+}
+.jog-panel .mode-btn {
+    width: 47px;
+}
+.jog-panel .step-distance-input {
+    float: left;
+    width: 100px;
+    padding-right: 28px;
+    text-align: right;
+    font-size: 14px;
+    border-radius: 0;
+    top: 1px;
+}
+.jog-panel .step-distance-input.disabled-input {
+    color: #bbb;
+}
+.jog-panel .input-axis-units {
+    color: #bbbbbb;
+    float: left;
+    font-size: 11px;
+    margin-left: -25px;
+    padding-top: 11px;
+}
+.jog-panel .jog-btn {
+    -webkit-box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
+    width: 52px;
+    font-size: 18px;
+}
+.jog-panel .x-jog-btns {
+    float: right;
+    margin-top: 19px;
+}
+.jog-panel .x-neg-btn {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+.jog-panel .x-pos-btn {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+.jog-panel .y-jog-btns {
+    float: right;
+    margin: 0;
+}
+.jog-panel .z-jog-btns {
+    float: right;
+    margin-left: 8px;
+}
+
+/* -- Auto Level Widget -- */
+.auto-level-panel .probe-failed-alert {
+    display: inline-block;
+}
+.auto-level-panel .probe-failed-alert .btn {
+    margin-left: 35px;
+    transition: none;
+}
+.auto-level-panel .control-btns {
+    float: right;
+}
+.auto-level-panel .auto-level-setting {
+    width: 100%;
+}
+.auto-level-panel .auto-level-setting .setting-label {
+    width: 130px;
+    padding: 0;
+}
+.auto-level-panel .input-axis-label {
+    color: #bbbbbb;
+    padding: 12px 0;
+    float: left;
+    display: table-cell;
+    font-size: 13px;
+    margin-left: 15px;
+}
+.auto-level-panel .auto-level-setting .form-control {
+    width: 42%;
+    margin-left: -13px;
+    padding-right: 28px;
+    text-align: right;
+}
+.auto-level-panel .input-axis-units {
+    color: #bbbbbb;
+    float: left;
+    display: table-cell;
+    font-size: 11px;
+    margin-left: -25px;
+    padding-top: 16px;
+    /*margin-right: 14px;*/
+}
+.auto-level-panel .repeat-probe-input input {
+    margin: 12px 5px 9px 5px;
+}
+.auto-level-panel .profile-selector {
+    float: right;
+    width: 0;
+    position: relative;
+    top: 224px;
+    right: 133px;
+    z-index: 3;
+}
+.auto-level-panel .profile-selector .selector-label {
+    /*float: right;*/
+    position: absolute;
+    top: -24px;
+    left: 81px;
+    color: #666;
+}
+.auto-level-panel .profile-selector .btn-group {
+    display: flex;
+    position: absolute;
+    right: -133px;
+}
+.auto-level-panel .profile-selector .save-btn.btn-active {
+    background-color: #dff0d8;
+}
+.auto-level-panel .profile-selector .delete-btn.btn-active {
+    background-color: #f28e92;
+}
+.auto-level-panel .profile-selector .dropdown-toggle {
+    padding-right: 8px;
+}
+.auto-level-panel .profile-selector .dropdown-toggle .caret {
+    margin-left: 4px;
+}
+.auto-level-panel .profile-selector .dropdown-menu {
+    position: absolute;
+    top: 29px;
+    left: inherit;
+    /*right: -71px;*/
+    right: -133px;
+    padding: 0;
+    text-align: right;
+    font-size: 13px;
+    box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.4);
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+.auto-level-panel .profile-selector .dropdown-menu .profile-btn {
+    padding: 3px 14px;
+    display: block;
+    font-size: 13px;
+    font-weight: normal;
+    text-align: right;
+    line-height: 1.846;
+    color: #212121;
+    white-space: nowrap;
+    clear: both;
+    -webkit-box-shadow: none;
+    box-shadow: none;
+}
+.auto-level-panel .profile-selector .dropdown-menu .profile-btn:hover {
+    text-decoration: none;
+    color: #141414;
+    background-color: #eeeeee;
+}

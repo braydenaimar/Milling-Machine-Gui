@@ -1,0 +1,120 @@
+# Run Widget Settings
+
+# Enables the start, pause, resume, and stop buttons after one of the buttons have been pressed.
+# @type {Object}
+gcodeControlBtnVisibility: {
+	start: {
+		'start-btn': false
+		'pause-btn': true
+		'resume-btn': false
+		'stop-btn': true
+	}
+	pause: {
+		'start-btn': false
+		'pause-btn': false
+		'resume-btn': true
+		'stop-btn': true
+	}
+	resume: {
+		'start-btn': false
+		'pause-btn': true
+		'resume-btn': false
+		'stop-btn': true
+	}
+	stop: {
+		'start-btn': false
+		'pause-btn': false
+		'resume-btn': false
+		'stop-btn': false
+	}
+}
+# File types that will be shown in the file explorer when opening a Gcode file.
+# @type {Array}
+fileOpenGcodeExtensions: [ 'nc' ],
+pauseOnFirstToolChange: true
+pauseOnToolChange: true
+# The maximum number of gcode lines to be sent to the connection-widget per packet.
+# @type {Number}
+maxGcodeBufferLength: 1000
+# The delay between packets of gcode being sent to the connection-widget in milliseconds [ms].
+# @type {Number}
+gcodeBufferInterval: 500
+gcodeLineScrollOffset: 6
+scrollOffsetFactor: 0.4
+maxUpdateGapFill: 30
+activeLineClearDelay: 0
+# Delay in milliseconds [ms] between the stopping of a gcode and the file being reloaded.
+# A value of zero (0) will disable file reloading on stop.
+# @type {Number}
+reloadFileOnStopDelay: 1500
+# Label used to signify the starting line in a file.
+# @type {Number}
+startFromLabelText: 'Start From',
+startFromSelectFlashCount: 3,
+startFromSelectFlashInterval: 400,
+
+minLineNumberDigits: 3
+
+# Sets the feedrate at which jogging of each axis should take place at [mm/min].
+# @type {Object}
+jogContFeedrate:
+  x: 3000
+  y: 4000
+  z: 180
+# Sets the interval at which spamming the queue flush command should take place.
+# This is done in an attempt to increase a machine's responsiveness to stopping jogging.
+# @type {Number}
+jogSpamQueueFlushInterval: 250
+
+# Probe Settings
+probe:
+  scanWithXAxis: true
+  defaultProfile: 'Default'
+  # String containing all characters not allowed in profile names.
+  # @type {String}
+  profileBannedChars: '~[]{}()\\^!'
+  # Array of all substitutions that should be made to convert a safe profile name into an unsafe profile name and back again.
+  # Eg. [ [ 'unsafe-text', 'safe-text' ] ]
+  # @type {Array}
+  parseProfileRepl: [
+    [ ' ', '~' ]
+  ]
+  # Number of decimal places that should be used when adding z values to gcode lines.
+  # @type {Number}
+  autoLevelDecimalPlaces: 3
+  retryOnFailedProbe: false
+  profile:
+    Default:
+      probeCount:
+        x: 4
+        y: 3
+      startPoint:
+        x: 0
+        y: 0
+      endPoint:
+        x: 75
+        y: 50
+      clearanceHeight: 5
+      probeHeight: 1
+      feedrate: 25
+      maxNegative: -20
+      heightOffset: 0
+      repeatProbe: false
+
+machine:
+  # Minimum spindle speed [rpm].
+  # @type {Number}
+  spindleMin: 1000,
+  # Maximum spindle speed [rpm].
+  # @type {Number}
+  spindleMax: 24000,
+  # The number of digits should be shown before the decimal place by default.
+  # @type {Number}
+  intGrayDigits: 3,
+  # The minimum number of decimal places to show in the DRO.
+  # @type {Number}
+  minDecimals: 3,
+  # The maximum number of decimal places to show in the DRO.
+  # Values longer than this will be rounded.
+  # @type {Number}
+  maxDecimals: 3,

@@ -1,0 +1,117 @@
+/* Settings Widget CSS */
+
+.settings-view .checkbox {
+    padding-left: 2.25em;
+}
+.checkbox, .radio {
+    padding-left: 48px;
+}
+.checkbox {
+    padding-left: 2.5em;
+}
+.radio, .checkbox {
+    position: relative;
+    display: block;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.settings-view .settings-panel label {
+    color: rgba(36, 41, 46, 0.65);
+}
+.settings-view .checkbox label {
+    padding-left: 0;
+    display: block;
+}
+.radio label, .checkbox label {
+    min-height: 17px;
+    padding-left: 20px;
+    margin-bottom: 0;
+    font-weight: normal;
+    cursor: pointer;
+}
+label {
+    font-weight: normal;
+}
+label {
+    display: inline-block;
+    max-width: 100%;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.settings-view input[type="checkbox"] {
+    margin: 0 0.75em 0 -2.25em;
+}
+.radio input[type="radio"], .radio-inline input[type="radio"], .checkbox input[type="checkbox"], .checkbox-inline input[type="checkbox"] {
+    position: absolute;
+    margin-left: -20px;
+    margin-top: 4px \9;
+}
+.input-checkbox:checked {
+    background: #009688;
+}
+.input-checkbox:checked {
+    background-color: #64B5F6;
+}
+input.input-radio, input.input-checkbox, input.input-toggle {
+    margin-top: 0;
+}
+input[type="radio"], input[type="checkbox"] {
+    margin: 4px 0 0;
+    margin-top: 1px \9;
+    line-height: normal;
+}
+.input-checkbox {
+    border: 0.125em solid #009688;
+    background: none;
+    position: relative;
+    width: 1.5em;
+    height: 1.5em;
+    cursor: pointer;
+}
+.input-checkbox {
+    vertical-align: middle;
+    -webkit-appearance: none;
+    display: inline-block;
+    position: relative;
+    width: 16px;
+    height: 16px;
+    font-size: inherit;
+    border-radius: 0.125rem;
+    background-color: rgba(231, 232, 233, 0.93);
+    transition: background-color 0.16s cubic-bezier(0.5, 0.15, 0.2, 1);
+}
+
+input, button, select, textarea {
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+}
+button, input, optgroup, select, textarea {
+    color: inherit;
+    font: inherit;
+    margin: 0;
+}
+.settings-view .checkbox .setting-title {
+    display: inline-block;
+}
+.checkbox .setting-title, .checkbox .setting-description {
+    padding-left: 1rem;
+}
+.settings-view .setting-title {
+    font-size: 1.2em;
+    -webkit-user-select: none;
+}
+
+.checkbox .setting-description, .radio .setting-description {
+    margin-top: 0.5rem;
+}
+.checkbox .setting-title, .checkbox .setting-description {
+    padding-left: 1rem;
+}
+.settings-view .setting-description {
+    color: rgba(36, 41, 46, 0.35);
+    -webkit-user-select: none;
+    cursor: default;
+}

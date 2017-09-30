@@ -1,0 +1,169 @@
+# Device Meta Settings
+
+# If VidPids does not match portVid and portPid, assume serial device is a TinyG v8 board.
+DefaultMetaIndex: 3
+
+# Information about different devices that will be connected to the spjs.
+DeviceMeta: [
+  {
+    Friendly: "TinyG G2 Native"
+    Baud: 115200
+    Buffer: "tinygg2"
+    useReceivedFriendly: false
+    autoConnectPort: true
+    portMuted: false
+    VidPids: [
+      {
+        Vid: "1D50"
+        Pid: "606D"
+      }
+    ]
+  }
+  {
+    Friendly: "TinyG G2 Native [Virtual]"
+    Baud: 115200
+    Buffer: "tinygg2"
+    useReceivedFriendly: false
+    autoConnectPort: false
+    portMuted: true
+    VidPids: [
+      {
+        Vid: "1D50"
+        Pid: "606D"
+      }
+    ]
+  }
+  {
+    Friendly: "TinyG G2 Programming"
+    Baud: 115200
+    Buffer: "tinygg2"
+    useReceivedFriendly: false
+    autoConnectPort: false
+    portMuted: true
+    VidPids: [
+      {
+        Vid: "2341"
+        Pid: "003D"
+      }
+    ]
+  }
+  {
+    Friendly: "TinyG v8"
+    Baud: 115200
+    Buffer: "tinyg"
+    useReceivedFriendly: false
+    autoConnectPort: true
+    portMuted: false
+    VidPids: [
+      {
+        Vid: "0403"
+        Pid: "6015"
+      }
+    ]
+  }
+  {
+    Friendly: "Arduino Uno"
+    Baud: 9600
+    Buffer: "default"
+    useReceivedFriendly: false
+    autoConnectPort: false
+    portMuted: false
+    VidPids: [
+      {
+        Vid: "2341"
+        Pid: "0043"
+      }
+      {
+        Vid: "2341"
+        Pid: "0001"
+      }
+      {
+        Vid: "2A03"
+        Pid: "0043"
+      }
+    ]
+  }
+  {
+    Friendly: "Arduino Duemilanove"
+    Baud: 9600
+    Buffer: "default"
+    useReceivedFriendly: false
+    autoConnectPort: false
+    portMuted: false
+    VidPids: [
+      {
+        Vid: "0403"
+        Pid: "6001"
+      }
+    ]
+  }
+  {
+    Friendly: "Arduino Yun"
+    Baud: 9600
+    Buffer: "default"
+    useReceivedFriendly: true
+    autoConnectPort: false
+    portMuted: false
+    VidPids: [
+      {
+        Vid: "2341"
+        Pid: "0041"
+      }
+      {
+        Vid: "2341"
+        Pid: "8041"
+      }
+      {
+        Vid: "2A03"
+        Pid: "0041"
+      }
+      {
+        Vid: "2A03"
+        Pid: "8041"
+      }
+    ]
+  }
+  {
+    Friendly: "Bossa Program Port"
+    Baud: 115200
+    Buffer: "tinyg"
+    useReceivedFriendly: false
+    autoConnectPort: false
+    portMuted: false
+    VidPids: [
+      {
+        Vid: "03EB"
+        Pid: "6124"
+      }
+    ]
+  }
+  {
+    Friendly: "TI MSP430"
+    Baud: 115200
+    Buffer: "default"
+    useReceivedFriendly: true
+    autoConnectPort: false
+    portMuted: false
+    lineEnding: "CRLF"
+    VidPids: [
+      {
+        Vid: "2047"
+        Pid: "0013"
+      }
+    ]
+  }
+  {
+    Friendly: "Device Not Recognized"
+    Baud: 9600
+    Buffer: "default"
+    useReceivedFriendly: true
+    autoConnectPort: false
+    portMuted: false
+    VidPids: [
+      {
+        Vid: ""
+        Pid: ""
+      }
+    ]
+  }
+]

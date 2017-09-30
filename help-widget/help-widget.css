@@ -1,0 +1,12 @@
+/* Help Widget CSS */
+
+#help-widget .jumbotron {
+	/*width: 100%;*/
+	height: 40%;
+	margin: 15px;
+	padding: 20px;
+}
+
+#help-widget .help-panel1, .help-panel2, .help-panel3 {
+	height: 22%;
+}

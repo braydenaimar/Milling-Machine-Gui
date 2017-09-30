@@ -5,32 +5,34 @@
 		<meta charset= "utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
-		<link rel="stylesheet" type="text/css" href="css/lib/bootstrap-paper.min.css">
-		<!-- <link rel="stylesheet" type="text/css" href="node_modules/bootswatch/paper/bootstrap.min.css"> -->
-		<!-- <link rel="stylesheet" type="text/css" href="../node_modules/bootswatch/paper/bootstrap.css"> -->
-		<!-- <link rel="stylesheet" type="text/css" href="../node_modules/font-awesome/css/font-awesome.min.css"> -->
-		<link rel="stylesheet" type="text/css" href="css/lib/font-awesome.min.css">
-		<link rel="stylesheet" type="text/css" href="css/fonts/material-icons.css">
+		<link rel="stylesheet" type="text/css" href="lib/css/bootstrap-paper.min.css">
+		<link rel="stylesheet" type="text/css" href="lib/css/font-awesome.min.css">
+		<link rel="stylesheet" type="text/css" href="lib/css/material-icons.css">
+		<link rel="stylesheet" type="text/css" href="lib/css/24-segment.css">
 
-		<link rel="stylesheet" type="text/css" href="css/main.css">
-		<link rel="stylesheet" type="text/css" href="css/load-widget.css">
-		<link rel="stylesheet" type="text/css" href="css/run-widget.css">
-		<link rel="stylesheet" type="text/css" href="css/mdi-widget.css">
-		<link rel="stylesheet" type="text/css" href="css/connection-widget.css">
-		<link rel="stylesheet" type="text/css" href="css/settings-widget.css">
-		<link rel="stylesheet" type="text/css" href="css/about-widget.css">
+		<link rel="stylesheet" type="text/css" href="main/main.css">
+		<link rel="stylesheet" type="text/css" href="load-widget/load-widget.css">
+		<link rel="stylesheet" type="text/css" href="run-widget/run-widget.css">
+		<link rel="stylesheet" type="text/css" href="mdi-widget/mdi-widget.css">
+		<link rel="stylesheet" type="text/css" href="connection-widget/connection-widget.css">
+		<link rel="stylesheet" type="text/css" href="about-widget/about-widget.css">
+		<link rel="stylesheet" type="text/css" href="settings-widget/settings-widget.css">
 
 		<title>Milling Machine GUI</title>
 
 		<!-- Load RequireJS -->
-		<script data-main="js/lib/require-config" src="js/lib/require.js"></script>
+		<script data-main="lib/js/require-config" src="lib/js/require.js"></script>
 
 		<!-- Use RequireJS to load scripts -->
 		<script type="text/javascript">
-			requirejs(['require-config'], () => {
-				requirejs(['main'], () => {
+			requirejs([ 'require-config' ], () => {
+
+				requirejs([ 'main/main' ], () => {
+
 					initBody();
+
 				});
+
 			});
 		</script>
 
@@ -47,7 +49,37 @@
 		    </div>
 	    </nav>
 
-		<div id="sidebar" class=""></div>
+		<div id="sidebar" class="">
+
+			<div class="feed-control-btns">
+
+				<span class="btn btn-success feedresume-btn hidden" evt-data="feedresume">
+					<div>
+						<span class="material-icons">keyboard_arrow_up</span>
+					</div>
+
+					<div>Resume</div>
+				</span>
+
+				<span class="btn btn-warning queueflush-btn hidden" evt-data="queueflush">
+					<div>
+						<span class="fa fa-percent"></span>
+					</div>
+
+					<div>Clear</div>
+				</span>
+
+				<span class="btn btn-danger feedhold-btn" evt-data="feedhold">
+					<div>
+						<span class="material-icons">priority_high</span>
+					</div>
+
+					<div>Stop</div>
+				</span>
+
+			</div>
+
+		</div>
 
 	</body>
 </html>

@@ -1,2 +1,2 @@
-echo "Launching the Punch Press GUI"
+echo "Launching the Milling Machine GUI"
 npm start

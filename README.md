@@ -40,7 +40,7 @@ Windows Firewall may pop-up with a security alert but you just need to click `Al
 
 If you are having issues, you may need to add the program to the list of exclusions for Windows Defender.
 
-#### Windows Defender Exclusion
+#### Windows Defender Exclusion (**Not Applicable to Windows 10 Creators Update)**
 
 1. Select `Start` and `Settings` to open the settings window.
 2. Select `Update & Security`.
