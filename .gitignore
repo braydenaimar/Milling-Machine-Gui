@@ -1,14 +1,6 @@
 # Ignore the node_modules folder
 node_modules/
 
-html/settings-widget.html
-css/settings-widget.css
-js/settings-widget.js
-
-html/help-widget.html
-css/help-widget.css
-js/help-widget.js
-
 User_Settings.cson
 
 connection-widget_*.cson
