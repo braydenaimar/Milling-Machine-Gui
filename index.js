@@ -90,7 +90,7 @@ app.on('ready', () => {
 			// height: 950,
 			// fullscreen: true,
 			// kiosk: true,
-			width: 980,
+			width: 1180,
 			height: 880,
 			frame: true,
 			// backgroundColor: '#eaedf4',
