@@ -32,6 +32,9 @@ define([ 'jquery' ], $ => ({
 	widgetDom: [ 'settings-panel' ],
 	widgetVisible: false,
 
+	defaultSettings: [],
+	settings: [],
+
 	initBody() {
 
 		console.group(`${this.name}.initBody()`);
@@ -41,14 +44,81 @@ define([ 'jquery' ], $ => ({
 
 		// subscribe('/connection-widget/recvPortList', this, this.recvPortList.bind(this));
 
+		// this.loadSettings();  // Load the settings file
+		// this.readSettingsFile('main');  // Read main settings file
+
 		publish('/main/widget-loaded', this.id);
 
 	},
+	/**
+	 *  Load settings for this widget.
+	 */
+	loadSettings() {
+
+		fsCSON.readFile('settings-widget/Settings.cson', (err, data) => {
+
+			if (err)  // If there was an error reading the file
+				return false;
+
+		});
+
+		fsCSON.readFile('main/Settings.cson', (err, data) => {
+
+			if (err) // If there was an error reading the file
+				return false;
+
+
+
+		});
+
+	},
+	readSettingsFile(name) {
+
+		const that = this;
+
+		fsCSON.readFile(`${name}/Settings.cson`, (err, data) => {
+
+			if (err)  // If there was an error reading the file
+				return false;
+
+			that.defaultSettings[name] = {};
+			that.settings[name] = {};
+			gui.mergeDeep(that.defaultSettings[name], data);  // Merge settings from cson file into this widget
+			gui.mergeDeep(that.settings[name], data);		  // Merge settings from cson file into this widget
+
+			fsCSON.readFile(`${name}/User_Settings.cson`, (err, userData) => {
+
+				if (err) {  // If there was an error reading the file
+
+					const { code, errno, message, path, stack, syscall } = err;
+
+					if (code === 'ENOENT')  // If no user settings file was found
+						fsCSON.writeFileSafe(path, '');  // Create a user settings cson file
+
+				}
+
+				if (typeof userData != 'undefined')  // If there are any user settings
+					gui.mergeDeep(that.settings[name], userData);  // Merge settings from user settings cson file into this widget
+
+				this.buildPanelDOM(name);
+
+			});
+
+		});
+
+	},
+	// buildPanelDOM(name) {
+    //
+	// },
+	// buildDOM() {
+    //
+	// },
 	resizeWidgetDom() {
 
 		/* eslint-disable prefer-const*/
-		// If this widget is not visible, do not bother updating the DOM elements.
-		if (!this.widgetVisible) return false;
+
+		if (!this.widgetVisible)  // If this widget is not visible
+			return false;
 
 		const that = this;
 
@@ -66,7 +136,6 @@ define([ 'jquery' ], $ => ({
 			if (i === that.widgetDom.length - 1) {
 
 				marginSpacing += Number(panelDom.css('margin-bottom').replace(/px/g, ''));
-
 				let panelHeight = containerHeight - (marginSpacing + panelSpacing);
 
 				panelDom.css({ height: `${panelHeight}px` });

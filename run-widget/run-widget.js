@@ -1602,21 +1602,21 @@ define([ 'jquery' ], $ => ({
 				if (deleteProfileFlag)  // If the delete operation is already active
 					this.profileCtrlBtnState('deactivate', 'delete');
 
-				if (saveProfileFlag)  // If the save operation is already active
+				if (saveProfileFlag)  	// If the save operation is already active
 					this.profileCtrlBtnState('deactivate', 'save');
 
-				else  // If the save operation is inactive
+				else  					// If the save operation is inactive
 					this.profileCtrlBtnState('activate', 'save');
 
 			} else if (operation === 'delete') {
 
-				if (saveProfileFlag)  // If the save operation is already active
+				if (saveProfileFlag)  	// If the save operation is already active
 					this.profileCtrlBtnState('deactivate', 'save');
 
 				if (deleteProfileFlag)  // If the delete operation is already active
 					this.profileCtrlBtnState('deactivate', 'delete');
 
-				else  // If the delete operation is inactive
+				else  					// If the delete operation is inactive
 					this.profileCtrlBtnState('activate', 'delete');
 
 			}
@@ -1630,31 +1630,36 @@ define([ 'jquery' ], $ => ({
 		 */
 		profileCtrlBtnState(task, target) {
 
-			if (target === 'save' && task === 'activate') {  // Activate the save operation
+			const $saveBtn = $('#run-widget .auto-level-panel .profile-selector .save-btn');
+			const $deleteBtn = $('#run-widget .auto-level-panel .profile-selector .delete-btn');
+			const $newProfileBtn = $('#run-widget .auto-level-panel .profile-selector .new-profile-btn');
+
+			if (target === 'save' && task === 'activate') {  			// Activate the save operation
 
 				this.saveProfileFlag = true;
-				$('#run-widget .auto-level-panel .profile-selector .save-btn').addClass('btn-active');
 
-				$('#run-widget .auto-level-panel .profile-selector .new-profile-btn').removeClass('hidden');
+				$saveBtn.addClass('btn-active');
+				$newProfileBtn.removeClass('hidden');
 				this.profileDropDownMenu('show');
 
-			} else if (target === 'save' && task === 'deactivate') {  // Deactivate the save operation
+			} else if (target === 'save' && task === 'deactivate') { 	// Deactivate the save operation
 
 				this.saveProfileFlag = false;
-				$('#run-widget .auto-level-panel .profile-selector .save-btn').removeClass('btn-active');
 
-				$('#run-widget .auto-level-panel .profile-selector .new-profile-btn').addClass('hidden');
+				$saveBtn.removeClass('btn-active');
+				$newProfileBtn.addClass('hidden');
 
-			} else if (target === 'delete' && task === 'activate') {  // Activate the delete operation
+			} else if (target === 'delete' && task === 'activate') {  	// Activate the delete operation
 
 				this.deleteProfileFlag = true;
-				$('#run-widget .auto-level-panel .profile-selector .delete-btn').addClass('btn-active');
+
+				$deleteBtn.addClass('btn-active');
 				this.profileDropDownMenu('show');
 
 			} else if (target === 'delete' && task === 'deactivate') {  // Deactivate the delete operation
 
 				this.deleteProfileFlag = false;
-				$('#run-widget .auto-level-panel .profile-selector .delete-btn').removeClass('btn-active');
+				$deleteBtn.removeClass('btn-active');
 
 			}
 
@@ -1678,13 +1683,20 @@ define([ 'jquery' ], $ => ({
 			}
 
 		},
-		loadProfile(profileName) {
+		loadProfile(profileName, recursionDepth = 0) {
 
 			const { profile, activeProfile } = this;
 			const profileItem = profile[profileName];
 
-			if (typeof profileItem == 'undefined')  // If the profile is invalid
+			if (recursionDepth > 1)
 				return false;
+
+			if (typeof profileItem == 'undefined') {  // If the profile is invalid
+
+				return this.loadProfile('Default', ++recursionDepth);
+				return false;
+
+			}
 
 			$('#run-widget .auto-level-panel .probe-count-input input.x-val').val(profileItem.probeCount.x);  // Probe Count
 			$('#run-widget .auto-level-panel .probe-count-input input.y-val').val(profileItem.probeCount.y);
@@ -1703,18 +1715,129 @@ define([ 'jquery' ], $ => ({
 			$('#run-widget .auto-level-panel .repeat-probe-input input').prop('checked', profileItem.repeatProbe);  // Repeat Probe
 
 			this.activeProfile = profileName;
+			this.defaultProfile = profileName;
 			this.updateDropDownDOM();
+
+			fsCSON.updateFile('run-widget/User_Settings.cson', (data) => {
+
+				if (!data.probe)
+					data.probe = {};
+
+				if (!data.probe.profile)
+					data.probe.profile = {};
+
+				data.probe.defaultProfile = profileName;
+				return data;
+
+			}, (err) => {
+
+				if (err)  // If an error occurred while reading the file
+					return false;
+
+			});
 
 		},
 		saveProfile(profileName) {
 
+			const { profile } = this;
+
+			if (profileName == 'New-Profile') {
+
+				for (let i = 1; true; i++) {
+
+					if (profile[`${profileName}-0${i}`])
+						continue;
+
+					profileName = `${profileName}-0${i}`;
+					break;
+
+				}
+
+			}
+
 			this.activeProfile = profileName;
-			this.saveProfileFlag = false;
+			this.profileCtrlBtnState('deactivate', 'save');
+			this.profileDropDownMenu('hide');
+
+			const profileItem = {
+				probeCount: {
+					x: $('#run-widget .auto-level-panel .probe-count-input input.x-val').val(),
+					y: $('#run-widget .auto-level-panel .probe-count-input input.y-val').val()
+				},
+				startPoint: {
+					x: $('#run-widget .auto-level-panel .start-point-input input.x-val').val(),
+					y: $('#run-widget .auto-level-panel .start-point-input input.y-val').val()
+				},
+				endPoint: {
+					x: $('#run-widget .auto-level-panel .end-point-input input.x-val').val(),
+					y: $('#run-widget .auto-level-panel .end-point-input input.y-val').val()
+				},
+				clearanceHeight: $('#run-widget .auto-level-panel .clearance-height-input input').val(),
+				probeHeight: $('#run-widget .auto-level-panel .probe-height-input input').val(),
+				feedrate: $('#run-widget .auto-level-panel .feedrate-input input').val(),
+				maxNegative: $('#run-widget .auto-level-panel .probe-limit-input input').val(),
+				heightOffset: $('#run-widget .auto-level-panel .height-offset-input input').val(),
+				repeatProbe: $('#run-widget .auto-level-panel .repeat-probe-input input').prop('checked')
+			};
+
+			this.profile[profileName] = profileItem;
+
+			fsCSON.updateFile('run-widget/User_Settings.cson', (data) => {
+
+				if (!data.probe)
+					data.probe = {};
+
+				if (!data.probe.profile)
+					data.probe.profile = {};
+
+				data.probe.profile[profileName] = profileItem;
+				return data;
+
+			}, (err) => {
+
+				if (err)  // If an error occurred while reading the file
+					return false;
+
+			});
+
+			this.loadProfile(profileName);
 
 		},
 		deleteProfile(profileName) {
 
-			this.deleteProfileFlag = false;
+			this.profileCtrlBtnState('deactivate', 'delete');
+			this.profileDropDownMenu('hide');
+
+			const { defaultProfile, profile, activeProfile } = this;
+
+			if (profileName == 'Default')
+				return false;
+
+			delete this.profile[profileName];
+
+			fsCSON.updateFile('run-widget/User_Settings.cson', (data) => {
+
+				if (!data.probe)
+					data.probe = {};
+
+				if (!data.probe.profile)
+					data.probe.profile = {};
+
+				delete data.probe.profile[profileName];
+				return data;
+
+			}, (err) => {
+
+				if (err)  // If an error occurred while reading the file
+					return false;
+
+				if (activeProfile === profileName)
+					this.loadProfile('Default');
+
+				else
+					this.loadProfile(activeProfile);
+
+			});
 
 		},
 		pollSettings() {

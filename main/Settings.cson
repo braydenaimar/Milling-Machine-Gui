@@ -1,4 +1,4 @@
-# Main Settings
+# Main - Settings
 
 # Widget to show on program load (default: first html widget loaded).
 wgtVisible: "run-widget"
