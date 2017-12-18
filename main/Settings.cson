@@ -29,8 +29,8 @@ widget: {
     sidebarBtn: false
   }
   "about-widget": {
-    loadHtml: true
-    sidebarBtn: true
+    loadHtml: false
+    sidebarBtn: false
   }
 }
 
