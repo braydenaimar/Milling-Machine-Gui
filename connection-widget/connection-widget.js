@@ -130,6 +130,7 @@ define([ 'jquery' ], $ => ({
 		 *  @type {number}
 		 */
 		requestListDelay: 4000,
+		requestListAfterCorruptDelay: 800,
 		/**
 		 *  Enable automatic relaunching of the Serial Port JSON Server if this process did not launch it and no devices are connected.
 		 *  @default Overwritten by settings cson file.
@@ -212,7 +213,7 @@ define([ 'jquery' ], $ => ({
 			Buffer: 'default',
 			useReceivedFriendly: true,
 			autoConnectPort: false,
-			portMuted: false,
+			portMuted: true,
 			VidPids: [
 				{ Vid: '', Pid: '' }
 			]
@@ -2324,6 +2325,8 @@ define([ 'jquery' ], $ => ({
 			}
 		}
 
+		const { requestListAfterCorruptDelay } = this.SPJS;
+
 		// Check for errors in the portList (aka. no serial numbers, vid/pid).
 		// Linux os will show ports like '/dev/ttyAMA0' with no assocciated serial number.
 		if (hostMeta.platform !== 'linux' && !this.validifyPortList(dataObj)) {  // If any errors are present, discard data and get portList again
@@ -2335,7 +2338,7 @@ define([ 'jquery' ], $ => ({
 			// this.logCmdStatus('SPJS', {Cmd: 'list'}, 'Error');
 			this.consoleLog.updateCmd('SPJS', { Msg: 'list', IndexMap: this.consoleLog.SPJS.verifyMap, Status: 'Warning', Comment: 'Corrupt' });
 
-			setTimeout(() => this.newspjsSend({ Msg: 'list', Comment: 'Auto List' }), 500);
+			setTimeout(() => this.newspjsSend({ Msg: 'list', Comment: 'Auto List' }), requestListAfterCorruptDelay);
 
 			return false;
 
@@ -2457,23 +2460,14 @@ define([ 'jquery' ], $ => ({
 
 		debug.log('Validating port list data.');
 
-		const that = this;
-		const requiredProp = [ 'SerialNumber', 'UsbPid', 'UsbVid' ];
+		for (let i in data) {  // Check that each port has the required properties
 
-
-		for (let i in data) {  // Check that each property in the requiredProp array has an associated value for each port in the portList object
-
-			for (let x = 0; x < requiredProp.length; x++) {
-
-				if (!data[i][requiredProp[x]])  // If port list data is corrupted
-					return false;
-
-			}
+			if (!data[i].SerialNumber && !data[i].UsbVid && !data[i].UsbPid)  // If port list data is corrupt
+				return false;
 
 		}
 
-		// Return 'true' to indicate that data is valid.
-		return true;
+		return true;  // Return true to indicate that the port list data is valid
 
 	},
 	buildPortListDiffs(data) {
@@ -4252,7 +4246,7 @@ define([ 'jquery' ], $ => ({
 			cmdBuffer[i].Msg = cmdBuffer[i].Msg.replace('\r', '');
 
 		}
-		
+
 		if (typeof this.dataSendBuffer[port] == 'undefined')
 		this.dataSendBuffer[port] = [];
 

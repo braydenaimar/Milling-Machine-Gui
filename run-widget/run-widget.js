@@ -334,23 +334,17 @@ define([ 'jquery' ], $ => ({
 			if ($target.hasClass('disabled'))  // If the button is disabled
 				return false;
 
-			if (evtSignal === 'gcode-control') {
-
+			if (evtSignal === 'gcode-control')
 				this.onGcodeControl(evtData);
 
-			} else if (evtData === 'reload-gcode') {
-
+			else if (evtData === 'reload-gcode')
 				this.reloadFile();
 
-			} else if (evtData === 'open-file') {
-
+			else if (evtData === 'open-file')
 				this.fileOpenDialog();
 
-			} else if (evtSignal === 'tool-change') {
-
+			else if (evtSignal === 'tool-change')
 				this.onToolChangeControl(evtData);
-
-			}
 
 		});
 
@@ -601,6 +595,10 @@ define([ 'jquery' ], $ => ({
 		if (FileName === '')  // If the file data is invalid
 			return debug.error('The file data is invalid.');
 
+		$('.gcode-view-panel .gcode-file-text').addClass('hidden');
+		$('.gcode-view-panel .no-file-modal').addClass('hidden');
+		$('.gcode-view-panel .loading-file-modal').removeClass('hidden');
+
 		$('#run-widget .gcode-view-panel .start-line-input')[0].value = 0;
 		this.startFromIndex = 0;
 
@@ -653,19 +651,19 @@ define([ 'jquery' ], $ => ({
 			if (desc.includes('tool-change'))  // If the line is a tool change command
 				idToolChangeMap[id] = tcSum++;
 
-			else if (desc.includes('units'))  // If the line is a units command
+			else if (desc.includes('units'))   // If the line is a units command
 				this.fileUnits = line.includes('G21') ? 'mm' : 'inch';
 
 			gcodeHTML += `<div  id="run-widget/${id}" class="gcode-div ${id}${!i ? ' first-line' : ''}" gcode-index="${i}">`;
 			gcodeHTML += `<span class="line-number text-muted">${domLineNumber}</span>`;
 
-			if (desc.includes('comment'))  // If the line is a comment
+			if (desc.includes('comment'))  			// If the line is a comment
 				gcodeHTML += `<samp class="gcode text-nowrap text-muted">${line}</samp>`;  // Mute text
 
 			else if (desc.includes('tool-change'))  // If the line is not a comment
 				gcodeHTML += `<samp class="gcode text-nowrap text-info">${line}</samp>`;  // Hilite text
 
-			else  // If the line is not a comment or a tool change command
+			else  									// If the line is not a comment or a tool change command
 				gcodeHTML += `<samp class="gcode text-nowrap text-default">${line}</samp>`;
 
 			if (i === startFromIndex)
@@ -703,6 +701,9 @@ define([ 'jquery' ], $ => ({
 			this.gcodeScrollToId(gcodeLineId);
 
 			this.resizeWidgetDom();
+
+			$('.gcode-view-panel .gcode-file-text').removeClass('hidden');
+			$('.gcode-view-panel .loading-file-modal').addClass('hidden');
 
 		}, 10);
 
@@ -1691,14 +1692,14 @@ define([ 'jquery' ], $ => ({
 			$('#run-widget .auto-level-panel .start-point-input input.x-val').val(profileItem.startPoint.x);  // Start Point
 			$('#run-widget .auto-level-panel .start-point-input input.y-val').val(profileItem.startPoint.y);
 
-			$('#run-widget .auto-level-panel .end-point-input input.x-val').val(profileItem.endPoint.x);  // End Point
+			$('#run-widget .auto-level-panel .end-point-input input.x-val').val(profileItem.endPoint.x);  	  // End Point
 			$('#run-widget .auto-level-panel .end-point-input input.y-val').val(profileItem.endPoint.y);
 
-			$('#run-widget .auto-level-panel .clearance-height-input input').val(profileItem.clearanceHeight);  // Clearance Height
-			$('#run-widget .auto-level-panel .probe-height-input input').val(profileItem.probeHeight);  // Probe Height
-			$('#run-widget .auto-level-panel .feedrate-input input').val(profileItem.feedrate);  // Feedrate
-			$('#run-widget .auto-level-panel .probe-limit-input input').val(profileItem.maxNegative);  // Low Probe Limit
-			$('#run-widget .auto-level-panel .height-offset-input input').val(profileItem.heightOffset);  // Height Offset
+			$('#run-widget .auto-level-panel .clearance-height-input input').val(profileItem.clearanceHeight);  	// Clearance Height
+			$('#run-widget .auto-level-panel .probe-height-input input').val(profileItem.probeHeight);  			// Probe Height
+			$('#run-widget .auto-level-panel .feedrate-input input').val(profileItem.feedrate);  					// Feedrate
+			$('#run-widget .auto-level-panel .probe-limit-input input').val(profileItem.maxNegative);  				// Low Probe Limit
+			$('#run-widget .auto-level-panel .height-offset-input input').val(profileItem.heightOffset); 			// Height Offset
 			$('#run-widget .auto-level-panel .repeat-probe-input input').prop('checked', profileItem.repeatProbe);  // Repeat Probe
 
 			this.activeProfile = profileName;
@@ -2635,7 +2636,6 @@ define([ 'jquery' ], $ => ({
 					if (elementHeight !== panelHeight && panelItem === ' .gcode-view-panel') {
 
 						const { scrollOffsetFactor } = that1;
-						// const lineHeight = $element.find('div') ? $element.find('div').height() : 18.5;
 						const lineHeight = 18.5;
 						that1.gcodeLineScrollOffset = Math.roundTo(Number(panelHeight.replace(/px/, '')) * scrollOffsetFactor / lineHeight, 0);
 
@@ -2651,28 +2651,14 @@ define([ 'jquery' ], $ => ({
 
 		});
 
-		this.gcodeScrollToId(activeId);  // Scroll gcode file to active gcode line
+		// Adjust size of the load file modal
+		const $modal = $('.gcode-view-panel .gcode-modal');
+		const $gcodePanelBody = $('.gcode-view-panel .panel-body');
 
-		// if (activeId) {
-		//
-		// 	const lineIndex = idMap[activeId];
-		//
-		// 	if (typeof lineIndex != 'undefined') {
-		//
-		// 		let gcodeId = '';
-		//
-		// 		if (lineIndex > gcodeLineScrollOffset)
-		// 			gcodeId = GcodeData.Id[lineIndex - gcodeLineScrollOffset];
-		//
-		// 		else
-		// 			gcodeId = GcodeData.Id[0];
-		//
-		// 		const element = document.getElementById(`run-widget/${gcodeId}`);
-		// 			element && element.scrollIntoView({ block: "start", behavior: "smooth" });  // Scroll the active gcode line into view
-		//
-		// 	}
-		//
-		// }
+		$modal.css({ height: $gcodePanelBody.css('height') });
+		$modal.css({ width: $gcodePanelBody.css('width') });
+
+		this.gcodeScrollToId(activeId);  // Scroll gcode file to active gcode line
 
 		return true;
 

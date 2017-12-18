@@ -22,6 +22,20 @@
     margin-bottom: 6px;
 }
 
+.loader {
+    display: inline-flex;
+    border: 7px solid #f3f3f3;
+    border-radius: 50%;
+    border-top: 7px solid #3498db;
+    width: 35px;
+    height: 35px;
+    -webkit-animation: spin 2s linear infinite;
+    animation: spin 2s linear infinite;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
 /* -- File Panel -- */
 .gcode-view-panel {
     margin-bottom: 0;
@@ -39,6 +53,25 @@
     height: 20px;
     width: 21px;
     padding: 1px 2px;
+}
+.gcode-view-panel .gcode-modal {
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    padding: 15% 8%; /* Location of the box */
+    overflow: hidden; /* Enable scroll if needed */
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+.gcode-view-panel .modal-content {
+    background-color: #fefefe;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid #888;
+    text-align: center;
+    font-size: 25px;
+}
+.gcode-view-panel .loader {
+    margin-left: 13px;
 }
 .gcode-view-panel .panel-heading > .btn-group > span.btn.complete-btn,
 .gcode-view-panel .panel-heading > .btn-group > span.btn.pause-btn,

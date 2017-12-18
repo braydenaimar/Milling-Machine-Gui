@@ -16,6 +16,7 @@ wsReconnectOnExitCmd: true
 # Use a value greater than approx 500ms to ensure the stability of the program.
 # @type {number}
 requestListDelay: 4000
+requestListAfterCorruptDelay: 800
 # Enable automatic relaunching of the Serial Port JSON Server if this process did not launch it and no devices are connected.
 # @type {Boolean}
 exitUntrustedSpjs: true
