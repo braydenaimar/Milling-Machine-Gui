@@ -65,6 +65,10 @@ define([ 'jquery' ], $ => ({
 	*  @type {Array}
 	*/
 	ToolChange: [],
+	/**
+	 *  Stores a map object relating the id of every gcode line to the line index number.
+	 *  @type {Object}
+	 */
 	idMap: {},
 	idToolChangeMap: {},
 	/**
@@ -84,6 +88,12 @@ define([ 'jquery' ], $ => ({
 	 *  @type {String}
 	 */
 	fileStatus: 'inactive',
+	/**
+	 *  Describes the status of each line in the Gcode file.
+	 *  Eg. 'success'.
+	 *  @type {Array}
+	 */
+	gcodeStatus: [],
 
 	/**
 	 *  File types that will be shown in the file explorer when opening a Gcode file.
@@ -133,10 +143,15 @@ define([ 'jquery' ], $ => ({
 	 */
 	gcodeBufferInterval: 500,
 
+	activeId: '',
 	activeIndex: 0,
 	trackMode: 'on-complete',
 	// trackMode: 'status-report',
 	$gcodeLog: $('#run-widget .gcode-view-panel .gcode-file-text'),
+	/**
+	 *  Updated by resize function to account for panel height based on the scrollOffsetFactor.
+	 *  @type {Number}
+	 */
 	gcodeLineScrollOffset: 6,
 	scrollOffsetFactor: 0.4,
 	maxUpdateGapFill: 30,
@@ -147,11 +162,46 @@ define([ 'jquery' ], $ => ({
 	 *  @type {Number}
 	 */
 	reloadFileOnStopDelay: 3500,
-	startFromLabelText: 'Start From Here',
+	startFromLabelText: 'Start From',
 	startFromSelectFlashCount: 3,
 	startFromSelectFlashInterval: 400,
 
 	minLineNumberDigits: 3,
+	/**
+	 *  Enable or disable gcode file pagination.
+	 *  @type {Boolean}
+	 */
+	gcodePaginationEnable: true,
+    /**
+     *  Minimum length of gcode file to be paginated.
+     *  Must be equal to or greater than gcodePaginationMaxLength.
+     *  @type {Number}
+     */
+	gcodePaginationFileThreshold: 3000,
+	/**
+	 *  Maximum length of pagination window.
+	 *  Must be equal to or greater than gcodePaginationUpperBuffer + gcodePaginationLowerBuffer + 1.
+	 *  @type {Number}
+	 */
+	gcodePaginationMaxLength: 500,
+	/**
+	 *  Minimum number of Gcode lines overhead of the current line.
+	 *  @type {Number}
+	 */
+	gcodePaginationUpperBuffer: 50,
+	/**
+	 *  Maximum number of Gcode lines below the current line.
+	 *  @type {Number}
+	 */
+	gcodePaginationLowerBuffer: 75,
+	/**
+	 *  Stores the range of Gcode indicies that have DOM elements in the Gcode file view.
+	 *  Updated by buildGcodeFileDOM() and buildPaginatedGcodeDOM().
+	 *  Index values are totally inclusive.
+	 *  ie. [ first, last ]
+	 *  @type {Array}
+	 */
+	paginationRange: [ 0, 0 ],
 
 	jogStep: 1,
 	/**
@@ -208,7 +258,6 @@ define([ 'jquery' ], $ => ({
 
 		subscribe('gcode-data/file-loaded', this, this.fileLoaded.bind(this));  // Receive gcode lines when a gcode file is loaded { FileName, Data }
 		subscribe('probe-data/auto-level', this, this.onAutoLevel.bind(this));  // Receive auto-level data [ { x, y, z }, { x, y, z }, ..., { x, y, z } ]
-		subscribe('gcode-buffer/control', this, this.gcodeBufferControl.bind(this));
 
 		subscribe('connection-widget/queue-count', this, this.onQueueCount.bind(this));  // Receive updates for the queue count
 		subscribe('connection-widget/message-status', this, this.onMessageStatus.bind(this));
@@ -374,9 +423,6 @@ define([ 'jquery' ], $ => ({
 
 			const gcodeLineId = `gc${evt.currentTarget.firstChild.innerText.match(/N[0-9]+/i)[0]}`;
 			this.gcodeScrollToId(gcodeLineId);
-
-			// const gcodeLine = document.getElementById(`run-widget/${gcodeLineId}`);
-			// gcodeLine && gcodeLine.scrollIntoView();
 
 		});
 
@@ -595,9 +641,11 @@ define([ 'jquery' ], $ => ({
 		if (FileName === '')  // If the file data is invalid
 			return debug.error('The file data is invalid.');
 
-		$('.gcode-view-panel .gcode-file-text').addClass('hidden');
-		$('.gcode-view-panel .no-file-modal').addClass('hidden');
-		$('.gcode-view-panel .loading-file-modal').removeClass('hidden');
+		const { gcodePaginationEnable, gcodePaginationFileThreshold } = this;
+
+		$('.gcode-view-panel .gcode-file-text').removeClass('m-fadeIn');  // Hide any previous Gcode
+		$('.gcode-view-panel .no-file-modal').removeClass('m-fadeIn');	  // Hide the 'No Gcode File' modal
+		$('.gcode-view-panel .loading-file-modal').addClass('m-fadeIn');  // Show the 'Loading File' modal
 
 		$('#run-widget .gcode-view-panel .start-line-input')[0].value = 0;
 		this.startFromIndex = 0;
@@ -626,21 +674,16 @@ define([ 'jquery' ], $ => ({
 		this.fileStarted = false;
 		this.fileStatus = 'inactive';
 		this.fileUnits = '';
+		this.gcodeStatus = Array.apply(null, Array(Gcode.length)).map(String.prototype.valueOf, '');
+		this.paginationRange = [ 0, 0 ];
 
 		this.setButtonEnabledState('enable');
 
 		const idMap = {};
 		const idToolChangeMap = {};
-		let gcodeHTML = '';
 		let tcSum = 0;
 
-		const { id, startFromIndex, zeroIndexLineNumber, minLineNumberDigits, startFromLabelText } = this;
-
-		for (let i = 0; i < Gcode.length; i++) {  // Build the gcode DOM
-
-			const lineNumber = zeroIndexLineNumber ? i : i + 1;
-			const prefixZeros = ((lineNumber).toString().length > minLineNumberDigits) ? 0 : minLineNumberDigits - (lineNumber).toString().length;
-			const domLineNumber = `${'0'.repeat(prefixZeros)}${lineNumber}`;
+		for (let i = 0; i < Gcode.length; i++) {
 
 			const line = GcodeData.Gcode[i];
 			const id = GcodeData.Id[i];
@@ -654,14 +697,60 @@ define([ 'jquery' ], $ => ({
 			else if (desc.includes('units'))   // If the line is a units command
 				this.fileUnits = line.includes('G21') ? 'mm' : 'inch';
 
-			gcodeHTML += `<div  id="run-widget/${id}" class="gcode-div ${id}${!i ? ' first-line' : ''}" gcode-index="${i}">`;
+		}
+
+		this.updateToolChange();
+		this.activeId = '';
+		this.idMap = idMap;
+		this.idToolChangeMap = idToolChangeMap;
+
+		const [ globalPath, localFileName ] = FileName.match(/([^\\]+)\.[a-z0-9]+$/i);
+		$('#run-widget .gcode-view-panel .gcode-file-name').text(localFileName);
+
+		if (gcodePaginationEnable && Gcode.length >= gcodePaginationFileThreshold) {  // If the Gcode file should be paginated
+
+			this.buildPaginatedGcodeDOM();
+
+		} else {  // If the Gcode file should not be paginated
+
+			this.buildGcodeFileDOM();
+
+		}
+
+	},
+	reloadFile() {
+
+		const { FileName, Gcode, GcodeData, ToolMeta, ToolChange } = this;
+
+		if (!FileName)  // If no file is loaded
+			return false;
+
+		this.fileLoaded({ FileName, Gcode, GcodeData, ToolMeta, ToolChange });
+
+	},
+	buildGcodeFileDOM() {
+
+		const { Gcode, GcodeData, startFromIndex, zeroIndexLineNumber, minLineNumberDigits, startFromLabelText } = this;
+		let gcodeHTML = '';
+
+		for (let i = 0; i < Gcode.length; i++) {  // Build the Gcode File DOM
+
+			const lineNumber = zeroIndexLineNumber ? i : i + 1;
+			const prefixZeros = ((lineNumber).toString().length > minLineNumberDigits) ? 0 : minLineNumberDigits - (lineNumber).toString().length;
+			const domLineNumber = `${'0'.repeat(prefixZeros)}${lineNumber}`;
+
+			const line = GcodeData.Gcode[i];
+			const id = GcodeData.Id[i];
+			const desc = GcodeData.Desc[i];
+
+			gcodeHTML += `<div id="run-widget/${id}" class="gcode-div ${id}${!i ? ' first-line' : ''}" gcode-index="${i}">`;
 			gcodeHTML += `<span class="line-number text-muted">${domLineNumber}</span>`;
 
 			if (desc.includes('comment'))  			// If the line is a comment
 				gcodeHTML += `<samp class="gcode text-nowrap text-muted">${line}</samp>`;  // Mute text
 
 			else if (desc.includes('tool-change'))  // If the line is not a comment
-				gcodeHTML += `<samp class="gcode text-nowrap text-info">${line}</samp>`;  // Hilite text
+				gcodeHTML += `<samp class="gcode text-nowrap text-info">${line}</samp>`;   // Hilite text
 
 			else  									// If the line is not a comment or a tool change command
 				gcodeHTML += `<samp class="gcode text-nowrap text-default">${line}</samp>`;
@@ -673,49 +762,117 @@ define([ 'jquery' ], $ => ({
 
 		}
 
-		this.updateToolChange();
-		// this.activeId = GcodeData.Id[0];
-		this.activeId = '';
-		// this.activeIndex = 0;
-		this.idMap = idMap;
-		this.idToolChangeMap = idToolChangeMap;
-
-		const [ globalPath, localFileName ] = FileName.match(/([^\\]+)\.[a-z0-9]+$/i);
-
-		$('#run-widget .gcode-view-panel .gcode-file-name').text(localFileName);
-
 		$('#run-widget .gcode-view-panel .pause-btn').addClass('hidden');
 		$('#run-widget .gcode-view-panel .resume-btn').addClass('hidden');
 		$('#run-widget .gcode-view-panel .stop-btn').addClass('hidden');
 
 		this.resizeWidgetDom();
+		this.paginationRange = [ 0, Gcode.length - 1 ];
 
 		setTimeout(() => {  // Use timeout to allow the filename and tool change panel to perform DOM updates before loading Gcode file
 
 			$('#run-widget .gcode-view-panel .gcode-file-text').html(gcodeHTML);  // Add the gcode file to the file text panel
-
-			$('#run-widget .gcode-view-panel .start-btn').removeClass('hidden');  // Show the play button
-			$('#run-widget .gcode-view-panel .reload-gcode-btn').removeClass('hidden');
 
 			const [ gcodeLineId ] = GcodeData.Id;
 			this.gcodeScrollToId(gcodeLineId);
 
 			this.resizeWidgetDom();
 
-			$('.gcode-view-panel .gcode-file-text').removeClass('hidden');
-			$('.gcode-view-panel .loading-file-modal').addClass('hidden');
+			$('#run-widget .gcode-view-panel .start-btn').removeClass('hidden');  		 // Show the play button
+			$('#run-widget .gcode-view-panel .reload-gcode-btn').removeClass('hidden');  // Show the reload button
+
+			$('.gcode-view-panel .gcode-file-text').addClass('m-fadeIn');  		 // Show the file
+			$('.gcode-view-panel .loading-file-modal').removeClass('m-fadeIn');  // Hide the 'Loading File' modal
 
 		}, 10);
 
 	},
-	reloadFile() {
+	buildPaginatedGcodeDOM(id) {
 
-		const { FileName, Gcode, GcodeData, ToolMeta, ToolChange } = this;
+		const { Gcode, GcodeData, fileStatus, gcodeStatus, activeId, idMap, startFromIndex, zeroIndexLineNumber, minLineNumberDigits, startFromLabelText } = this;
+		const { gcodePaginationEnable: enable, gcodePaginationFileThreshold: fileThreshold, gcodePaginationMaxLength: maxLength, gcodePaginationUpperBuffer: upperBuffer, gcodePaginationLowerBuffer: lowerBuffer } = this;
 
-		if (!FileName)  // If no file is loaded
+		if (!enable || Gcode.length < fileThreshold)  // If the file is not valid for pagination
 			return false;
 
-		this.fileLoaded({ FileName, Gcode, GcodeData, ToolMeta, ToolChange });
+		const lineIndex = (idMap[id] || startFromIndex);
+		let [ lowerLimit, upperLimit ] = [ 0, Gcode.length - 1 ];
+		let gcodeHTML = '';
+
+		if (lineIndex <= upperBuffer)  // If at the begining of the Gcode file
+			[ lowerLimit, upperLimit ] = [ 0, maxLength ];
+
+		else if (lineIndex >= Gcode.length - 1 - lowerBuffer)  // If at the end of the Gcode file
+			[ lowerLimit, upperLimit ] = [ Gcode.length - 1 - maxLength, Gcode.length - 1 ];
+
+		else  // If at the middle of the Gcode file
+			[ lowerLimit, upperLimit ] = [ lineIndex - upperBuffer, lineIndex - upperBuffer + maxLength - 1 ];
+
+		for (let i = lowerLimit; i <= upperLimit; i++) {
+
+			const lineNumber = zeroIndexLineNumber ? i : i + 1;
+			const prefixZeros = ((lineNumber).toString().length > minLineNumberDigits) ? 0 : minLineNumberDigits - (lineNumber).toString().length;
+			const domLineNumber = `${'0'.repeat(prefixZeros)}${lineNumber}`;
+
+			const line = GcodeData.Gcode[i];
+			const id = GcodeData.Id[i];
+			const desc = GcodeData.Desc[i];
+			const status = gcodeStatus[i];
+			const hiliteClass = id === activeId ? ' bg-primary' : (status === 'success' ? ' bg-success' : '');
+
+			gcodeHTML += `<div id="run-widget/${id}" class="gcode-div ${id}${!i ? ' first-line' : ''}${hiliteClass}" gcode-index="${i}">`;
+			gcodeHTML += `<span class="line-number text-muted">${domLineNumber}</span>`;
+
+			if (desc && desc.includes('comment'))  			// If the line is a comment
+				gcodeHTML += `<samp class="gcode text-nowrap text-muted">${line}</samp>`;  // Mute text
+
+			else if (desc && desc.includes('tool-change'))  // If the line is not a comment
+				gcodeHTML += `<samp class="gcode text-nowrap text-info">${line}</samp>`;   // Hilite text
+
+			else  											// If the line is not a comment or a tool change command
+				gcodeHTML += `<samp class="gcode text-nowrap text-default">${line}</samp>`;
+
+			if (fileStatus === 'inactive' && i === startFromIndex)  // If the file has not been run yet
+				gcodeHTML += `<samp class="start-from-label text-success"><samp class="material-icons">arrow_back</samp>${startFromLabelText}</samp>`;
+
+			gcodeHTML += '</div>';
+
+		}
+
+		this.resizeWidgetDom();
+		this.paginationRange = [ lowerLimit, upperLimit ];
+
+		setTimeout(() => {  // Use timeout to allow the filename and tool change panel to perform DOM updates before loading Gcode file
+
+			$('#run-widget .gcode-view-panel .gcode-file-text').html(gcodeHTML);  // Add the gcode file to the file text panel
+
+			this.gcodeScrollToId(GcodeData.Id[lineIndex]);
+			this.resizeWidgetDom();
+
+			$('#run-widget .gcode-view-panel .start-btn').removeClass('hidden');  		 // Show the play button
+			$('#run-widget .gcode-view-panel .reload-gcode-btn').removeClass('hidden');  // Show the reload button
+
+			$('.gcode-view-panel .gcode-file-text').addClass('m-fadeIn');  		 // Show the file
+			$('.gcode-view-panel .loading-file-modal').removeClass('m-fadeIn');  // Hide the 'Loading File' modal
+
+		}, 10);
+
+	},
+	/**
+	 *  Checks if a Gcode line has a DOM element in the Gcode file viewer.
+	 *  @param  {String} id The id of the Gcode line to be checked.
+	 *  @return {Boolean}
+	 */
+	inPagination(id) {
+
+		const { idMap, paginationRange } = this;
+		const index = idMap[id];
+		const [ lowerLimit, upperLimit ] = paginationRange;
+
+		if (index < lowerLimit || index > upperLimit)  // If the Gcode line is not in the pagination
+			return false;
+
+		return true;
 
 	},
 
@@ -833,43 +990,6 @@ define([ 'jquery' ], $ => ({
 		publish('connection-widget/port-sendbuffered', port, { Data: bufferData });  // Send gcode data to be buffered to the SPJS
 
 	},
-	gcodeBufferControl(data) {
-
-		// if (data === 'auto-paused') {  // If buffering gcode to the SPJS was automatically paused by the connection widget
-		//
-		// 	$(`#${this.id} .gcode-view-panel .auto-gcode-paused`).removeClass('text-muted', 'btn-default');
-		// 	$(`#${this.id} .gcode-view-panel .auto-gcode-paused`).addClass('btn-warning');
-		//
-		// } else if (data === 'auto-resumed') {  // If buffering gcode to the SPJS was automatically resumed by the connection widget
-		//
-		// 	$(`#${this.id} .gcode-view-panel .auto-gcode-paused`).addClass('text-muted', 'btn-default');
-		// 	$(`#${this.id} .gcode-view-panel .auto-gcode-paused`).removeClass('btn-warning');
-		//
-		// } else if (data === 'user-paused') {  // If buffering gcode to the SPJS was manually paused
-		//
-		// 	// $('#run-widget .gcode-view-panel .start-btn').addClass('hidden');
-		// 	// $('#run-widget .gcode-view-panel .pause-btn').addClass('hidden');
-		// 	// $('#run-widget .gcode-view-panel .resume-btn').removeClass('hidden');
-		// 	// $('#run-widget .gcode-view-panel .stop-btn').removeClass('hidden');
-		//
-		// 	// $(`#${this.id} .gcode-view-panel .pause-btn`).attr('evt-data', 'resume');
-		// 	// $(`#${this.id} .gcode-view-panel .pause-btn`).addClass('text-muted');
-		// 	// $(`#${this.id} .gcode-view-panel .pause-btn`).removeClass('btn-default');
-		//
-		// } else if (data === 'user-resumed') {  // If buffering gcode to the SPJS was manually resumed
-		//
-		// 	// $('#run-widget .gcode-view-panel .start-btn').addClass('hidden');
-		// 	// $('#run-widget .gcode-view-panel .pause-btn').removeClass('hidden');
-		// 	// $('#run-widget .gcode-view-panel .resume-btn').addClass('hidden');
-		// 	// $('#run-widget .gcode-view-panel .stop-btn').removeClass('hidden');
-		//
-		// 	// $(`#${this.id} .gcode-view-panel .pause-btn`).attr('evt-data', 'pause');
-		// 	// $(`#${this.id} .gcode-view-panel .pause-btn`).addClass('btn-default');
-		// 	// $(`#${this.id} .gcode-view-panel .pause-btn`).removeClass('text-muted');
-		//
-		// }
-
-	},
 
 	onPortList(data) {
 
@@ -923,12 +1043,8 @@ define([ 'jquery' ], $ => ({
 		if (Data.r && Data.r.sr)  // If a status report was received
 			this.onStatusReport(Data.r.sr);
 
-		// if (Data.r && Data.r.n)  // If a line number was received
-		// 	this.onStatusReport({ line: Data.r.n });
-
 		if (Data.r && Data.r.prb)  // If a probe finished message (eg. '{"r":{"prb":{"e":1,"x":0.000,"y":0.000,"z":-0.511,"a":0.000,"b":0.000,"c":0.000}},"f":[1,0,0,4931]}')
 			this.probe.onReply(Data);
-
 
 		if (Data.r && typeof Data.r.unit != 'undefined')  // Got units information
 			this.machine.updateUnit(Data.r.unit ? 'mm' : 'inch');  // Update the unit
@@ -953,13 +1069,10 @@ define([ 'jquery' ], $ => ({
 		if (typeof index != 'undefined' && (trackMode === 'on-complete' || desc.includes('spindle')))
 			this.updateGcodeTracker(Id);
 
-		// if (trackMode === 'on-complete' && typeof index != 'undefined' && index < Gcode.length - 1 && GcodeData.Desc[index + 1].includes('tool-change'))  // If the next line is a tool change
-		// 	this.toolChangeActive(Id);
-
 	},
 	onStatusReport(sr) {
 
-		const { trackMode, machine, idMap, Gcode, GcodeData } = this;
+		const { trackMode, machine, idMap, Gcode, GcodeData, gcodeStatus } = this;
 		const { line, posx, posy, posz, vel, unit, stat, feed, coor, momo, plan, path, dist, mpox, mpoy, mpoz } = sr;
 
 		if (typeof line != 'undefined' && (typeof stat == 'undefined' || stat !== 5)) {  // If received a line number and status is not error
@@ -979,10 +1092,9 @@ define([ 'jquery' ], $ => ({
 					for (let i = index + 1; i < GcodeData.Id.length; i++) {  // Remove success hiliting on following lines that have not yet been completed
 
 						const itemId = GcodeData.Id[i];
-						const $line = $(`#run-widget .gcode-view-panel .${itemId}`);
 
-						if ($line.hasClass('bg-success'))
-							$line.removeClass('bg-success');
+						if (gcodeStatus[i] === 'success')
+							this.gcodeTrackerActive({ InactiveId: itemId })
 
 						else
 							break;
@@ -994,9 +1106,6 @@ define([ 'jquery' ], $ => ({
 					this.updateGcodeTracker(id);  // Update the active line in the gcode viewer panel
 
 				}
-
-				// if (index < Gcode.length - 1 && GcodeData.Desc[index + 1].includes('tool-change'))  // If the next line is a tool change
-				// 	this.toolChangeActive(id);
 
 			}
 
@@ -1010,15 +1119,12 @@ define([ 'jquery' ], $ => ({
 
 		if (typeof posx != 'undefined')  // X axis position
 			this.updateMachPosition({ x: posx });
-			// machine.updatePosition({ x: posx });
 
 		if (typeof posy != 'undefined')  // Y axis position
 			this.updateMachPosition({ y: posy });
-			// machine.updatePosition({ y: posy });
 
 		if (typeof posz != 'undefined')  // Z axis position
 			this.updateMachPosition({ z: posz });
-			// machine.updatePosition({ z: posz });
 
 		if (typeof unit != 'undefined')  // Got units information
 			machine.updateUnit(unit ? 'mm' : 'inch');  // Update the unit
@@ -1048,6 +1154,9 @@ define([ 'jquery' ], $ => ({
 
 	},
 	gcodeFlashLine(id, repeat, interval) {
+
+		if (!this.inPagination(id))  // If the Gcode line has no DOM element in the Gcode view panel
+			return false;
 
 		const { GcodeData, startFromIndex } = this;
 		const hiliteClass = 'bg-success';
@@ -1082,8 +1191,6 @@ define([ 'jquery' ], $ => ({
 
 		const { fileStarted, Gcode, GcodeData, idMap } = this;
 		const { activeId, activeIndex, startFromIndex, $gcodeLog, gcodeLineScrollOffset, lastBufferedId, activeLineClearDelay, reloadFileOnStopDelay } = this;
-		const $activeElement = $(`#run-widget .gcode-view-panel .${id}`);
-		let activeIdNext = '';
 
 		if (!fileStarted)  // If no lines from the gcode file have been sent
 			return false;
@@ -1101,7 +1208,7 @@ define([ 'jquery' ], $ => ({
 		if (scroll)
 			this.gcodeScrollToId(id);
 
-		if (!activeId && lineIndex > startFromIndex)  // If the first line to be updated
+		if (!activeId && lineIndex > startFromIndex)  // If the first line to be updated is not first line of gcode file
 			this.updateGcodeTracker(GcodeData.Id[lineIndex - 1], false);
 
 		if (activeId && lineIndex - 1 > idMap[activeId])  // If there is a gap between the active line and this line
@@ -1125,10 +1232,7 @@ define([ 'jquery' ], $ => ({
 		if (lineIndex && GcodeData.Desc[lineIndex - 1].includes('tool-change'))  // If the previous line is a tool change command
 			this.toolChangeComplete(GcodeData.Id[lineIndex - 1]);
 
-		this.gcodeTrackerActive({ ActiveId: id, SuccessId: this.activeId });
-
-		this.activeId = id;
-		this.activeIndex = idMap[id];
+		this.gcodeTrackerActive({ ActiveId: id, SuccessId: activeId });
 
 		if (id === GcodeData.Id[Gcode.length - 1] && activeLineClearDelay) {  // If this is the last line in the gcode file
 
@@ -1153,32 +1257,60 @@ define([ 'jquery' ], $ => ({
 		}
 
 	},
-	gcodeTrackerActive({ SuccessId, ActiveId, InactiveId }) {
+	gcodeTrackerActive({ ActiveId, SuccessId, InactiveId }) {
 
 		const { idMap } = this;
 
-		if (typeof ActiveId != 'undefined' && ActiveId && typeof idMap[ActiveId] != 'undefined')
-			$(`#run-widget .gcode-view-panel .${ActiveId}`).removeClass('bg-default bg-success').addClass('bg-primary');  // Hilite the active gcode line
+		if (typeof ActiveId != 'undefined' && ActiveId && typeof idMap[ActiveId] != 'undefined') {
 
-		if (typeof SuccessId != 'undefined' && SuccessId && typeof idMap[SuccessId] != 'undefined')
-			$(`#run-widget .gcode-view-panel .${SuccessId}`).removeClass('bg-default bg-primary').addClass('bg-success');  // Hilite the completed gcode line
+			this.activeId = ActiveId;
+			this.activeIndex = idMap[ActiveId];
 
-		if (typeof InactiveId != 'undefined' && InactiveId && typeof idMap[InactiveId] != 'undefined')
-			$(`#run-widget .gcode-view-panel .${InactiveId}`).removeClass('bg-primary bg-success').addClass('bg-default');  // Remove hiliting from line
+			if (this.inPagination(ActiveId))  // If the Gcode line has a DOM element in the Gcode view panel
+				$(`#run-widget .gcode-view-panel .${ActiveId}`).removeClass('bg-default bg-success').addClass('bg-primary');  // Hilite the active gcode line
+
+		}
+
+		if (typeof SuccessId != 'undefined' && SuccessId && typeof idMap[SuccessId] != 'undefined') {
+
+			this.gcodeStatus[idMap[SuccessId]] = 'success';
+
+			if (this.inPagination(SuccessId))  // If the Gcode line has a DOM element in the Gcode view panel
+				$(`#run-widget .gcode-view-panel .${SuccessId}`).removeClass('bg-default bg-primary').addClass('bg-success');  // Hilite the completed gcode line
+
+		}
+
+		if (typeof InactiveId != 'undefined' && InactiveId && typeof idMap[InactiveId] != 'undefined') {
+
+			this.gcodeStatus[idMap[InactiveId]] = '';
+
+			if (this.inPagination(InactiveId))  // If the Gcode line has a DOM element in the Gcode view panel
+				$(`#run-widget .gcode-view-panel .${InactiveId}`).removeClass('bg-primary bg-success').addClass('bg-default');  // Remove hiliting from line
+
+		}
 
 	},
 	gcodeScrollToId(id) {
 
-		const { idMap, GcodeData, gcodeLineScrollOffset } = this;
+		const { idMap, Gcode, GcodeData, gcodeLineScrollOffset, paginationRange, gcodePaginationLowerBuffer, gcodePaginationUpperBuffer } = this;
+
+		const lineIndex = idMap[id];
+		const [ lowerLimit, upperLimit ] = paginationRange;
+		const [ lowerBufferLimit, upperBufferLimit ] = [ lowerLimit + gcodePaginationUpperBuffer, upperLimit - gcodePaginationLowerBuffer ];
 
 		if (typeof id == 'undefined' || typeof idMap[id] == 'undefined')  // If the id argument is invalid
 			return false;
 
-		const lineIndex = idMap[id];
-		let scrollId = GcodeData.Id[0];
+		let scrollId = GcodeData.Id[lowerLimit];
 
-		if (lineIndex > gcodeLineScrollOffset)
+		if ((lowerLimit !== 0 && lineIndex < lowerBufferLimit) || (upperLimit !== Gcode.length && lineIndex > upperBufferLimit))  // If the Gcode is outside of the pagination buffer
+			return this.buildPaginatedGcodeDOM(id);  // The buildPaginatedGcodeDOM() function will call this method when it is finished the DOM update
+
+		if (lineIndex - lowerLimit > gcodeLineScrollOffset)
 			scrollId = GcodeData.Id[lineIndex - gcodeLineScrollOffset];
+
+		if (!this.inPagination(scrollId))  // If the Gcode line has no DOM element in the Gcode view panel
+			return false;
 
 		const element = document.getElementById(`run-widget/${scrollId}`);
 		element && element.scrollIntoView({ block: "start", behavior: "smooth" });  // Scroll the active gcode line into view
@@ -2055,21 +2187,9 @@ define([ 'jquery' ], $ => ({
 
 			if (!e) {  // If probe failed
 
-				// $('#run-widget .auto-level-panel .start-btn').removeClass('hidden');  // Show the pause and stop stop buttons
-				// $('#run-widget .auto-level-panel .pause-btn').removeClass('hidden');
-				// $('#run-widget .auto-level-panel .resume-btn').addClass('hidden');
-				// $('#run-widget .auto-level-panel .stop-btn').removeClass('hidden');
-
 				$('#run-widget .auto-level-panel .probe-failed-alert').removeClass('hidden');  // Show the probe failed alert in the auto level panel
 
 				if (failedProbe) {  // If the previous probe also failed
-
-					// publish('/connection-widget/port-feedhold', port);  // Pause the probing cycle
-					//
-					// $('#run-widget .auto-level-panel .pause-btn').addClass('hidden');
-					// $('#run-widget .auto-level-panel .resume-btn').removeClass('hidden');
-					//
-					// return false;
 
 				} else if (retryOnFailedProbe) {  // If the previous probe was successful
 
@@ -2102,7 +2222,6 @@ define([ 'jquery' ], $ => ({
 				}
 
 				this.failedProbe = true;
-				// return false;
 
 			} else {  // If the probe succeeded
 
@@ -2371,13 +2490,6 @@ define([ 'jquery' ], $ => ({
 
 			if (vel === velocity)
 				return false;
-
-			// if ((typeof velocity == 'undefined' || velocity === 0) && vel > 0) {  // If moving
-			//
-			// 	$('#run-widget .feedrate-progress-bar').addClass('progress-bar-success');
-			// 	$('#run-widget .feedrate-progress-bar').removeClass('progress-bar-danger progress-bar-warning');
-			//
-			// }
 
 			if (vel > feedrate) {  // If doing a rapid movement
 

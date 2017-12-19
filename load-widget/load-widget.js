@@ -203,7 +203,7 @@ define([ 'jquery' ], $ => ({
 			x: [],
 			y: [],
 			z: [],
-			Id: [],  // Id
+			Id: [],    // Id
 			Line: [],
 			Gcode: [],
 			Desc: [],  // Eg. 'comment', 'M6', 'M8', 'motion', 'coord'

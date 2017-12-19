@@ -54,6 +54,23 @@ startFromSelectFlashCount: 3
 startFromSelectFlashInterval: 400
 
 minLineNumberDigits: 3
+# Enable or disable gcode file pagination.
+# @type {Boolean}
+gcodePaginationEnable: true
+# Minimum length of gcode file to be paginated.
+# Must be equal to or greater than gcodePaginationMaxLength.
+# @type {Number}
+gcodePaginationFileThreshold: 3000
+# Maximum length of pagination window.
+# Must be equal to or greater than gcodePaginationUpperBuffer + gcodePaginationLowerBuffer + 1.
+# @type {Number}
+gcodePaginationMaxLength: 500
+# Minimum number of Gcode lines overhead of the current line.
+# @type {Number}
+gcodePaginationUpperBuffer: 50
+# Maximum number of Gcode lines below the current line.
+# @type {Number}
+gcodePaginationLowerBuffer: 75
 
 # Sets the feedrate at which jogging of each axis should take place at [mm/min].
 # @type {Object}

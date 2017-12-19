@@ -45,19 +45,33 @@
 
 		<div class="panel-body">
 
-			<div class="gcode-modal no-file-modal">
+			<!-- <ul class="pager">
+				<li><a href="#">Previous</a></li>
+				<li><a href="#">Next</a></li>
+			</ul>
+
+			<div class="pager">
+
+			</div>
+
+			<ul class="pager">
+				<li class="previous disabled"><a href="#">&larr; Older</a></li>
+				<li class="next"><a href="#">Newer &rarr;</a></li>
+			</ul> -->
+
+			<div class="gcode-modal no-file-modal m-fadeOut m-fadeIn">
 				<div class="modal-content">
 					<span>No Gcode Loaded</span>
 				</div>
 			</div>
 
-			<div class="gcode-modal loading-file-modal hidden">
+			<div class="gcode-modal loading-file-modal m-fadeOut">
 				<div class="modal-content">
 					<span>Loading Gcode File <div class="loader"></div></span>
 				</div>
 			</div>
 
-			<div class="gcode-file-text"></div>
+			<div class="gcode-file-text m-fadeOut m-fadeIn"></div>
 
 		</div>
 
