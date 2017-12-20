@@ -89,12 +89,12 @@ probe:
   defaultProfile: 'Default'
   # String containing all characters not allowed in profile names.
   # @type {String}
-  profileBannedChars: '~[]{}()\\^!'
+  profileBannedChars: '~[]{}()\\^!:;\'\".\/'
   # Array of all substitutions that should be made to convert a safe profile name into an unsafe profile name and back again.
   # Eg. [ [ 'unsafe-text', 'safe-text' ] ]
   # @type {Array}
   parseProfileRepl: [
-    [ ' ', '~' ]
+    [ ' ', '-' ]
   ]
   # Number of decimal places that should be used when adding z values to gcode lines.
   # @type {Number}

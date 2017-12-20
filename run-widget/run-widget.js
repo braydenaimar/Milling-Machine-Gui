@@ -294,22 +294,8 @@ define([ 'jquery' ], $ => ({
 
 				if (err) {  // If there was an error reading the file
 
-					const { code, errno, message, path, stack, syscall } = err;
-
-					if (code === 'ENOENT') {  // If no user settings file was found
-
-						const userSettings = {
-							probe: {
-								defaultProfile: probe.defaultProfile,
-								profile: {
-									default: probe.profile.default
-								}
-							}
-						};
-
-						fsCSON.writeFileSafe(path, userSettings);  // Create a user settings cson file
-
-					}
+					this.repairUserSettings(err);
+					userData = this.readUserSettings();
 
 				}
 
@@ -321,6 +307,55 @@ define([ 'jquery' ], $ => ({
 			});
 
 		});
+
+	},
+	readUserSettings(recursionDepth = 0) {
+
+		if (recursionDepth > 2)  // Prevent infinite loop between readUserSettings() and repairUserSettings()
+			return;
+
+		fsCson.readFile('run-widget/Settings.cson', (err, data) => {
+
+			if (err)
+				return this.repairUserSettings(err, recursionDepth);
+
+		});
+
+	},
+	repairUserSettings(err, recursionDepth) {
+
+		const { probe } = this;
+		const { code, erno, filename, location, path, message, stack, syscall } = err;
+
+		if (code === 'ENOENT') {  // If no user settings file was found
+
+			const userSettings = {
+				probe: {
+					defaultProfile: probe.defaultProfile,
+					profile: {
+						Default: probe.profile.Default
+					}
+				}
+			};
+
+			fsCSON.writeFileSafeSync('run-widet/User_Settings', userSettings);  // Create a user settings cson file
+
+		} else {
+
+			const [ a, b ] = [ 0, code.match(/probe:/).index ];
+			const safeCode = code.substring(a, b);
+			const safeData = CSON.parse(safeCode);
+
+			fsCSON.writeFileSafeSync('run-widget/User_Settings.cson', safeData, (err) => {
+
+				if (err)  // If an error occured while writing the file
+					return;
+
+			});
+
+			return this.readUserSettings(++recursionDepth);
+
+		}
 
 	},
 	/**
@@ -1314,8 +1349,6 @@ define([ 'jquery' ], $ => ({
 
 		const element = document.getElementById(`run-widget/${scrollId}`);
 		element && element.scrollIntoView({ block: "start", behavior: "smooth" });  // Scroll the active gcode line into view
-
-
 	},
 	onToolChangeControl(task) {
 
@@ -1877,7 +1910,7 @@ define([ 'jquery' ], $ => ({
 
 				for (let i = 1; true; i++) {
 
-					if (profile[`${profileName}-0${i}`])
+					if (profile[`${profileName}-0${i}`])  // If the profie name matches an existing profile name
 						continue;
 
 					profileName = `${profileName}-0${i}`;
@@ -1930,9 +1963,9 @@ define([ 'jquery' ], $ => ({
 				if (err)  // If an error occurred while reading the file
 					return false;
 
-			});
+				this.loadProfile(profileName);
 
-			this.loadProfile(profileName);
+			});
 
 		},
 		deleteProfile(profileName) {
@@ -1960,14 +1993,14 @@ define([ 'jquery' ], $ => ({
 
 			}, (err) => {
 
-				if (err)  // If an error occurred while reading the file
-					return false;
+				if (err)  // If there was an error reading the settings file
+					this.repairUserSettings(err);
 
 				if (activeProfile === profileName)
 					this.loadProfile('Default');
 
 				else
-					this.loadProfile(activeProfile);
+					this.loadProfile(activeProfile);  // Call load profile to update the profile drop-down menu
 
 			});
 
