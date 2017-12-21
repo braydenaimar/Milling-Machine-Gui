@@ -17,7 +17,7 @@ define([ 'jquery' ], $ => ({
 	shortName: 'Run',
 	btnTheme: 'default',
 	icon: 'material-icons directions_run',
-	desc: 'A description of the program and how to contact developer about issues or bugs.',
+	desc: '',
 	publish: {
 		'/main/widget-loaded': ''
 	},
@@ -314,7 +314,7 @@ define([ 'jquery' ], $ => ({
 		if (recursionDepth > 2)  // Prevent infinite loop between readUserSettings() and repairUserSettings()
 			return;
 
-		fsCson.readFile('run-widget/Settings.cson', (err, data) => {
+		fsCSON.readFile('run-widget/Settings.cson', (err, data) => {
 
 			if (err)
 				return this.repairUserSettings(err, recursionDepth);
@@ -338,9 +338,9 @@ define([ 'jquery' ], $ => ({
 				}
 			};
 
-			fsCSON.writeFileSafeSync('run-widet/User_Settings', userSettings);  // Create a user settings cson file
+			fsCSON.writeFileSafeSync('run-widget/User_Settings.cson', userSettings);  // Create a user settings cson file
 
-		} else {
+		} else if (code) {
 
 			const [ a, b ] = [ 0, code.match(/probe:/).index ];
 			const safeCode = code.substring(a, b);
@@ -354,6 +354,19 @@ define([ 'jquery' ], $ => ({
 			});
 
 			return this.readUserSettings(++recursionDepth);
+
+		} else {
+
+			const userSettings = {
+				probe: {
+					defaultProfile: probe.defaultProfile,
+					profile: {
+						Default: probe.profile.Default
+					}
+				}
+			};
+
+			fsCSON.writeFileSafeSync('run-widget/User_Settings.cson', userSettings);  // Create a user settings cson file
 
 		}
 

@@ -1,1 +1,17 @@
 # Settings Widget - Settings
+
+# Links to directory of settings files.
+# Each directory should have a 'Settings.cson' and a 'User_Settings.cson' file.
+# If the 'Settings.cson' file is missing from the directory, a warning will be displayed in the corresponding settings panel.
+# If the 'User_Settings.cson' file is missing from the directory, a blank 'User_Settings.cson' file will be created in that directory.
+# Aliases must be safe for HTML, CSS, and JavaScript.
+# Eg. /alias/ = /directory_name/
+# @type {Object}
+directoryLinks: {
+    'Run-Widget': 'run-widget'
+    'Terminal': 'connection-widget'
+}
+
+# Enable the contents of the settings widget to be reloaded when the widget is made visible.
+# @type {Boolean}
+reloadContentsOnWidgetShow: false

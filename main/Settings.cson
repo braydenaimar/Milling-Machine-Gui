@@ -25,8 +25,8 @@ widget: {
     sidebarBtn: true
   }
   "settings-widget": {
-    loadHtml: false
-    sidebarBtn: false
+    loadHtml: true
+    sidebarBtn: true
   }
   "about-widget": {
     loadHtml: false
