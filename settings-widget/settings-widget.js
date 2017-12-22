@@ -190,8 +190,9 @@ define([ 'jquery' ], $ => ({
 			const key = dataKeys[i];
 			const title = this.toUserFriendlyTitle(key);
 			const item = data[key];
-			const defaultItem = defaultData[key];
 			const description = 'This setting does very interesting things.';
+			const defaultItem = typeof defaultData == 'undefined' ? '' : (typeof defaultData[key] == 'undefined' ? '' : defaultData[key]);
+			const tooltip = typeof defaultItem == 'undefined' ? '' : `Default: ${defaultItem}`;
 
 			switch (typeof item) {
 				case 'boolean':
@@ -205,7 +206,7 @@ define([ 'jquery' ], $ => ({
 					// </div>
 
 					objectHTML += `<div class="${objectDepth} checkbox">`;
-					objectHTML += `<input class="" type="checkbox"${item ? ' checked' : ''}>`;
+					objectHTML += `<input class="" data-toggle="tooltip" data-placement="bottom" title="Default: ${defaultItem ? 'True' : 'False'}" type="checkbox"${item ? ' checked' : ''}>`;
 					objectHTML += `<span class="setting-title">${title}</span>`;
 					objectHTML += `<span class="setting-description text-muted">${description}</span>`;
 					objectHTML += '</div>';
@@ -217,7 +218,7 @@ define([ 'jquery' ], $ => ({
 					objectHTML += `<div class="${objectDepth} number-input">`;
 					objectHTML += `<span class="setting-title">${title}</span>`;
 					objectHTML += `<span class="setting-description text-muted">${description}</span>`
-					objectHTML += `<input class="" type="number" value="${item}">`;
+					objectHTML += `<input class="" data-toggle="tooltip" data-placement="bottom" title="${tooltip}" type="number" value="${item}">`;
 					objectHTML += '</div>';
 
 					break;
@@ -227,7 +228,7 @@ define([ 'jquery' ], $ => ({
 					objectHTML += `<div class="${objectDepth} text-input">`;
 					objectHTML += `<span class="setting-title">${title}</span>`;
 					objectHTML += `<span class="setting-description text-muted">${description}</span>`
-					objectHTML += `<input class="" type="text" value="${item}">`;
+					objectHTML += `<input class="" data-toggle="tooltip" data-placement="bottom" title="${tooltip}" type="text" value="${item}">`;
 					objectHTML += '</div>';
 
 					break;
@@ -238,23 +239,25 @@ define([ 'jquery' ], $ => ({
 						if (typeof item[0] == 'object') {  // If the array consists of other arrays or objects
 
 							// paragraph textbox input with cson parsing
-							const value = CSON.stringify(item).replace(/"\n/g,'",').replace(/\n|\s/g,'').replace(/,]/g,']').replace(/^[\[\{]|[\]\}]$/g,'');
+							const value = CSON.stringify(item).replace(/"\n/g,'\',').replace(/\n|\s/g,'').replace(/,]/g,']').replace(/^[\[\{]|[\]\}]$/g,'').replace(/"/g, '\'');
+							const defaultValue = CSON.stringify(defaultItem).replace(/"\n/g,'\',').replace(/\n|\s/g,'').replace(/,]/g,']').replace(/^[\[\{]|[\]\}]$/g,'').replace(/"/g, '\'');
 
 							objectHTML += `<div class="${objectDepth} cson-input">`;
 							objectHTML += `<span class="setting-title">${title}</span>`;
 							objectHTML += `<span class="setting-description text-muted">${description}</span>`
-							objectHTML += `<input class="" type="text" value="${value}">`;
+							objectHTML += `<input class="" data-toggle="tooltip" data-placement="bottom" title="${tooltip}" type="text" value="${value}">`;
 							objectHTML += '</div>';
 
 						} else {
 
 							const value = item.join(',');
+							const defaultValue = defaultItem.join(',');
 
 							// textbox input with comma-delineated elements
 							objectHTML += `<div class="${objectDepth} text-input">`;
 							objectHTML += `<span class="setting-title">${title}</span>`;
 							objectHTML += `<span class="setting-description text-muted">${description}</span>`
-							objectHTML += `<input class="" type="text" value="${value}">`;
+							objectHTML += `<input class="" data-toggle="tooltip" data-placement="bottom" title="${tooltip}" type="text" value="${value}">`;
 							objectHTML += '</div>';
 
 						}
@@ -273,7 +276,6 @@ define([ 'jquery' ], $ => ({
 					break;
 				default:
 					// idek
-					objectHTML += '<p>default</p>';
 
 			}
 

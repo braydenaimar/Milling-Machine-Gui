@@ -113,7 +113,7 @@ button, input, optgroup, select, textarea {
     padding: 0;
 }
 .sub-settings-panel .panel-body div {  /* Settings Object */
-    margin: 18px 24px;
+    margin: 18px 0 18px 24px;
 }
 .settings-panel .checkbox {
     padding-left: 1.5em;
@@ -134,9 +134,12 @@ button, input, optgroup, select, textarea {
 .setting-description {
     margin: 4px 2px;
     font-size: smaller;
+    font-weight: lighter;
 }
 .settings-panel input:not([type=checkbox]) {
+    width: 85%;
     margin: 0 4px;
     padding: 5px 6px;
-    font-size: small;
+    font-size: initial;
+    font-family: monospace;
 }

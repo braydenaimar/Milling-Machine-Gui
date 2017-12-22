@@ -1939,22 +1939,22 @@ define([ 'jquery' ], $ => ({
 
 			const profileItem = {
 				probeCount: {
-					x: $('#run-widget .auto-level-panel .probe-count-input input.x-val').val(),
-					y: $('#run-widget .auto-level-panel .probe-count-input input.y-val').val()
+					x: Number($('#run-widget .auto-level-panel .probe-count-input input.x-val').val()),
+					y: Number($('#run-widget .auto-level-panel .probe-count-input input.y-val').val())
 				},
 				startPoint: {
-					x: $('#run-widget .auto-level-panel .start-point-input input.x-val').val(),
-					y: $('#run-widget .auto-level-panel .start-point-input input.y-val').val()
+					x: Number($('#run-widget .auto-level-panel .start-point-input input.x-val').val()),
+					y: Number($('#run-widget .auto-level-panel .start-point-input input.y-val').val())
 				},
 				endPoint: {
-					x: $('#run-widget .auto-level-panel .end-point-input input.x-val').val(),
-					y: $('#run-widget .auto-level-panel .end-point-input input.y-val').val()
+					x: Number($('#run-widget .auto-level-panel .end-point-input input.x-val').val()),
+					y: Number($('#run-widget .auto-level-panel .end-point-input input.y-val').val())
 				},
-				clearanceHeight: $('#run-widget .auto-level-panel .clearance-height-input input').val(),
-				probeHeight: $('#run-widget .auto-level-panel .probe-height-input input').val(),
-				feedrate: $('#run-widget .auto-level-panel .feedrate-input input').val(),
-				maxNegative: $('#run-widget .auto-level-panel .probe-limit-input input').val(),
-				heightOffset: $('#run-widget .auto-level-panel .height-offset-input input').val(),
+				clearanceHeight: Number($('#run-widget .auto-level-panel .clearance-height-input input').val()),
+				probeHeight: Number($('#run-widget .auto-level-panel .probe-height-input input').val()),
+				feedrate: Number($('#run-widget .auto-level-panel .feedrate-input input').val()),
+				maxNegative: Number($('#run-widget .auto-level-panel .probe-limit-input input').val()),
+				heightOffset: Number($('#run-widget .auto-level-panel .height-offset-input input').val()),
 				repeatProbe: $('#run-widget .auto-level-panel .repeat-probe-input input').prop('checked')
 			};
 
