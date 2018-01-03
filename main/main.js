@@ -11,7 +11,7 @@
 
 /* global ws:true, wgtMap:true, wgtLoaded:true, wgtVisible:true, widget:true, initBody:true, widgetLoadCheck:true, createWidgetContainer:true, loadHtmlWidget:true, loadJsWidget:true, createSidebarBtns:true, initWidgetVisible:true, makeWidgetVisible:true, updateGitRepo:true */  // eslint-disable-line no-unused-vars
 
-define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
+define([ 'jquery', 'gui', 'amplify', 'mousetrap', 'bootstrap' ], ($) => {
 
 	/* eslint-disable no-console*/
 
@@ -30,6 +30,8 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 	electron = require('electron');
 	({ ipcRenderer: ipc } = electron);
 	({ publish, subscribe, unsubscribe } = amplify);
+
+	$.fn.tooltip('[data-toggle="tooltip"]');  // Enable tooltips on all elements
 
 	/**
 	 *  Enable the console log for debugging.
@@ -120,7 +122,7 @@ define([ 'jquery', 'gui', 'amplify', 'mousetrap' ], ($) => {
 	Mousetrap.bind('ctrl+shift+i', () => ipc.send('open-dev-tools'));  // Press Ctrl-Shift-I to launch development tools.
 	Mousetrap.bind('ctrl+shift+r', () => location.reload(true));       // Press Ctrl-Shift-R to reload the program.
 
-	// Store information about the system.
+	// Store information about the system
 	hostMeta = {
 		os: null,
 		platform: os.platform(),

@@ -1,14 +1,5 @@
 /* Settings Widget CSS */
 
-.settings-view .checkbox {
-    padding-left: 2.25em;
-}
-.checkbox, .radio {
-    padding-left: 48px;
-}
-.checkbox {
-    padding-left: 2.5em;
-}
 .radio, .checkbox {
     position: relative;
     display: block;
@@ -48,7 +39,7 @@ label {
     margin-left: -20px;
     margin-top: 4px \9;
 }
-.input-checkbox:checked {
+/* .input-checkbox:checked {
     background: #009688;
 }
 .input-checkbox:checked {
@@ -81,7 +72,7 @@ input[type="radio"], input[type="checkbox"] {
     border-radius: 0.125rem;
     background-color: rgba(231, 232, 233, 0.93);
     transition: background-color 0.16s cubic-bezier(0.5, 0.15, 0.2, 1);
-}
+} */
 
 input, button, select, textarea {
     font-family: inherit;
@@ -107,11 +98,48 @@ button, input, optgroup, select, textarea {
 .checkbox .setting-description, .radio .setting-description {
     margin-top: 0.5rem;
 }
-.checkbox .setting-title, .checkbox .setting-description {
-    padding-left: 1rem;
-}
+
 .settings-view .setting-description {
     color: rgba(36, 41, 46, 0.35);
     -webkit-user-select: none;
     cursor: default;
+}
+
+.settings-panel {
+    overflow-y: auto;
+}
+.sub-settings-panel .panel-body {
+    overflow: auto;
+    padding: 0;
+}
+.sub-settings-panel .panel-body div {  /* Settings Object */
+    margin: 18px 0 18px 24px;
+}
+.settings-panel .checkbox {
+    padding-left: 1.5em;
+}
+.setting-title,
+.setting-description {
+    display: table;
+}
+.settings-panel .object-depth-01 > .object-title {
+    font-size: x-large;
+}
+.settings-panel .object-depth-02 > .object-title {
+    font-size: larger;
+}
+.settings-panel .object-depth-03 > .object-title {
+
+}
+.setting-description {
+    margin: 4px 2px;
+    font-size: smaller;
+    font-weight: lighter;
+}
+.settings-panel input:not([type=checkbox]) {
+    width: 85%;
+    margin: 0 4px;
+    padding: 5px 6px;
+    font-size: initial;
+    font-family: monospace;
 }

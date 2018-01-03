@@ -12,7 +12,7 @@ minLineLimit: 500
 staleCmdLimit: 30000
 # Sets the time limit (ms) that an active command in the console log can prevent other commands of the same type from being set.
 # To prevent messages from being marked as stale, set this to 0.
-# @type {number}
+# @type {Number}
 staleListCmdLimit: 5000
 # Enable the finding of stale commands in the console log.
 # @type {Boolean}

@@ -1,6 +1,6 @@
 # Init Scripts CSON File
 
-# InitScripts are sent to a device with matching information when a port is opened to the device.
+# Init scripts are sent to a device with matching information when a port is opened to the device.
 # Conditions: Friendly, Baud, Buffer, SerialNumber
 InitScripts: [
   { # Arduino Uno (GRBL Board)
@@ -140,7 +140,7 @@ InitScripts: [
   }
 ]
 
-# connectScripts are sent to a device with matching info if a port is already opened to the device on the SPJS but the UI just connected to the SPJS.
+# Connect scripts are sent to a device with matching info if a port is already opened to the device on the SPJS but the UI just connected to the SPJS.
 ConnectScripts: [
   { # Arduino Due
     Buffer: "tinygg2"

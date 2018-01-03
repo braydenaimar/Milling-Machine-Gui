@@ -1,4 +1,4 @@
-# Main Settings
+# Main - Settings
 
 # Widget to show on program load (default: first html widget loaded).
 wgtVisible: "run-widget"
@@ -33,13 +33,3 @@ widget: {
     sidebarBtn: false
   }
 }
-
-# widget: [
-#     "statusbar-widget"
-#     "load-widget"
-#     "run-widget"
-#     "mdi-widget"
-#     "connection-widget"
-#     "settings-widget"
-#     "about-widget"
-# ]
