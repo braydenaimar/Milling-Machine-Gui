@@ -455,12 +455,25 @@
 }
 
 /* -- Auto Level Widget -- */
+.auto-level-panel .panel-body {
+    padding-right: 0;
+    padding-bottom: 0;
+}
 .auto-level-panel .probe-failed-alert {
     display: inline-block;
 }
 .auto-level-panel .probe-failed-alert .btn {
     margin-left: 35px;
     transition: none;
+}
+.auto-level-panel .btn-header {
+    height: 40px;
+    padding-right: 8px;
+}
+.auto-level-panel .settings-input {
+    padding-right: 8px;
+    padding-bottom: 4px;
+    overflow: auto;
 }
 .auto-level-panel .control-btns {
     float: right;

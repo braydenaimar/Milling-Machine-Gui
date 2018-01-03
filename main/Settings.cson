@@ -25,21 +25,11 @@ widget: {
     sidebarBtn: true
   }
   "settings-widget": {
-    loadHtml: true
-    sidebarBtn: true
+    loadHtml: false
+    sidebarBtn: false
   }
   "about-widget": {
     loadHtml: false
     sidebarBtn: false
   }
 }
-
-# widget: [
-#     "statusbar-widget"
-#     "load-widget"
-#     "run-widget"
-#     "mdi-widget"
-#     "connection-widget"
-#     "settings-widget"
-#     "about-widget"
-# ]

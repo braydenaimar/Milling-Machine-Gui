@@ -306,138 +306,146 @@
 
 		<div class="panel-body">
 
-			<div class="panel-label">Auto Level</div>
+			<div class="btn-header">
 
-			<div class="probe-failed-alert hidden">
-				<span class="btn btn-sm btn-danger">Probe Failed</span>
-			</div>
+				<div class="panel-label">Auto Level</div>
 
-			<div class="profile-selector">
-				<div class="dropdown">
-					<div class="selector-label">
-						<span>Profile</span>
-					</div>
-					<div class="btn-group">
-						<span evt-signal="dropdown-toggle" evt-data="hidden" class="btn btn-sm btn-default dropdown-toggle">
-							<span>Default</span>
-							<span class="caret"></span>
-						</span>
-						<span evt-signal="profile-control" evt-data="save" class="btn btn-sm btn-default save-btn">
-							<span class="fa fa-floppy-o"></span>
-						</span>
-						<span evt-signal="profile-control" evt-data="delete" class="btn btn-sm btn-default delete-btn">
-							<span class="fa fa-trash-o"></span>
-						</span>
-					</div>
-					<ul class="dropdown-menu hidden">
-						<li><span evt-signal="profile" evt-data="Default" class="btn profile-btn">Default</span></li>
-						<li><span evt-signal="profile" evt-data="new-profile" class="btn profile-btn new-profile-btn hidden">New Profile</span></li>
-					</ul>
+				<div class="probe-failed-alert hidden">
+					<span class="btn btn-sm btn-danger">Probe Failed</span>
 				</div>
-			</div>
 
-			<div class="btn-group control-btns">
+				<div class="btn-group control-btns">
 
-				<span evt-signal="auto-level" evt-data="pause" class="btn btn-sm btn-default pause-btn hidden">Pause</span>
-				<span evt-signal="auto-level" evt-data="resume" class="btn btn-sm btn-default resume-btn hidden">Resume</span>
-				<span evt-signal="auto-level" evt-data="stop" class="btn btn-sm btn-default stop-btn hidden">Stop</span>
+					<span evt-signal="auto-level" evt-data="pause" class="btn btn-sm btn-default pause-btn hidden">Pause</span>
+					<span evt-signal="auto-level" evt-data="resume" class="btn btn-sm btn-default resume-btn hidden">Resume</span>
+					<span evt-signal="auto-level" evt-data="stop" class="btn btn-sm btn-default stop-btn hidden">Stop</span>
 
-			</div>
+				</div>
 
-			<div class="btn-group control-btns">
-				<span evt-signal="auto-level" evt-data="start" class="btn btn-sm btn-default start-btn">Start</span>
-			</div>
-
-			<div class="input-group auto-level-setting probe-count-input">
-
-				<span class="input-group-addon setting-label">Probe Count</span>
-
-				<span class="input-axis-label">X</span>
-				<input class="form-control mousetrap x-val" value="0" min="1" step="1" type="number">
-
-				<span class="input-axis-label">Y</span>
-				<input class="form-control mousetrap y-val" value="0" min="1" step="1" type="number">
+				<div class="btn-group control-btns">
+					<span evt-signal="auto-level" evt-data="start" class="btn btn-sm btn-default start-btn">Start</span>
+				</div>
 
 			</div>
 
-			<div class="input-group auto-level-setting start-point-input">
+			<div class="settings-input">
 
-				<span class="input-group-addon setting-label">Start Point</span>
+				<div class="profile-selector">
+					<div class="dropdown">
+						<div class="selector-label">
+							<span>Profile</span>
+						</div>
+						<div class="btn-group">
+							<span evt-signal="dropdown-toggle" evt-data="hidden" class="btn btn-sm btn-default dropdown-toggle">
+								<span>Default</span>
+								<span class="caret"></span>
+							</span>
+							<span evt-signal="profile-control" evt-data="save" class="btn btn-sm btn-default save-btn">
+								<span class="fa fa-floppy-o"></span>
+							</span>
+							<span evt-signal="profile-control" evt-data="delete" class="btn btn-sm btn-default delete-btn">
+								<span class="fa fa-trash-o"></span>
+							</span>
+						</div>
+						<ul class="dropdown-menu hidden">
+							<li><span evt-signal="profile" evt-data="Default" class="btn profile-btn">Default</span></li>
+							<li><span evt-signal="profile" evt-data="new-profile" class="btn profile-btn new-profile-btn hidden">New Profile</span></li>
+						</ul>
+					</div>
+				</div>
 
-				<span class="input-axis-label">X</span>
-				<input class="form-control mousetrap x-val" value="0" step="1" type="number">
-				<span class="input-axis-units">mm</span>
+				<div class="input-group auto-level-setting probe-count-input">
 
-				<span class="input-axis-label">Y</span>
-				<input class="form-control mousetrap y-val" value="0" step="1" type="number">
-				<span class="input-axis-units">mm</span>
+					<span class="input-group-addon setting-label">Probe Count</span>
 
-			</div>
+					<span class="input-axis-label">X</span>
+					<input class="form-control mousetrap x-val" value="0" min="1" step="1" type="number">
 
-			<div class="input-group auto-level-setting end-point-input">
+					<span class="input-axis-label">Y</span>
+					<input class="form-control mousetrap y-val" value="0" min="1" step="1" type="number">
 
-				<span class="input-group-addon setting-label">End Point</span>
+				</div>
 
-				<span class="input-axis-label">X</span>
-				<input class="form-control mousetrap x-val" value="75" step="1" type="number">
-				<span class="input-axis-units">mm</span>
+				<div class="input-group auto-level-setting start-point-input">
 
-				<span class="input-axis-label">Y</span>
-				<input class="form-control mousetrap y-val" value="50" step="1" type="number">
-				<span class="input-axis-units">mm</span>
+					<span class="input-group-addon setting-label">Start Point</span>
 
-			</div>
+					<span class="input-axis-label">X</span>
+					<input class="form-control mousetrap x-val" value="0" step="1" type="number">
+					<span class="input-axis-units">mm</span>
 
-			<div class="input-group auto-level-setting clearance-height-input">
+					<span class="input-axis-label">Y</span>
+					<input class="form-control mousetrap y-val" value="0" step="1" type="number">
+					<span class="input-axis-units">mm</span>
 
-				<span class="input-group-addon setting-label">Clearanze Height</span>
-				<span class="input-axis-label">Z</span>
-				<input class="form-control mousetrap" value="5" step="0.5" type="number">
-				<span class="input-axis-units">mm</span>
+				</div>
 
-			</div>
+				<div class="input-group auto-level-setting end-point-input">
 
-			<div class="input-group auto-level-setting probe-height-input">
+					<span class="input-group-addon setting-label">End Point</span>
 
-				<span class="input-group-addon setting-label">Probe Height</span>
-				<span class="input-axis-label">Z</span>
-				<input class="form-control mousetrap" value="1" step="0.5" type="number">
-				<span class="input-axis-units">mm</span>
+					<span class="input-axis-label">X</span>
+					<input class="form-control mousetrap x-val" value="75" step="1" type="number">
+					<span class="input-axis-units">mm</span>
 
-			</div>
+					<span class="input-axis-label">Y</span>
+					<input class="form-control mousetrap y-val" value="50" step="1" type="number">
+					<span class="input-axis-units">mm</span>
 
-			<div class="input-group auto-level-setting probe-limit-input">
+				</div>
 
-				<span class="input-group-addon setting-label">Low Probe Limit</span>
-				<span class="input-axis-label">Z</span>
-				<input class="form-control mousetrap" value="-5" step="0.5" type="number">
-				<span class="input-axis-units">mm</span>
+				<div class="input-group auto-level-setting clearance-height-input">
 
-			</div>
+					<span class="input-group-addon setting-label">Clearance Height</span>
+					<span class="input-axis-label">Z</span>
+					<input class="form-control mousetrap" value="5" step="0.5" type="number">
+					<span class="input-axis-units">mm</span>
 
-			<div class="input-group auto-level-setting feedrate-input">
+				</div>
 
-				<span class="input-group-addon setting-label">Feedrate</span>
-				<span class="input-axis-label">Z</span>
-				<input class="form-control mousetrap" value="20" step="1" type="number">
-				<span class="input-axis-units">mm/min</span>
+				<div class="input-group auto-level-setting probe-height-input">
 
-			</div>
+					<span class="input-group-addon setting-label">Probe Height</span>
+					<span class="input-axis-label">Z</span>
+					<input class="form-control mousetrap" value="1" step="0.5" type="number">
+					<span class="input-axis-units">mm</span>
 
-			<div class="input-group auto-level-setting height-offset-input">
+				</div>
 
-				<span class="input-group-addon setting-label">Height Offset</span>
-				<span class="input-axis-label">Z</span>
-				<input class="form-control mousetrap" value="4.78" step="0.1" type="number">
-				<span class="input-axis-units">mm</span>
+				<div class="input-group auto-level-setting probe-limit-input">
 
-			</div>
+					<span class="input-group-addon setting-label">Low Probe Limit</span>
+					<span class="input-axis-label">Z</span>
+					<input class="form-control mousetrap" value="-5" step="0.5" type="number">
+					<span class="input-axis-units">mm</span>
 
-			<div class="input-group auto-level-setting repeat-probe-input">
+				</div>
 
-				<span class="input-group-addon setting-label">Repeat Probe</span>
-				<!-- <span class="input-axis-label">Z</span> -->
-				<input class="mousetrap" type="checkbox">
+				<div class="input-group auto-level-setting feedrate-input">
+
+					<span class="input-group-addon setting-label">Feedrate</span>
+					<span class="input-axis-label">Z</span>
+					<input class="form-control mousetrap" value="20" step="1" type="number">
+					<span class="input-axis-units">mm/min</span>
+
+				</div>
+
+				<div class="input-group auto-level-setting height-offset-input">
+
+					<span class="input-group-addon setting-label">Height Offset</span>
+					<span class="input-axis-label">Z</span>
+					<input class="form-control mousetrap" value="4.78" step="0.1" type="number">
+					<span class="input-axis-units">mm</span>
+
+				</div>
+
+				<div class="input-group auto-level-setting repeat-probe-input">
+
+					<span class="input-group-addon setting-label">Repeat Probe</span>
+					<!-- <span class="input-axis-label">Z</span> -->
+					<input class="mousetrap" type="checkbox">
+
+				</div>
 
 			</div>
 

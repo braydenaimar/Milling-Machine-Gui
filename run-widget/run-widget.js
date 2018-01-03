@@ -130,18 +130,22 @@ define([ 'jquery' ], $ => ({
 			'stop-btn': false
 		}
 	},
-	pauseOnFirstToolChange: true,
+	pauseOnFirstToolChange: false,
 	pauseOnToolChange: true,
+	gcodePacketSplittingEnable: false,
+	gcodePacketSplittingThreshold: 1500,
 	/**
-	 *  The maximum number of gcode lines to be sent to the connection-widget per packet.
+	 *  The maximum number of Gcode lines to be sent to the connection-widget per packet.
+	 *  A value of zero (0) will disable packet splitting.
 	 *  @type {Number}
 	 */
-	maxGcodeBufferLength: 1000,
+	maxGcodePacketLength: 500,
 	/**
-	 *  The delay between packets of gcode being sent to the connection-widget in milliseconds [ms].
+	 *  The delay between packets of Gcode being sent to the connection-widget in milliseconds [ms].
+	 *  A value of zero (0) will remove delay between packets.
 	 *  @type {Number}
 	 */
-	gcodeBufferInterval: 500,
+	gcodePacketInterval: 300,
 
 	activeId: '',
 	activeIndex: 0,
@@ -177,23 +181,23 @@ define([ 'jquery' ], $ => ({
      *  Must be equal to or greater than gcodePaginationMaxLength.
      *  @type {Number}
      */
-	gcodePaginationFileThreshold: 3000,
+	gcodePaginationFileThreshold: 1500,
 	/**
 	 *  Maximum length of pagination window.
 	 *  Must be equal to or greater than gcodePaginationUpperBuffer + gcodePaginationLowerBuffer + 1.
 	 *  @type {Number}
 	 */
-	gcodePaginationMaxLength: 500,
+	gcodePaginationMaxLength: 400,
 	/**
 	 *  Minimum number of Gcode lines overhead of the current line.
 	 *  @type {Number}
 	 */
-	gcodePaginationUpperBuffer: 50,
+	gcodePaginationUpperBuffer: 40,
 	/**
 	 *  Maximum number of Gcode lines below the current line.
 	 *  @type {Number}
 	 */
-	gcodePaginationLowerBuffer: 75,
+	gcodePaginationLowerBuffer: 40,
 	/**
 	 *  Stores the range of Gcode indicies that have DOM elements in the Gcode file view.
 	 *  Updated by buildGcodeFileDOM() and buildPaginatedGcodeDOM().
@@ -724,6 +728,7 @@ define([ 'jquery' ], $ => ({
 		this.fileUnits = '';
 		this.gcodeStatus = Array.apply(null, Array(Gcode.length)).map(String.prototype.valueOf, '');
 		this.paginationRange = [ 0, 0 ];
+		this.lastBufferedId = '';
 
 		this.setButtonEnabledState('enable');
 
@@ -890,20 +895,19 @@ define([ 'jquery' ], $ => ({
 		this.resizeWidgetDom();
 		this.paginationRange = [ lowerLimit, upperLimit ];
 
-		setTimeout(() => {  // Use timeout to allow the filename and tool change panel to perform DOM updates before loading Gcode file
+		$('#run-widget .gcode-view-panel .gcode-file-text').html(gcodeHTML);  // Add the gcode file to the file text panel
 
-			$('#run-widget .gcode-view-panel .gcode-file-text').html(gcodeHTML);  // Add the gcode file to the file text panel
+		$('#run-widget .gcode-view-panel .start-btn').removeClass('hidden');  		 // Show the play button
+		$('#run-widget .gcode-view-panel .reload-gcode-btn').removeClass('hidden');  // Show the reload button
 
-			this.gcodeScrollToId(GcodeData.Id[lineIndex]);
-			this.resizeWidgetDom();
+		$('.gcode-view-panel .gcode-file-text').addClass('m-fadeIn');  		 // Show the file
+		$('.gcode-view-panel .loading-file-modal').removeClass('m-fadeIn');  // Hide the 'Loading File' modal
 
-			$('#run-widget .gcode-view-panel .start-btn').removeClass('hidden');  		 // Show the play button
-			$('#run-widget .gcode-view-panel .reload-gcode-btn').removeClass('hidden');  // Show the reload button
+		this.gcodeScrollToId(GcodeData.Id[lineIndex]);
+		this.resizeWidgetDom();
 
-			$('.gcode-view-panel .gcode-file-text').addClass('m-fadeIn');  		 // Show the file
-			$('.gcode-view-panel .loading-file-modal').removeClass('m-fadeIn');  // Hide the 'Loading File' modal
-
-		}, 10);
+		// setTimeout(() => {  // Use timeout to allow the filename and tool change panel to perform DOM updates before loading Gcode file
+		// }, 10);
 
 	},
 	/**
@@ -973,8 +977,7 @@ define([ 'jquery' ], $ => ({
 	},
 	bufferGcode({ StartIndex = 0 }) {
 
-		const { mainDevicePort: port, Gcode, GcodeData, idToolChangeMap, fileUnits, pauseOnFirstToolChange, pauseOnToolChange, maxGcodeBufferLength, gcodeBufferInterval } = this;
-		let bufferData = [];
+		const { mainDevicePort: port, Gcode, GcodeData, idToolChangeMap, fileUnits, pauseOnFirstToolChange, pauseOnToolChange, gcodePacketSplittingEnable: splitEnable, gcodePacketSplittingThreshold: splitThreshold, maxGcodePacketLength: packetLength, gcodePacketInterval: packetInterval } = this;
 
 		if (!port || !Gcode.length)  // If no port or gcode file is open
 			return false;
@@ -991,12 +994,12 @@ define([ 'jquery' ], $ => ({
 			Msg = [
 				...Msg,
 				'G91',
-				'G0 Z5',
+				`G0 Z${fileUnits === 'mm' ? '5' : '0.2'}`,  // Raise spindle 5mm (0.2in)
 				'G90',
 				`G0 X${x} Y${y}`,
 				`G0 Z${z}`,
 				`${plane}${feed ? ` F${feed}` : ''}`,  // G17 or G18 or G19 and feedrate
-				`${momo}`  // G0 or G1 or G2 or G3
+				`${momo}`  // G0, G1, G2 or G3
 			];
 
 			if (dist !== 'G90')
@@ -1006,7 +1009,28 @@ define([ 'jquery' ], $ => ({
 
 		}
 
-		for (let i = StartIndex; i < Gcode.length; i++) {
+		if (!splitEnable || Gcode.length < splitThreshold) {  // If packet splitting is not applicable to the file
+
+			this.sendGcodePacket(StartIndex, Gcode.length - 1);
+
+		} else {  // If buffering gcode into many packets
+
+			setTimeout(() => {
+
+				this.sendGcodePacket(a, b);
+
+			})
+
+
+		}
+
+	},
+	sendGcodePacket(a, b) {
+
+		const { mainDevicePort: port, Gcode, GcodeData, idToolChangeMap, fileUnits, pauseOnFirstToolChange, pauseOnToolChange, maxGcodePacketLength, maxPacketInterval } = this;
+		let bufferData = [];
+
+		for (let i = a; i < b; i++) {
 
 			const line = GcodeData.Gcode[i];
 			const id = GcodeData.Id[i];
@@ -1032,8 +1056,6 @@ define([ 'jquery' ], $ => ({
 		const lastId = bufferData[bufferData.length - 1].Id;
 		this.lastBufferedId = lastId;
 		this.fileStarted = true;
-		// this.activeIndex = StartIndex;
-		// this.activeId = GcodeData.Id[StartIndex];
 
 		publish('connection-widget/port-sendbuffered', port, { Data: bufferData });  // Send gcode data to be buffered to the SPJS
 
@@ -1232,7 +1254,7 @@ define([ 'jquery' ], $ => ({
 		}
 
 		if (repeat)
-			setTimeout(() => {this.gcodeFlashLine(id, repeat, interval)}, interval);
+			setTimeout(() => { this.gcodeFlashLine(id, repeat, interval) }, interval);
 
 	},
 	updateGcodeTracker(id, scroll = true) {
@@ -1243,7 +1265,8 @@ define([ 'jquery' ], $ => ({
 		if (!fileStarted)  // If no lines from the gcode file have been sent
 			return false;
 
-		if (typeof id == 'undefined' || (typeof lastBufferedId == 'undefined' && Number(lastBufferedId.match(/[0-9]+/)[0]) - Number(id.match(/[0-9]+/)[0]) < 0))
+		// FIXME: match() of undefined.
+		if (typeof id == 'undefined' || (typeof lastBufferedId == 'undefined' && Number(lastBufferedId.match(/[0-9]+/)[0]) < Number(id.match(/[0-9]+/)[0])))
 			return false;
 
 		if (id === activeId)
@@ -1259,7 +1282,7 @@ define([ 'jquery' ], $ => ({
 		if (!activeId && lineIndex > startFromIndex)  // If the first line to be updated is not first line of gcode file
 			this.updateGcodeTracker(GcodeData.Id[lineIndex - 1], false);
 
-		if (activeId && lineIndex - 1 > idMap[activeId])  // If there is a gap between the active line and this line
+		if (activeId && lineIndex > idMap[activeId] + 1)  // If there is a gap between the active line and this line
 			this.updateGcodeTracker(GcodeData.Id[lineIndex - 1], false);
 
 		if (/S[0-9]+/i.test(gcodeLine))  // Spindle rpm
@@ -1280,7 +1303,7 @@ define([ 'jquery' ], $ => ({
 		if (lineIndex && GcodeData.Desc[lineIndex - 1].includes('tool-change'))  // If the previous line is a tool change command
 			this.toolChangeComplete(GcodeData.Id[lineIndex - 1]);
 
-		this.gcodeTrackerActive({ ActiveId: id, SuccessId: activeId });
+		this.gcodeTrackerActive({ ActiveId: id, SuccessId: this.activeId });
 
 		if (id === GcodeData.Id[Gcode.length - 1] && activeLineClearDelay) {  // If this is the last line in the gcode file
 
@@ -2940,6 +2963,14 @@ define([ 'jquery' ], $ => ({
 		$modal.css({ width: $gcodePanelBody.css('width') });
 
 		this.gcodeScrollToId(activeId);  // Scroll gcode file to active gcode line
+
+		const $autoLevelPanel = $('.auto-level-panel');
+		const $autoLevelPanelBody = $('.auto-level-panel .panel-body');
+		const $autoLevelBtnHeader = $('.auto-level-panel .btn-header');
+		const $autoLevelSettings = $('.auto-level-panel .settings-input');
+		const settingsHeight = Number($autoLevelPanel.css('height').replace(/px/, '')) - Number($autoLevelPanelBody.css('padding-top').replace(/px/, '')) - Number($autoLevelBtnHeader.css('height').replace(/px/, ''));
+
+		$autoLevelSettings.css({ height: settingsHeight });
 
 		return true;
 

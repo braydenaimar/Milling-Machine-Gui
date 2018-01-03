@@ -31,14 +31,18 @@ gcodeControlBtnVisibility: {
 # File types that will be shown in the file explorer when opening a Gcode file.
 # @type {Array}
 fileOpenGcodeExtensions: [ 'nc' ]
-pauseOnFirstToolChange: true
+pauseOnFirstToolChange: false
 pauseOnToolChange: true
-# The maximum number of gcode lines to be sent to the connection-widget per packet.
+gcodePacketSplittingEnable: false
+gcodePacketSplittingThreshold: 1500
+# The maximum number of Gcode lines to be sent to the connection-widget per packet.
+# A value of zero (0) will disable packet splitting.
 # @type {Number}
-maxGcodeBufferLength: 1000
-# The delay between packets of gcode being sent to the connection-widget in milliseconds [ms].
+maxGcodePacketLength: 500
+# The delay between packets of Gcode being sent to the connection-widget in milliseconds [ms].
+# A value of zero (0) will remove delay between packets.
 # @type {Number}
-gcodeBufferInterval: 500
+gcodePacketInterval: 300
 gcodeLineScrollOffset: 6
 scrollOffsetFactor: 0.4
 maxUpdateGapFill: 30
@@ -60,17 +64,17 @@ gcodePaginationEnable: true
 # Minimum length of gcode file to be paginated.
 # Must be equal to or greater than gcodePaginationMaxLength.
 # @type {Number}
-gcodePaginationFileThreshold: 3000
+gcodePaginationFileThreshold: 1500
 # Maximum length of pagination window.
 # Must be equal to or greater than gcodePaginationUpperBuffer + gcodePaginationLowerBuffer + 1.
 # @type {Number}
-gcodePaginationMaxLength: 500
+gcodePaginationMaxLength: 400
 # Minimum number of Gcode lines overhead of the current line.
 # @type {Number}
-gcodePaginationUpperBuffer: 50
+gcodePaginationUpperBuffer: 40
 # Maximum number of Gcode lines below the current line.
 # @type {Number}
-gcodePaginationLowerBuffer: 75
+gcodePaginationLowerBuffer: 40
 
 # Sets the feedrate at which jogging of each axis should take place at [mm/min].
 # @type {Object}
@@ -109,14 +113,14 @@ probe:
         x: 0
         y: 0
       endPoint:
-        x: 75
-        y: 50
-      clearanceHeight: 5
-      probeHeight: 1
+        x: 74
+        y: 40
+      clearanceHeight: 3
+      probeHeight: 0.5
       feedrate: 25
       maxNegative: -20
       heightOffset: 0
-      repeatProbe: false
+      repeatProbe: true
 
 machine:
   # Minimum spindle speed [rpm].
