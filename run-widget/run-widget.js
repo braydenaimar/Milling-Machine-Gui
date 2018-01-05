@@ -26,10 +26,10 @@ define([ 'jquery' ], $ => ({
 	},
 
 	widgetDom: [
-		[ '.widget-container', ' .tool-panel', ' .gcode-view-panel' ],
-		[ '.widget-container', ' .dro-panel', ' .feedrate-panel', ' .spindle-panel', ' .jog-panel', ' .auto-level-panel' ],
-		[ ' .gcode-view-panel', ' .panel-heading', ' .panel-body' ],
-		[ ' .gcode-view-panel .panel-body', ' .gcode-file-text' ]
+		[ '.widget-container', '.tool-panel', '.gcode-view-panel' ],
+		[ '.widget-container', '.dro-panel', '.feedrate-panel', '.spindle-panel', '.jog-panel', '.auto-level-panel' ],
+		[ ' .gcode-view-panel', '.panel-heading', '.panel-body' ],
+		[ ' .gcode-view-panel .panel-body', '.gcode-file-text' ]
 	],
 	widgetVisible: false,
 
@@ -151,7 +151,6 @@ define([ 'jquery' ], $ => ({
 	activeIndex: 0,
 	trackMode: 'on-complete',
 	// trackMode: 'status-report',
-	$gcodeLog: $('#run-widget .gcode-view-panel .gcode-file-text'),
 	/**
 	 *  Updated by resize function to account for panel height based on the scrollOffsetFactor.
 	 *  @type {Number}
@@ -764,6 +763,16 @@ define([ 'jquery' ], $ => ({
 
 			this.buildPaginatedGcodeDOM();
 
+			$('#run-widget .gcode-view-panel .pause-btn').addClass('hidden');
+			$('#run-widget .gcode-view-panel .resume-btn').addClass('hidden');
+			$('#run-widget .gcode-view-panel .stop-btn').addClass('hidden');
+
+			$('#run-widget .gcode-view-panel .start-btn').removeClass('hidden');  		 // Show the play button
+			$('#run-widget .gcode-view-panel .reload-gcode-btn').removeClass('hidden');  // Show the reload button
+
+			$('.gcode-view-panel .gcode-file-text').addClass('m-fadeIn');  		 // Show the file
+			$('.gcode-view-panel .loading-file-modal').removeClass('m-fadeIn');  // Hide the 'Loading File' modal
+
 		} else {  // If the Gcode file should not be paginated
 
 			this.buildGcodeFileDOM();
@@ -873,6 +882,9 @@ define([ 'jquery' ], $ => ({
 			const status = gcodeStatus[i];
 			const hiliteClass = id === activeId ? ' bg-primary' : (status === 'success' ? ' bg-success' : '');
 
+			if (typeof line == 'undefined')
+				break;
+
 			gcodeHTML += `<div id="run-widget/${id}" class="gcode-div ${id}${!i ? ' first-line' : ''}${hiliteClass}" gcode-index="${i}">`;
 			gcodeHTML += `<span class="line-number text-muted">${domLineNumber}</span>`;
 
@@ -896,12 +908,6 @@ define([ 'jquery' ], $ => ({
 		this.paginationRange = [ lowerLimit, upperLimit ];
 
 		$('#run-widget .gcode-view-panel .gcode-file-text').html(gcodeHTML);  // Add the gcode file to the file text panel
-
-		$('#run-widget .gcode-view-panel .start-btn').removeClass('hidden');  		 // Show the play button
-		$('#run-widget .gcode-view-panel .reload-gcode-btn').removeClass('hidden');  // Show the reload button
-
-		$('.gcode-view-panel .gcode-file-text').addClass('m-fadeIn');  		 // Show the file
-		$('.gcode-view-panel .loading-file-modal').removeClass('m-fadeIn');  // Hide the 'Loading File' modal
 
 		this.gcodeScrollToId(GcodeData.Id[lineIndex]);
 		this.resizeWidgetDom();
@@ -953,6 +959,9 @@ define([ 'jquery' ], $ => ({
 			this.fileStatus = 'standby';
 
 		} else if (task === 'resume') {  // If the resume button was pressed
+
+			if (port === '')  // If no device is connected
+				return false;
 
 			this.fileStatus = 'active';
 
@@ -1011,7 +1020,7 @@ define([ 'jquery' ], $ => ({
 
 		if (!splitEnable || Gcode.length < splitThreshold) {  // If packet splitting is not applicable to the file
 
-			this.sendGcodePacket(StartIndex, Gcode.length - 1);
+			this.sendGcodePacket(StartIndex, Gcode.length);
 
 		} else {  // If buffering gcode into many packets
 
@@ -1019,8 +1028,7 @@ define([ 'jquery' ], $ => ({
 
 				this.sendGcodePacket(a, b);
 
-			})
-
+			});
 
 		}
 
@@ -1075,7 +1083,7 @@ define([ 'jquery' ], $ => ({
 			$('#run-widget .feedrate-panel .feedrate-units').text('--');
 			$('#run-widget .feedrate-progress-bar').css('width', '0%');
 
-			machine.updateUnit('--');
+			this.updateUnits('--');
 			machine.updatePosition({ x: 0, y: 0, z: 0 });
 			machine.updateSpindle({ rpm: '--' });
 
@@ -1102,7 +1110,7 @@ define([ 'jquery' ], $ => ({
 	 */
 	onPortData(port, { Msg, Data }) {
 
-		debug.log(`Got data from '${port}':\nLine: ${Msg}\nData: ${Data}\nData:`, Data);
+		const { probe } = this;
 
 		if (typeof Data == 'undefined' || !Data)  // If the data argument is invalid
 			return debug.error('The data argument is invalid.');
@@ -1114,10 +1122,10 @@ define([ 'jquery' ], $ => ({
 			this.onStatusReport(Data.r.sr);
 
 		if (Data.r && Data.r.prb)  // If a probe finished message (eg. '{"r":{"prb":{"e":1,"x":0.000,"y":0.000,"z":-0.511,"a":0.000,"b":0.000,"c":0.000}},"f":[1,0,0,4931]}')
-			this.probe.onReply(Data);
+			probe.onReply(Data);
 
 		if (Data.r && typeof Data.r.unit != 'undefined')  // Got units information
-			this.machine.updateUnit(Data.r.unit ? 'mm' : 'inch');  // Update the unit
+			this.updateUnits(Data.r.unit ? 'mm' : 'inch');  // Update the unit
 
 	},
 	onQueueCount(QCnt) {
@@ -1197,7 +1205,14 @@ define([ 'jquery' ], $ => ({
 			this.updateMachPosition({ z: posz });
 
 		if (typeof unit != 'undefined')  // Got units information
-			machine.updateUnit(unit ? 'mm' : 'inch');  // Update the unit
+			this.updateUnits(unit ? 'mm' : 'inch');  // Update the unit
+
+	},
+	updateUnits(newUnit) {
+
+		const { machine } = this;
+
+		machine.updateUnit(newUnit);
 
 	},
 
@@ -1260,7 +1275,7 @@ define([ 'jquery' ], $ => ({
 	updateGcodeTracker(id, scroll = true) {
 
 		const { fileStarted, Gcode, GcodeData, idMap } = this;
-		const { activeId, activeIndex, startFromIndex, $gcodeLog, gcodeLineScrollOffset, lastBufferedId, activeLineClearDelay, reloadFileOnStopDelay } = this;
+		const { activeId, activeIndex, startFromIndex, gcodeLineScrollOffset, lastBufferedId, activeLineClearDelay, reloadFileOnStopDelay } = this;
 
 		if (!fileStarted)  // If no lines from the gcode file have been sent
 			return false;
@@ -2895,65 +2910,106 @@ define([ 'jquery' ], $ => ({
 
 	resizeWidgetDom() {
 
-		if (!this.widgetVisible)  // If the widgte is not visible
+		const { widgetVisible, widgetDom, GcodeData, idMap, gcodeLineScrollOffset, activeId, scrollOffsetFactor} = this;
+
+		if (!widgetVisible)  // If the widgte is not visible
 			return false;
 
-		const that = this;
-		const { GcodeData, idMap, gcodeLineScrollOffset, activeId } = this;
+		const lineHeight = 18.5;  // Height of lines in the Gcode file view panel in pixels [px]
 
 		// TODO: Do the resize stuff like this: $(selector).attr(attribute,function(index,currentvalue))
 		// index - Receives the index position of the element in the set.
 		// currentvalue - Receives the current attribute value of the selected elements.
-		// Put the .attr() function inside of a $.each() loop.
+		// Put the .attr() function inside of a for loop.
 
-		$.each(this.widgetDom, (setIndex, setItem) => {
+		for (let i = 0; i < widgetDom.length; i++) {
 
-			const that1 = that;
-			let containerElement = null;
-			let containerHeight = null;
+			const domItem = widgetDom[i];
+
+			if (!domItem || !domItem.length)  // If the domItem is invalid
+				continue;
+
+			const $container = $(`#run-widget${domItem[0]}`);
+	 	 	const containerHeight = $container.height();
 			let marginSpacing = 0;
 			let panelSpacing = 0;
 
-			$.each(setItem, (panelIndex, panelItem) => {
+			for (let j = 1; j < domItem.length; j++) {
 
-				if (!panelIndex) {  // If panelItem is the container element
+				const panelItem = domItem[j];
+				const $panel = $container.find(panelItem);
+				marginSpacing += Number($panel.css('margin-top').replace(/px/g, ''));
 
-					containerElement = `#${that1.id}${panelItem}`;
-					containerHeight = $(containerElement).height();
+				if (j < domItem.length - 1) {  // If not last panel in the array
 
-					return true;
-
-				}
-
-				const $element = $(`${containerElement}${panelItem}`);
-				marginSpacing += Number($element.css('margin-top').replace(/px/g, ''));
-
-				if (panelIndex === setItem.length - 1) {  // Last element in array
-
-					marginSpacing += Number($element.css('margin-bottom').replace(/px/g, ''));
-					const panelHeight = `${containerHeight - (marginSpacing + panelSpacing)}px`;
-					const elementHeight = $element.css('height');
-
-					if (elementHeight !== panelHeight)
-						$element.css({ height: panelHeight });
-
-					if (elementHeight !== panelHeight && panelItem === ' .gcode-view-panel') {
-
-						const { scrollOffsetFactor } = that1;
-						const lineHeight = 18.5;
-						that1.gcodeLineScrollOffset = Math.roundTo(Number(panelHeight.replace(/px/, '')) * scrollOffsetFactor / lineHeight, 0);
-
-					}
-
-				} else {  // If this is not the last element in the array, read the element's height.
-
-					panelSpacing += Number($element.css('height').replace(/px/, ''));
+					panelSpacing += Number($panel.css('height').replace(/px/, ''));
+					continue;
 
 				}
 
-			});
+				marginSpacing += Number($panel.css('margin-bottom').replace(/px/g, ''));
+				const panelHeight = $panel.css('height');
+				const desiredHeight = `${containerHeight - (marginSpacing + panelSpacing)}px`;
 
-		});
+				if (panelHeight !== desiredHeight)
+				$panel.css({ height: desiredHeight });
+
+				if (panelHeight !== desiredHeight && panelItem === ' .gcode-view-panel')
+				this.gcodeLineScrollOffset = Math.roundTo(Number(desiredHeight.replace(/px/, '')) * scrollOffsetFactor / lineHeight, 0);
+
+			}
+
+		}
+
+		// $.each(this.widgetDom, (setIndex, setItem) => {
+        //
+		// 	const that1 = that;
+        //
+		// 	let containerElement = null;
+		// 	let containerHeight = null;
+		// 	let marginSpacing = 0;
+		// 	let panelSpacing = 0;
+        //
+		// 	$.each(setItem, (panelIndex, panelItem) => {
+        //
+		// 		if (!panelIndex) {  // If panelItem is the container element
+        //
+		// 			containerElement = `#${that1.id}${panelItem}`;
+		// 			containerHeight = $(containerElement).height();
+        //
+		// 			return true;
+        //
+		// 		}
+        //
+		// 		const $element = $(`${containerElement}${panelItem}`);
+		// 		marginSpacing += Number($element.css('margin-top').replace(/px/g, ''));
+        //
+		// 		if (panelIndex === setItem.length - 1) {  // Last element in array
+        //
+		// 			marginSpacing += Number($element.css('margin-bottom').replace(/px/g, ''));
+		// 			const panelHeight = `${containerHeight - (marginSpacing + panelSpacing)}px`;
+		// 			const elementHeight = $element.css('height');
+        //
+		// 			if (elementHeight !== panelHeight)
+		// 				$element.css({ height: panelHeight });
+        //
+		// 			if (elementHeight !== panelHeight && panelItem === ' .gcode-view-panel') {
+        //
+		// 				const { scrollOffsetFactor } = that1;
+		// 				const lineHeight = 18.5;
+		// 				that1.gcodeLineScrollOffset = Math.roundTo(Number(panelHeight.replace(/px/, '')) * scrollOffsetFactor / lineHeight, 0);
+        //
+		// 			}
+        //
+		// 		} else {  // If this is not the last element in the array, read the element's height.
+        //
+		// 			panelSpacing += Number($element.css('height').replace(/px/, ''));
+        //
+		// 		}
+        //
+		// 	});
+        //
+		// });
 
 		// Adjust size of the load file modal
 		const $modal = $('.gcode-view-panel .gcode-modal');
@@ -2962,7 +3018,7 @@ define([ 'jquery' ], $ => ({
 		$modal.css({ height: $gcodePanelBody.css('height') });
 		$modal.css({ width: $gcodePanelBody.css('width') });
 
-		this.gcodeScrollToId(activeId);  // Scroll gcode file to active gcode line
+		// this.gcodeScrollToId(activeId);  // Scroll gcode file to active gcode line
 
 		const $autoLevelPanel = $('.auto-level-panel');
 		const $autoLevelPanelBody = $('.auto-level-panel .panel-body');
