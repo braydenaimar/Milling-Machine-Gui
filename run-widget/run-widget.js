@@ -94,6 +94,11 @@ define([ 'jquery' ], $ => ({
 	 *  @type {Array}
 	 */
 	gcodeStatus: [],
+	/**
+	 *  Stores the current completion progress of the Gcode file in percent [%].
+	 *  @type {Number}
+	 */
+	gcodeProgress: 0,
 
 	/**
 	 *  File types that will be shown in the file explorer when opening a Gcode file.
@@ -105,29 +110,50 @@ define([ 'jquery' ], $ => ({
 	 *  @type {Object}
 	 */
 	gcodeControlBtnVisibility: {
+		open: {
+			'open-btn': true,
+			'start-btn': true,
+			'pause-btn': false,
+			'resume-btn': false,
+			'stop-btn': false
+		},
 		start: {
+			'open-btn': false,
 			'start-btn': false,
 			'pause-btn': true,
 			'resume-btn': false,
 			'stop-btn': true
 		},
 		pause: {
+			'open-btn': false,
 			'start-btn': false,
 			'pause-btn': false,
 			'resume-btn': true,
 			'stop-btn': true
 		},
 		resume: {
+			'open-btn': false,
 			'start-btn': false,
 			'pause-btn': true,
 			'resume-btn': false,
 			'stop-btn': true
 		},
 		stop: {
+			'open-btn': false,
 			'start-btn': false,
 			'pause-btn': false,
 			'resume-btn': false,
 			'stop-btn': false
+		},
+		tcActive: {
+			'pause-btn': false,
+			'stop-btn': true,
+			'complete-btn': true
+		},
+		tcComplete: {
+			'pause-btn': true,
+			'stop-btn': true,
+			'complete-btn': false
 		}
 	},
 	pauseOnFirstToolChange: false,
@@ -694,9 +720,9 @@ define([ 'jquery' ], $ => ({
 
 		const { gcodePaginationEnable, gcodePaginationFileThreshold } = this;
 
-		$('.gcode-view-panel .gcode-file-text').removeClass('m-fadeIn');  // Hide any previous Gcode
-		$('.gcode-view-panel .no-file-modal').removeClass('m-fadeIn');	  // Hide the 'No Gcode File' modal
 		$('.gcode-view-panel .loading-file-modal').addClass('m-fadeIn');  // Show the 'Loading File' modal
+		$('.gcode-view-panel .no-file-modal').removeClass('m-fadeIn');	  // Hide the 'No Gcode File' modal
+		$('.gcode-view-panel .gcode-file-text').removeClass('m-fadeIn');  // Hide any previous Gcode
 
 		$('#run-widget .gcode-view-panel .start-line-input')[0].value = 0;
 		this.startFromIndex = 0;
@@ -759,25 +785,23 @@ define([ 'jquery' ], $ => ({
 		const [ globalPath, localFileName ] = FileName.match(/([^\\]+)\.[a-z0-9]+$/i);
 		$('#run-widget .gcode-view-panel .gcode-file-name').text(localFileName);
 
+		const fileStats = `(${GcodeData.Gcode.length} Lines)`;
+		$('#run-widget .gcode-view-panel .file-stats').text(fileStats);
+
 		if (gcodePaginationEnable && Gcode.length >= gcodePaginationFileThreshold) {  // If the Gcode file should be paginated
 
 			this.buildPaginatedGcodeDOM();
-
-			$('#run-widget .gcode-view-panel .pause-btn').addClass('hidden');
-			$('#run-widget .gcode-view-panel .resume-btn').addClass('hidden');
-			$('#run-widget .gcode-view-panel .stop-btn').addClass('hidden');
-
-			$('#run-widget .gcode-view-panel .start-btn').removeClass('hidden');  		 // Show the play button
-			$('#run-widget .gcode-view-panel .reload-gcode-btn').removeClass('hidden');  // Show the reload button
-
-			$('.gcode-view-panel .gcode-file-text').addClass('m-fadeIn');  		 // Show the file
-			$('.gcode-view-panel .loading-file-modal').removeClass('m-fadeIn');  // Hide the 'Loading File' modal
 
 		} else {  // If the Gcode file should not be paginated
 
 			this.buildGcodeFileDOM();
 
 		}
+
+		this.updateControlBtns('open');
+
+		$('.gcode-view-panel .gcode-file-text').addClass('m-fadeIn');  		 // Show the file
+		$('.gcode-view-panel .loading-file-modal').removeClass('m-fadeIn');  // Hide the 'Loading File' modal
 
 	},
 	reloadFile() {
@@ -824,10 +848,6 @@ define([ 'jquery' ], $ => ({
 
 		}
 
-		$('#run-widget .gcode-view-panel .pause-btn').addClass('hidden');
-		$('#run-widget .gcode-view-panel .resume-btn').addClass('hidden');
-		$('#run-widget .gcode-view-panel .stop-btn').addClass('hidden');
-
 		this.resizeWidgetDom();
 		this.paginationRange = [ 0, Gcode.length - 1 ];
 
@@ -839,12 +859,6 @@ define([ 'jquery' ], $ => ({
 			this.gcodeScrollToId(gcodeLineId);
 
 			this.resizeWidgetDom();
-
-			$('#run-widget .gcode-view-panel .start-btn').removeClass('hidden');  		 // Show the play button
-			$('#run-widget .gcode-view-panel .reload-gcode-btn').removeClass('hidden');  // Show the reload button
-
-			$('.gcode-view-panel .gcode-file-text').addClass('m-fadeIn');  		 // Show the file
-			$('.gcode-view-panel .loading-file-modal').removeClass('m-fadeIn');  // Hide the 'Loading File' modal
 
 		}, 10);
 
@@ -912,9 +926,6 @@ define([ 'jquery' ], $ => ({
 		this.gcodeScrollToId(GcodeData.Id[lineIndex]);
 		this.resizeWidgetDom();
 
-		// setTimeout(() => {  // Use timeout to allow the filename and tool change panel to perform DOM updates before loading Gcode file
-		// }, 10);
-
 	},
 	/**
 	 *  Checks if a Gcode line has a DOM element in the Gcode file viewer.
@@ -936,9 +947,7 @@ define([ 'jquery' ], $ => ({
 
 	onGcodeControl(task) {
 
-		const { gcodeControlBtnVisibility, mainDevicePort: port, reloadFileOnStopDelay } = this;
-		const btnVisible = gcodeControlBtnVisibility[task];
-		const btnKeys = Object.keys(btnVisible);
+		const { mainDevicePort: port, reloadFileOnStopDelay } = this;
 
 		if (task === 'start') {  // If the start button was pressed
 
@@ -979,9 +988,7 @@ define([ 'jquery' ], $ => ({
 		}
 
 		publish('gcode-buffer/control', task);
-
-		for (let i = 0; i < btnKeys.length; i++)
-			$(`#run-widget .gcode-view-panel .${btnKeys[i]}`).removeClass(btnVisible[btnKeys[i]] ? 'hidden' : '').addClass(btnVisible[btnKeys[i]] ? '' : 'hidden');
+		this.updateControlBtns(task);
 
 	},
 	bufferGcode({ StartIndex = 0 }) {
@@ -1066,6 +1073,16 @@ define([ 'jquery' ], $ => ({
 		this.fileStarted = true;
 
 		publish('connection-widget/port-sendbuffered', port, { Data: bufferData });  // Send gcode data to be buffered to the SPJS
+
+	},
+	updateControlBtns(state) {
+
+		const { gcodeControlBtnVisibility } = this;
+		const btnVisible = gcodeControlBtnVisibility[state];
+		const btnKeys = Object.keys(btnVisible);
+
+		for (let i = 0; i < btnKeys.length; i++)
+			$(`#run-widget .gcode-view-panel .${btnKeys[i]}`).removeClass(btnVisible[btnKeys[i]] ? 'hidden' : '').addClass(btnVisible[btnKeys[i]] ? '' : 'hidden');
 
 	},
 
@@ -1345,12 +1362,18 @@ define([ 'jquery' ], $ => ({
 	},
 	gcodeTrackerActive({ ActiveId, SuccessId, InactiveId }) {
 
-		const { idMap } = this;
+		const { idMap, gcodeProgress, Gcode } = this;
 
 		if (typeof ActiveId != 'undefined' && ActiveId && typeof idMap[ActiveId] != 'undefined') {
 
+			const progress = Math.roundTo((idMap[ActiveId] + 1) * 100 / Gcode.length, 0);
+
+			if (progress !== gcodeProgress)  // If the progress has changed
+				$('#run-widget .gcode-view-panel .file-stats').text(`(${progress}% Complete)`);
+
 			this.activeId = ActiveId;
 			this.activeIndex = idMap[ActiveId];
+			this.gcodeProgress = progress;
 
 			if (this.inPagination(ActiveId))  // If the Gcode line has a DOM element in the Gcode view panel
 				$(`#run-widget .gcode-view-panel .${ActiveId}`).removeClass('bg-default bg-success').addClass('bg-primary');  // Hilite the active gcode line
@@ -1482,10 +1505,12 @@ define([ 'jquery' ], $ => ({
 
 		}
 
-		$('#run-widget .gcode-view-panel .start-btn').addClass('hidden');  // Show the stop button in the gcode panel
-		$('#run-widget .gcode-view-panel .pause-btn').addClass('hidden');
-		$('#run-widget .gcode-view-panel .resume-btn').addClass('hidden');
-		$('#run-widget .gcode-view-panel .stop-btn').removeClass('hidden');
+		this.updateControlBtns('tcActive');
+
+		// $('#run-widget .gcode-view-panel .start-btn').addClass('hidden');  // Show the stop button in the gcode panel
+		// $('#run-widget .gcode-view-panel .pause-btn').addClass('hidden');
+		// $('#run-widget .gcode-view-panel .resume-btn').addClass('hidden');
+		// $('#run-widget .gcode-view-panel .stop-btn').removeClass('hidden');
 
 	},
 	toolChangeComplete(id) {
@@ -1499,13 +1524,13 @@ define([ 'jquery' ], $ => ({
 		$(`#run-widget .tool-panel .panel-body .item-${tcIndex}`).addClass('btn-success');  // Hilite the tool as complete
 		$(`#run-widget .tool-panel .panel-body .item-${tcIndex}`).removeClass('tool-active');
 
-		// $('#run-widget .tool-panel .panel-heading .complete-btn').addClass('hidden');  // Hide the tool change complete button
-		$('#run-widget .gcode-view-panel .complete-btn').addClass('hidden');  // Hide the tool change complete button
+		this.updateControlBtns('tcComplete');
 
-		$('#run-widget .gcode-view-panel .start-btn').addClass('hidden');  // Show the pause and stop buttons in the gcode panel
-		$('#run-widget .gcode-view-panel .pause-btn').removeClass('hidden');
-		$('#run-widget .gcode-view-panel .resume-btn').addClass('hidden');
-		$('#run-widget .gcode-view-panel .stop-btn').removeClass('hidden');
+		// $('#run-widget .gcode-view-panel .complete-btn').addClass('hidden');  // Hide the tool change complete button
+		// $('#run-widget .gcode-view-panel .start-btn').addClass('hidden');  // Show the pause and stop buttons in the gcode panel
+		// $('#run-widget .gcode-view-panel .pause-btn').removeClass('hidden');
+		// $('#run-widget .gcode-view-panel .resume-btn').addClass('hidden');
+		// $('#run-widget .gcode-view-panel .stop-btn').removeClass('hidden');
 
 	},
 
@@ -1680,9 +1705,6 @@ define([ 'jquery' ], $ => ({
 				maxNegative: -20
 			},
 		],
-		// probeHeight: 1,
-		// feedrate: 25,
-		// maxNegative: -20,
 		heightOffset: 0,
 		repeatProbe: false,
 		scanWithXAxis: true,
@@ -2911,16 +2933,10 @@ define([ 'jquery' ], $ => ({
 	resizeWidgetDom() {
 
 		const { widgetVisible, widgetDom, GcodeData, idMap, gcodeLineScrollOffset, activeId, scrollOffsetFactor} = this;
+		const lineHeight = 18.5;  // Height of lines in the Gcode file view panel in pixels [px]
 
 		if (!widgetVisible)  // If the widgte is not visible
 			return false;
-
-		const lineHeight = 18.5;  // Height of lines in the Gcode file view panel in pixels [px]
-
-		// TODO: Do the resize stuff like this: $(selector).attr(attribute,function(index,currentvalue))
-		// index - Receives the index position of the element in the set.
-		// currentvalue - Receives the current attribute value of the selected elements.
-		// Put the .attr() function inside of a for loop.
 
 		for (let i = 0; i < widgetDom.length; i++) {
 
@@ -2952,64 +2968,14 @@ define([ 'jquery' ], $ => ({
 				const desiredHeight = `${containerHeight - (marginSpacing + panelSpacing)}px`;
 
 				if (panelHeight !== desiredHeight)
-				$panel.css({ height: desiredHeight });
+					$panel.css({ height: desiredHeight });
 
-				if (panelHeight !== desiredHeight && panelItem === ' .gcode-view-panel')
-				this.gcodeLineScrollOffset = Math.roundTo(Number(desiredHeight.replace(/px/, '')) * scrollOffsetFactor / lineHeight, 0);
+				if (panelHeight !== desiredHeight && panelItem === '.gcode-view-panel')
+					this.gcodeLineScrollOffset = Math.roundTo(Number(desiredHeight.replace(/px/, '')) * scrollOffsetFactor / lineHeight, 0);
 
 			}
 
 		}
-
-		// $.each(this.widgetDom, (setIndex, setItem) => {
-        //
-		// 	const that1 = that;
-        //
-		// 	let containerElement = null;
-		// 	let containerHeight = null;
-		// 	let marginSpacing = 0;
-		// 	let panelSpacing = 0;
-        //
-		// 	$.each(setItem, (panelIndex, panelItem) => {
-        //
-		// 		if (!panelIndex) {  // If panelItem is the container element
-        //
-		// 			containerElement = `#${that1.id}${panelItem}`;
-		// 			containerHeight = $(containerElement).height();
-        //
-		// 			return true;
-        //
-		// 		}
-        //
-		// 		const $element = $(`${containerElement}${panelItem}`);
-		// 		marginSpacing += Number($element.css('margin-top').replace(/px/g, ''));
-        //
-		// 		if (panelIndex === setItem.length - 1) {  // Last element in array
-        //
-		// 			marginSpacing += Number($element.css('margin-bottom').replace(/px/g, ''));
-		// 			const panelHeight = `${containerHeight - (marginSpacing + panelSpacing)}px`;
-		// 			const elementHeight = $element.css('height');
-        //
-		// 			if (elementHeight !== panelHeight)
-		// 				$element.css({ height: panelHeight });
-        //
-		// 			if (elementHeight !== panelHeight && panelItem === ' .gcode-view-panel') {
-        //
-		// 				const { scrollOffsetFactor } = that1;
-		// 				const lineHeight = 18.5;
-		// 				that1.gcodeLineScrollOffset = Math.roundTo(Number(panelHeight.replace(/px/, '')) * scrollOffsetFactor / lineHeight, 0);
-        //
-		// 			}
-        //
-		// 		} else {  // If this is not the last element in the array, read the element's height.
-        //
-		// 			panelSpacing += Number($element.css('height').replace(/px/, ''));
-        //
-		// 		}
-        //
-		// 	});
-        //
-		// });
 
 		// Adjust size of the load file modal
 		const $modal = $('.gcode-view-panel .gcode-modal');
@@ -3017,8 +2983,6 @@ define([ 'jquery' ], $ => ({
 
 		$modal.css({ height: $gcodePanelBody.css('height') });
 		$modal.css({ width: $gcodePanelBody.css('width') });
-
-		// this.gcodeScrollToId(activeId);  // Scroll gcode file to active gcode line
 
 		const $autoLevelPanel = $('.auto-level-panel');
 		const $autoLevelPanelBody = $('.auto-level-panel .panel-body');

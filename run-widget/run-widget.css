@@ -57,6 +57,10 @@
     width: 0;
     white-space: nowrap;
 }
+.gcode-view-panel .file-stats {
+    margin-left: 10px;
+    font-size: smaller;
+}
 .gcode-view-panel .panel-heading .btn-group {
     float: right;
     margin-left: 6px;

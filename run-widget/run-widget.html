@@ -8,6 +8,7 @@
 
 			<div class="file-name-container">
 				<h3 class="gcode-file-name">GCode File</h3>
+				<span class="file-stats"></span>
 			</div>
 
 			<div class="btn-group">
@@ -19,7 +20,6 @@
 			</div>
 
 			<div class="btn-group buffer-control-btns">
-
 				<span evt-signal="tool-change" evt-data="complete" class="btn btn-xs btn-default complete-btn hidden">Tool Change Complete</span>
 				<span evt-signal="gcode-control" evt-data="pause" class="btn btn-xs btn-default pause-btn hidden">Pause</span>
 				<span evt-signal="gcode-control" evt-data="resume" class="btn btn-xs btn-default resume-btn hidden">Resume</span>
@@ -38,26 +38,9 @@
 
 			</div>
 
-			<!-- <div class="btn-group buffer-control-btns">
-			</div> -->
-
 		</div>
 
 		<div class="panel-body">
-
-			<!-- <ul class="pager">
-				<li><a href="#">Previous</a></li>
-				<li><a href="#">Next</a></li>
-			</ul>
-
-			<div class="pager">
-
-			</div>
-
-			<ul class="pager">
-				<li class="previous disabled"><a href="#">&larr; Older</a></li>
-				<li class="next"><a href="#">Newer &rarr;</a></li>
-			</ul> -->
 
 			<div class="gcode-modal no-file-modal m-fadeOut m-fadeIn">
 				<div class="modal-content">
@@ -94,14 +77,6 @@
 		</div>
 
 	</div>
-
-	<!-- <div class="panel panel-default path-view-panel">
-
-		<div class="panel-body">
-			<div id="run-widget-gcode-plot" class="gcode-plot"></div>
-		</div>
-
-	</div> -->
 
 </div>
 

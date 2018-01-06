@@ -159,19 +159,19 @@ define([ 'jquery' ], $ => ({
 		 *  @default Overwritten by settings cson file.
 		 *  @type {number}
 		 */
-		pauseOnQueueCount: 40,
+		pauseOnQueueCount: 150,
 		/**
 		 *  The number of lines queued in the SPJS buffer below which sending of buffered instructions will be resumed.
 		 *  @default Overwritten by settings cson file.
 		 *  @type {number}
 		 */
-		resumeOnQueueCount: 20,
+		resumeOnQueueCount: 80,
 		/**
 		 *  The maximum number of instructions that can be sent to the SPJS at a time.
 		 *  @default Overwritten by settings cson file.
 		 *  @type {number}
 		 */
-		maxLinesAtATime: 8,
+		maxLinesAtATime: 50,
 		/**
 		 *  The minimum time [ms] between data buffered to the SPJS.
 		 *  @default Overwritten by settings cson file.
@@ -351,7 +351,14 @@ define([ 'jquery' ], $ => ({
 	// New data gets pushed onto the buffer and shift out items to send.
 	dataSendBuffer: {},
 
-	// IDEA: Restructure the shit outta this stuff.
+	userSettingsRequiredFiles: [
+		'SPJS',
+		'Console_Log',
+		'Device_Meta',
+		'Init_Scripts'
+	],
+	parsedSettingsFiles: [],
+
 	consoleLog: {
 		/**
 		 *  Stores the name of the currently open console log.
@@ -1466,25 +1473,27 @@ define([ 'jquery' ], $ => ({
 
 		debug.log('Loading Settings from CSON files.');
 
-		CSON.parseCSONFile(`${this.id}/SPJS.cson`, (err, data) => {  // Asynchronously load SPJS and console log settings
+		CSON.parseCSONFile('connection-widget/SPJS.cson', (err, data) => {  // Asynchronously load SPJS and console log settings
 
 			if (err)  // If there was an error reading the file
 				return debug.error(err);
 
 			gui.mergeDeep(that.SPJS, data);  // Merge the SPJS settings from the file with the local default settings
+			that.initUserSettings('SPJS');
 
 		});
 
-		CSON.parseCSONFile(`${this.id}/Console_Log.cson`, (err, data) => {  // Asynchronously load SPJS and console log settings
+		CSON.parseCSONFile('connection-widget/Console_Log.cson', (err, data) => {  // Asynchronously load SPJS and console log settings
 
 			if (err)  // If there was an error reading the file
 				return debug.error(err);
 
 			gui.mergeDeep(that.consoleLog, data);  // Merge the Console Log settings from the file with the local default settings
+			that.initUserSettings('Console_Log');
 
 		});
 
-		CSON.parseCSONFile(`${this.id}/Device_Meta.cson`, (err, data) => {  // Asynchronously load device meta settings
+		CSON.parseCSONFile('connection-widget/Device_Meta.cson', (err, data) => {  // Asynchronously load device meta settings
 
 			if (err)  // If there was an error reading the file
 				return debug.error(err);
@@ -1497,9 +1506,11 @@ define([ 'jquery' ], $ => ({
 			if (typeof DeviceMeta != 'undefined' && DeviceMeta.length)  // If Device Meta was specified and is not empty
 				that.deviceMeta = [ ...DeviceMeta ];
 
+			that.initUserSettings('Device_Meta');
+
 		});
 
-		CSON.parseCSONFile(`${this.id}/Init_Scripts.cson`, (err, data) => {  // Asynchronously load init and connect scripts
+		CSON.parseCSONFile('connection-widget/Init_Scripts.cson', (err, data) => {  // Asynchronously load init and connect scripts
 
 			if (err)  // If there was an error reading the file
 				return debug.error(err);
@@ -1512,36 +1523,11 @@ define([ 'jquery' ], $ => ({
 			if (typeof ConnectScripts != 'undefined')  // If ConnectScripts was specified
 				that.connectScripts = ConnectScripts;
 
+			that.initUserSettings('Init_Scripts');
+
 		});
 
-		if (inDebugMode) {  // If running on a development device
-
-			this.SPJS.requestListDelay = null;    // Disable automatic list requests
-			this.consoleLog.commentCmdId = true;  // Comment the id of commands on the console log
-
-		}
-
-		debug.groupCollapsed('CSON Format');
-		debug.log(`SPJS:${CSON.stringify(this.SPJS)}`);
-		debug.log(`consoleLog:${CSON.stringify(this.consoleLog)}`);
-		debug.log(`deviceMeta:${CSON.stringify(this.deviceMeta)}`);
-		debug.log(`defaultMetaIndex:${CSON.stringify(this.defaultMetaIndex)}`);
-		debug.log(`initScripts:${CSON.stringify(this.initScripts)}`);
-		debug.log(`connectScripts:${CSON.stringify(this.connectScripts)}`);
-		debug.groupEnd();
-
-		debug.groupCollapsed('JSON Format');
-		debug.log(`SPJS:${JSON.stringify(this.SPJS)}`);
-		debug.log(`consoleLog:${JSON.stringify(this.consoleLog)}`);
-		debug.log(`deviceMeta:${JSON.stringify(this.deviceMeta)}`);
-		debug.log(`defaultMetaIndex:${JSON.stringify(this.defaultMetaIndex)}`);
-		debug.log(`initScripts:${JSON.stringify(this.initScripts)}`);
-		debug.log(`connectScripts:${JSON.stringify(this.connectScripts)}`);
-		debug.groupEnd();
-
-		debug.log('Loading Status Codes from cson file.');
-
-		CSON.parseCSONFile(`${this.id}/TinyG_Status_Codes.cson`, (err, result) => {  // Asynchronously load tinyg status codes
+		CSON.parseCSONFile('connection-widget/TinyG_Status_Codes.cson', (err, result) => {  // Asynchronously load tinyg status codes
 
 			if (err)  // If there was an error reading the file
 				return debug.error(err);
@@ -1550,6 +1536,42 @@ define([ 'jquery' ], $ => ({
 				that.tinygStatusMeta = result;
 
 		});
+
+	},
+	initUserSettings(file) {
+
+		const { userSettingsRequiredFiles: required } = this;
+		let { parsedSettingsFiles: parsed } = this;
+
+		if (file)  // If a file argument was passed
+			parsed = [ ...parsed, file ];
+
+		this.parsedSettingsFiles = parsed;
+		let matched = (parsed.length === required.length);
+
+		for (let i = 0; i < parsed.length; i++) {
+
+			if (parsed.sort()[i] !== required.sort()[i]) {
+
+				matched = false;
+				break;
+
+			}
+
+		}
+
+		if (!file || matched) {
+
+			CSON.parseCSONFile('connection-widget/User_Settings.cson', (err, data) => {  // Asynchronously load user settings
+
+				if (err)  // If there was an error reading the file
+					return false;
+
+				gui.mergeDeep(this, data);
+
+			});
+
+		}
 
 	},
 	initClickEvents() {
@@ -3316,7 +3338,6 @@ define([ 'jquery' ], $ => ({
 		}
 
 	},
-	// TODO: Test that it works when receiving multiple commands at a time where a list of data and ids are received.
 	onQueuedText(data) {
 
 		// Ex. { "Cmd": "Queued", "QCnt": 2, "Ids": [ "" ], "D": [ "!" ], "Port": "COM5" }
@@ -3876,7 +3897,6 @@ define([ 'jquery' ], $ => ({
 		inDebugMode && debug.log(`SPJS -Cayenn-\n  Addr: ${JSON.stringify(Addr)}\n  Announce: ${Announce}\n  Widget: ${Widget}\n  JsonTag: ${JsonTag}\n  DeviceId: ${DeviceId}`);
 
 		this.consoleLog.appendMsg('SPJS', { Msg: data, Type: 'Cayenn' });  // Add the message to the SPJS log
-
 		this.consoleLog.updateCmd('SPJS', { PartMsg: 'cayenn-sendudp', Status: 'Executed' });
 
 	},

@@ -3,29 +3,50 @@
 # Enables the start, pause, resume, and stop buttons after one of the buttons have been pressed.
 # @type {Object}
 gcodeControlBtnVisibility: {
+	open: {
+		'open-btn': true
+		'start-btn': true
+		'pause-btn': false
+		'resume-btn': false
+		'stop-btn': false
+	}
 	start: {
+		'open-btn': false
 		'start-btn': false
 		'pause-btn': true
 		'resume-btn': false
 		'stop-btn': true
 	}
 	pause: {
+		'open-btn': false
 		'start-btn': false
 		'pause-btn': false
 		'resume-btn': true
 		'stop-btn': true
 	}
 	resume: {
+		'open-btn': false
 		'start-btn': false
 		'pause-btn': true
 		'resume-btn': false
 		'stop-btn': true
 	}
 	stop: {
+		'open-btn': false
 		'start-btn': false
 		'pause-btn': false
 		'resume-btn': false
 		'stop-btn': false
+	}
+	tcActive: {
+		'pause-btn': false
+		'stop-btn': true
+		'complete-btn': true
+	}
+	tcComplete: {
+		'pause-btn': true
+		'stop-btn': true
+		'complete-btn': false
 	}
 }
 # File types that will be shown in the file explorer when opening a Gcode file.
